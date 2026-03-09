@@ -49,13 +49,25 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .settings-btn:hover { background: var(--accent); }
 
 /* STATUS BAR */
-.status-bar { background: #0a0a0a; border-bottom: 1px solid var(--border); padding: 4px 20px; font-size: 0.65rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.status-bar { background: #0a0a0a; border-bottom: 1px solid var(--border); padding: 4px 20px; font-size: 0.65rem; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
 .status-dot.connected { background: var(--green); animation: pulse-green 2s ease-in-out infinite; }
 @keyframes pulse-green { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
 
+/* PAGE NAV */
+.page-nav { background: #0f0f0f; border-bottom: 1px solid var(--border); display: flex; flex-shrink: 0; }
+.page-tab { background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); cursor: pointer; padding: 9px 22px; font-family: var(--font); font-size: 0.75rem; letter-spacing: 2px; transition: all 0.2s; }
+.page-tab:hover { color: var(--text); }
+.page-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* PAGE WRAPPERS */
+.tasks-page { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+.tasks-page.hidden { display: none; }
+.cal-page { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+.cal-page.hidden { display: none; }
+
 /* CONTROLS */
-.controls { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.controls { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
 .controls input[type="text"],
 .controls input[type="datetime-local"],
 .controls select {
@@ -66,6 +78,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .controls input[type="datetime-local"]:focus,
 .controls select:focus { border-color: var(--accent); }
 input[type="datetime-local"] { color-scheme: dark; }
+input[type="date"] { color-scheme: dark; }
 .input-task     { flex: 1; min-width: 200px; }
 .input-assignee { width: 150px; }
 .input-category { width: 150px; }
@@ -90,7 +103,7 @@ input[type="datetime-local"] { color-scheme: dark; }
 .btn-view:not(.active):hover { border-color: var(--accent); color: var(--text); }
 
 /* BOARD */
-.board { flex: 1; padding: 16px 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(275px, 1fr)); gap: 12px; align-content: start; }
+.board { flex: 1; padding: 16px 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(275px, 1fr)); gap: 12px; align-content: start; overflow-y: auto; }
 .empty-state { grid-column: 1/-1; text-align: center; padding: 70px 20px; color: var(--muted); font-size: 0.85rem; letter-spacing: 2px; }
 
 /* CARDS */
@@ -129,7 +142,7 @@ input[type="datetime-local"] { color-scheme: dark; }
 .card.done .btn-done { display: none; }
 
 /* TABLE VIEW */
-.table-container { flex: 1; padding: 16px 20px; overflow-x: auto; }
+.table-container { flex: 1; padding: 16px 20px; overflow-x: auto; overflow-y: auto; }
 .task-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 .task-table thead tr { border-bottom: 2px solid var(--accent); }
 .task-table th { text-align: left; padding: 10px 12px; font-size: 0.63rem; letter-spacing: 2px; color: var(--muted); font-weight: normal; white-space: nowrap; }
@@ -218,6 +231,144 @@ input[type="datetime-local"] { color-scheme: dark; }
 .btn-cancel { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 8px 18px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; }
 .btn-save   { background: var(--accent); color: white; border: none; padding: 8px 18px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; letter-spacing: 1px; }
 
+/* ── CALENDAR ──────────────────────────────────────────────────────────────── */
+
+/* Calendar toolbar */
+.cal-toolbar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 10px 20px; display: flex; gap: 10px; align-items: center;
+  flex-wrap: wrap; flex-shrink: 0;
+}
+.cal-nav-group { display: flex; align-items: center; gap: 6px; }
+.cal-title { font-size: 1rem; font-weight: bold; letter-spacing: 1px; color: var(--text); min-width: 230px; text-align: center; }
+.btn-cal-nav {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  cursor: pointer; padding: 7px 12px; font-family: var(--font); font-size: 0.85rem;
+  border-radius: 4px; transition: all 0.2s; line-height: 1;
+}
+.btn-cal-nav:hover { border-color: var(--accent); color: var(--accent); }
+.btn-cal-today {
+  background: var(--surface2); border: 1px solid var(--accent); color: var(--accent);
+  cursor: pointer; padding: 7px 13px; font-family: var(--font);
+  font-size: 0.72rem; letter-spacing: 1px; border-radius: 4px; transition: all 0.2s;
+}
+.btn-cal-today:hover { background: var(--accent); color: white; }
+.cal-view-toggle { display: flex; }
+.btn-cal-view {
+  background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
+  font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; padding: 7px 13px;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-cal-view:first-child { border-radius: 4px 0 0 4px; }
+.btn-cal-view:last-child  { border-radius: 0 4px 4px 0; border-left: none; }
+.btn-cal-view.active { background: var(--accent); color: white; border-color: var(--accent); }
+.btn-cal-view:not(.active):hover { border-color: var(--accent); color: var(--text); }
+.btn-add-event {
+  background: var(--accent); color: white; border: none; padding: 7px 16px;
+  font-family: var(--font); font-size: 0.78rem; letter-spacing: 1px; font-weight: bold;
+  border-radius: 4px; cursor: pointer; transition: opacity 0.2s; margin-left: auto;
+}
+.btn-add-event:hover { opacity: 0.82; }
+.cal-event-count { font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+
+/* Calendar main container */
+.cal-main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+/* ── MONTH VIEW ── */
+.cal-month-view { display: flex; flex-direction: column; height: 100%; }
+.cal-daynames { display: grid; grid-template-columns: repeat(7, 1fr); flex-shrink: 0; background: var(--surface); }
+.cal-dayname { text-align: center; padding: 8px 4px; font-size: 0.65rem; color: var(--muted); letter-spacing: 2px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); }
+.cal-dayname:last-child { border-right: none; }
+.cal-month-grid { display: grid; grid-template-columns: repeat(7, 1fr); flex: 1; overflow-y: auto; border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
+.cal-day-cell { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 6px; overflow: hidden; cursor: pointer; transition: background 0.15s; min-height: 110px; }
+.cal-day-cell:hover { background: var(--surface2); }
+.cal-day-cell.today { background: rgba(255,107,0,0.07); }
+.cal-day-cell.other-month { opacity: 0.28; }
+.cal-day-num { font-size: 0.7rem; color: var(--muted); margin-bottom: 4px; font-weight: bold; display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; }
+.cal-day-cell.today .cal-day-num { background: var(--accent); color: white; font-size: 0.65rem; }
+.cal-event-chip { font-size: 0.62rem; padding: 2px 5px; border-radius: 3px; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; transition: opacity 0.15s; }
+.cal-event-chip:hover { opacity: 0.78; }
+.cal-event-more { font-size: 0.6rem; color: var(--muted); padding-left: 2px; margin-top: 1px; }
+
+/* ── WEEK VIEW ── */
+.cal-week-view { display: flex; flex-direction: column; height: 100%; }
+.cal-week-top { flex-shrink: 0; }
+.cal-week-header { display: grid; grid-template-columns: 54px repeat(7, 1fr); background: var(--surface); border-bottom: 1px solid var(--border); }
+.cal-week-gutter { border-right: 1px solid var(--border); }
+.cal-week-col-name { text-align: center; padding: 8px 4px; font-size: 0.65rem; color: var(--muted); letter-spacing: 1px; border-right: 1px solid var(--border); }
+.cal-week-col-name.today-col { color: var(--accent); }
+.cal-week-col-name:last-child { border-right: none; }
+.cal-allday-bar { display: grid; grid-template-columns: 54px repeat(7, 1fr); background: var(--surface2); border-bottom: 2px solid var(--border); min-height: 30px; }
+.cal-allday-gutter { font-size: 0.55rem; color: var(--muted); text-align: right; padding: 6px 6px 0 0; border-right: 1px solid var(--border); letter-spacing: 1px; }
+.cal-allday-col { border-right: 1px solid var(--border); padding: 2px; }
+.cal-allday-col:last-child { border-right: none; }
+.cal-allday-chip { font-size: 0.62rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.cal-allday-chip:hover { opacity: 0.8; }
+.cal-week-scroll { flex: 1; overflow-y: auto; }
+.cal-time-grid { display: grid; grid-template-columns: 54px repeat(7, 1fr); }
+.cal-hour-label { font-size: 0.58rem; color: var(--muted); text-align: right; padding: 2px 6px 0 0; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); height: 60px; position: relative; top: -8px; }
+.cal-hour-label:first-child { top: 0; }
+.cal-time-col { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); height: 60px; cursor: pointer; position: relative; transition: background 0.15s; }
+.cal-time-col:hover { background: var(--surface2); }
+.cal-time-col.today-col { background: rgba(255,107,0,0.04); }
+.cal-time-col.today-col:hover { background: rgba(255,107,0,0.08); }
+.cal-time-col:last-child { border-right: none; }
+.cal-event-block {
+  position: absolute; left: 2px; right: 2px; border-radius: 3px; padding: 2px 4px;
+  font-size: 0.62rem; overflow: hidden; cursor: pointer; z-index: 2;
+  line-height: 1.3; transition: opacity 0.15s;
+}
+.cal-event-block:hover { opacity: 0.82; z-index: 3; }
+
+/* ── DAY VIEW ── */
+.cal-day-view { display: flex; flex-direction: column; height: 100%; }
+.cal-day-allday-bar { background: var(--surface2); border-bottom: 2px solid var(--border); min-height: 30px; display: flex; }
+.cal-day-allday-gutter { width: 54px; font-size: 0.55rem; color: var(--muted); text-align: right; padding: 6px 6px 0 0; border-right: 1px solid var(--border); letter-spacing: 1px; flex-shrink: 0; }
+.cal-day-allday-content { flex: 1; padding: 2px 4px; }
+.cal-day-scroll { flex: 1; overflow-y: auto; }
+.cal-day-grid { display: grid; grid-template-columns: 54px 1fr; }
+.cal-day-time-col { font-size: 0.58rem; color: var(--muted); text-align: right; padding: 2px 6px 0 0; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); height: 60px; position: relative; top: -8px; }
+.cal-day-time-col:first-child { top: 0; }
+.cal-day-slot { border-bottom: 1px solid var(--border); height: 60px; cursor: pointer; position: relative; transition: background 0.15s; }
+.cal-day-slot:hover { background: var(--surface2); }
+
+/* ── EVENT MODAL ── */
+.event-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.event-overlay.hidden { display: none; }
+.event-modal { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 8px; width: 100%; max-width: 480px; padding: 24px; max-height: 90vh; overflow-y: auto; }
+.event-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.event-modal-title { font-size: 0.9rem; letter-spacing: 3px; color: var(--accent); }
+.event-form-row { margin-bottom: 14px; }
+.event-form-row label { display: block; font-size: 0.63rem; color: var(--muted); letter-spacing: 2px; margin-bottom: 5px; }
+.event-form-row input[type="text"],
+.event-form-row input[type="datetime-local"],
+.event-form-row input[type="date"],
+.event-form-row textarea {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none;
+}
+.event-form-row input[type="text"]:focus,
+.event-form-row input[type="datetime-local"]:focus,
+.event-form-row input[type="date"]:focus,
+.event-form-row textarea:focus { border-color: var(--accent); }
+.event-form-row textarea { resize: vertical; min-height: 65px; }
+.event-allday-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.event-allday-row label { font-size: 0.78rem; color: var(--text); margin: 0; cursor: pointer; }
+.event-allday-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+.event-time-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.event-time-row .event-form-row { margin-bottom: 0; }
+.event-color-palette { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.color-swatch { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: transform 0.15s, border-color 0.15s; }
+.color-swatch:hover { transform: scale(1.15); }
+.color-swatch.selected { border-color: white; transform: scale(1.1); }
+.event-modal-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 8px; }
+.event-modal-footer-right { display: flex; gap: 8px; }
+.btn-event-delete { background: none; border: 1px solid var(--red); color: var(--red); padding: 7px 13px; font-family: var(--font); font-size: 0.72rem; border-radius: 4px; cursor: pointer; letter-spacing: 1px; transition: all 0.2s; }
+.btn-event-delete:hover { background: var(--red); color: white; }
+.btn-event-delete.hidden { display: none; }
+.btn-event-cancel { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 7px 15px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; }
+.btn-event-save { background: var(--accent); color: white; border: none; padding: 7px 15px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; letter-spacing: 1px; }
+
 ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 </style>
 </head>
@@ -269,30 +420,58 @@ input[type="datetime-local"] { color-scheme: dark; }
   <span id="statusText">CONNECTING...</span>
 </div>
 
+<!-- PAGE NAV TABS -->
+<nav class="page-nav">
+  <button class="page-tab active" id="tabTasks" onclick="setPage('tasks')">🔲 TASKS</button>
+  <button class="page-tab" id="tabCalendar" onclick="setPage('calendar')">📅 CALENDAR</button>
+</nav>
+
 <datalist id="assigneeList"></datalist>
 
-<div class="controls">
-  <input class="input-task" id="iTask" type="text" placeholder="TASK DESCRIPTION..." maxlength="80" onkeydown="if(event.key==='Enter')addTask()">
-  <input class="input-assignee" id="iAssignee" type="text" placeholder="ASSIGNEE" maxlength="30" list="assigneeList" autocomplete="off">
-  <select class="input-category" id="iCategory"></select>
-  <button class="btn btn-time" id="btnPastStart" onclick="togglePastStart()" title="Set a past start date/time">📅 PAST START</button>
-  <input class="input-past" id="iPastStart" type="datetime-local" style="display:none">
-  <button class="btn btn-time" id="btnDueDate" onclick="toggleDueDate()" title="Set a future due date">🗓 DUE DATE</button>
-  <input class="input-due" id="iDueDate" type="datetime-local" style="display:none">
-  <button class="btn btn-add" onclick="addTask()">+ ADD TASK</button>
-  <button class="btn btn-clear" onclick="clearDone()">CLEAR DONE</button>
-  <div class="view-toggle">
-    <button class="btn-view active" id="btnBoard" onclick="setView('board')">🔲 BOARD</button>
-    <button class="btn-view" id="btnTable" onclick="setView('table')">📋 TABLE</button>
+<!-- TASKS PAGE -->
+<div class="tasks-page" id="tasksPage">
+  <div class="controls">
+    <input class="input-task" id="iTask" type="text" placeholder="TASK DESCRIPTION..." maxlength="80" onkeydown="if(event.key==='Enter')addTask()">
+    <input class="input-assignee" id="iAssignee" type="text" placeholder="ASSIGNEE" maxlength="30" list="assigneeList" autocomplete="off">
+    <select class="input-category" id="iCategory"></select>
+    <button class="btn btn-time" id="btnPastStart" onclick="togglePastStart()" title="Set a past start date/time">📅 PAST START</button>
+    <input class="input-past" id="iPastStart" type="datetime-local" style="display:none">
+    <button class="btn btn-time" id="btnDueDate" onclick="toggleDueDate()" title="Set a future due date">🗓 DUE DATE</button>
+    <input class="input-due" id="iDueDate" type="datetime-local" style="display:none">
+    <button class="btn btn-add" onclick="addTask()">+ ADD TASK</button>
+    <button class="btn btn-clear" onclick="clearDone()">CLEAR DONE</button>
+    <div class="view-toggle">
+      <button class="btn-view active" id="btnBoard" onclick="setView('board')">🔲 BOARD</button>
+      <button class="btn-view" id="btnTable" onclick="setView('table')">📋 TABLE</button>
+    </div>
+    <div class="task-count" id="taskCount">0 ACTIVE · 0 DONE</div>
   </div>
-  <div class="task-count" id="taskCount">0 ACTIVE · 0 DONE</div>
+  <div id="mainContainer" class="board">
+    <div class="empty-state">SIGNING IN...<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">PLEASE WAIT</span></div>
+  </div>
 </div>
 
-<div id="mainContainer" class="board">
-  <div class="empty-state">SIGNING IN...<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">PLEASE WAIT</span></div>
+<!-- CALENDAR PAGE -->
+<div class="cal-page hidden" id="calPage">
+  <div class="cal-toolbar">
+    <div class="cal-nav-group">
+      <button class="btn-cal-nav" onclick="calPrev()">&#8249;</button>
+      <button class="btn-cal-today" onclick="calToday()">TODAY</button>
+      <button class="btn-cal-nav" onclick="calNext()">&#8250;</button>
+      <span class="cal-title" id="calTitle">MARCH 2026</span>
+    </div>
+    <div class="cal-view-toggle">
+      <button class="btn-cal-view active" id="btnCalMonth" onclick="setCalView('month')">MONTH</button>
+      <button class="btn-cal-view" id="btnCalWeek" onclick="setCalView('week')">WEEK</button>
+      <button class="btn-cal-view" id="btnCalDay" onclick="setCalView('day')">DAY</button>
+    </div>
+    <span class="cal-event-count" id="calEventCount"></span>
+    <button class="btn-add-event" onclick="openAddEvent()">+ ADD EVENT</button>
+  </div>
+  <div class="cal-main" id="calMain"></div>
 </div>
 
-<!-- CONFIRM REMOVE DIALOG -->
+<!-- CONFIRM REMOVE DIALOG (tasks) -->
 <div class="confirm-overlay hidden" id="confirmOverlay">
   <div class="confirm-box">
     <div class="confirm-title">⚠ REMOVE TASK</div>
@@ -347,6 +526,55 @@ input[type="datetime-local"] { color-scheme: dark; }
   </div>
 </div>
 
+<!-- EVENT MODAL -->
+<div class="event-overlay hidden" id="eventOverlay">
+  <div class="event-modal">
+    <div class="event-modal-header">
+      <div class="event-modal-title" id="eventModalTitle">+ ADD EVENT</div>
+      <button class="modal-close" onclick="closeEventModal()">✕</button>
+    </div>
+    <div class="event-form-row">
+      <label>TITLE</label>
+      <input type="text" id="evTitle" placeholder="Event title..." maxlength="80" onkeydown="if(event.key==='Enter')saveEvent()">
+    </div>
+    <div class="event-allday-row">
+      <input type="checkbox" id="evAllDay" onchange="toggleEventAllDay()">
+      <label for="evAllDay">ALL-DAY EVENT</label>
+    </div>
+    <div class="event-time-row" id="evDatetimeRows">
+      <div class="event-form-row">
+        <label>START</label>
+        <input type="datetime-local" id="evStart">
+      </div>
+      <div class="event-form-row">
+        <label>END</label>
+        <input type="datetime-local" id="evEnd">
+      </div>
+    </div>
+    <div id="evAllDayDateRow" style="display:none">
+      <div class="event-form-row">
+        <label>DATE</label>
+        <input type="date" id="evDate">
+      </div>
+    </div>
+    <div class="event-form-row">
+      <label>DESCRIPTION (OPTIONAL)</label>
+      <textarea id="evDesc" placeholder="Notes, details..."></textarea>
+    </div>
+    <div class="event-form-row">
+      <label>COLOR</label>
+      <div class="event-color-palette" id="evColorPalette"></div>
+    </div>
+    <div class="event-modal-footer">
+      <button class="btn-event-delete hidden" id="btnEventDelete" onclick="deleteEditingEvent()">✕ DELETE</button>
+      <div class="event-modal-footer-right">
+        <button class="btn-event-cancel" onclick="closeEventModal()">CANCEL</button>
+        <button class="btn-event-save" onclick="saveEvent()">SAVE EVENT</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -366,6 +594,7 @@ firebase.initializeApp(firebaseConfig);
 const db          = firebase.database();
 const tasksRef    = db.ref('tasks');
 const settingsRef = db.ref('settings');
+const eventsRef   = db.ref('events');
 const auth        = firebase.auth();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
@@ -382,14 +611,22 @@ const DEFAULTS = {
   ]
 };
 
+const EVENT_COLORS = ['#4a9eff','#00c853','#ffd600','#ff6b00','#d50000','#ab47bc','#00bcd4','#f06292','#78909c'];
+
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let cfg               = loadLocal('taskq_settings_v3', DEFAULTS);
 let tasks             = [];
+let events            = [];
 let tmpCats           = [];
 let tmpAssignees      = [];
 let pastStartOn       = false;
 let dueDateOn         = false;
 let viewMode          = 'board';
+let currentPage       = 'tasks';
+let calView           = 'month';
+let calDate           = new Date();
+let editingEventKey   = null;
+let selectedColor     = EVENT_COLORS[0];
 let pendingRemoveKey  = null;
 let pendingRemoveName = '';
 let settingsSynced    = false;
@@ -402,13 +639,18 @@ function loadLocal(key, fallback) {
 }
 function saveLocal(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
-// ── DATETIME HELPER — local time string for datetime-local inputs ─────────────
-// toISOString() returns UTC; this returns YYYY-MM-DDTHH:mm in the user's local zone
+// ── DATETIME HELPERS ──────────────────────────────────────────────────────────
 function toLocalDT(date) {
   const d   = new Date(date);
   const pad = n => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+function toLocalDate(date) {
+  const d   = new Date(date);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function pad2(n) { return String(n).padStart(2, '0'); }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 function signIn() {
@@ -418,39 +660,27 @@ function signIn() {
   });
 }
 
-function signOut() {
-  auth.signOut();
-}
+function signOut() { auth.signOut(); }
 
 auth.onAuthStateChanged(user => {
   if (user) {
-    // Hide auth screen, show user info
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('userInfo').style.display = 'flex';
     document.getElementById('userName').textContent = user.displayName || user.email;
-
-    // Start Firebase listeners (only once)
-    if (!listenersActive) {
-      listenersActive = true;
-      setupListeners();
-    }
+    if (!listenersActive) { listenersActive = true; setupListeners(); }
   } else {
-    // Show auth screen, hide user info, detach listeners
     document.getElementById('authScreen').classList.remove('hidden');
     document.getElementById('userInfo').style.display = 'none';
     if (listenersActive) {
-      tasksRef.off();
-      settingsRef.off();
-      listenersActive = false;
-      settingsSynced  = false;
-      tasks = [];
+      tasksRef.off(); settingsRef.off(); eventsRef.off();
+      listenersActive = false; settingsSynced = false;
+      tasks = []; events = [];
     }
   }
 });
 
-// ── FIREBASE LISTENERS (called only after sign-in) ───────────────────────────
+// ── FIREBASE LISTENERS ────────────────────────────────────────────────────────
 function setupListeners() {
-  // Connection status
   db.ref('.info/connected').on('value', snap => {
     const on = snap.val() === true;
     document.getElementById('statusDot').className = 'status-dot' + (on ? ' connected' : '');
@@ -460,7 +690,6 @@ function setupListeners() {
     updateSettingsSyncUI();
   });
 
-  // Settings sync
   settingsRef.on('value', snapshot => {
     const cloudCfg = snapshot.val();
     if (cloudCfg && cloudCfg.categories && cloudCfg.categories.length) {
@@ -469,19 +698,25 @@ function setupListeners() {
       refreshDatalist();
       render();
     } else if (!settingsSynced) {
-      // Cloud empty on first-ever run — push defaults up
       pushSettingsToCloud();
     }
     settingsSynced = true;
     updateSettingsSyncUI();
   });
 
-  // Tasks sync
   tasksRef.on('value', snapshot => {
     tasks = [];
     snapshot.forEach(child => tasks.push({ _key: child.key, ...child.val() }));
     tasks.sort((a, b) => a.createdAt - b.createdAt);
     render();
+  });
+
+  eventsRef.on('value', snapshot => {
+    events = [];
+    snapshot.forEach(child => events.push({ _key: child.key, ...child.val() }));
+    events.sort((a, b) => a.startAt - b.startAt);
+    if (currentPage === 'calendar') renderCalendar();
+    updateCalEventCount();
   });
 }
 
@@ -521,13 +756,23 @@ function saveAssigneeIfNew(name) {
   }
 }
 
+// ── PAGE NAVIGATION ───────────────────────────────────────────────────────────
+function setPage(page) {
+  currentPage = page;
+  document.getElementById('tasksPage').classList.toggle('hidden', page !== 'tasks');
+  document.getElementById('calPage').classList.toggle('hidden', page !== 'calendar');
+  document.getElementById('tabTasks').classList.toggle('active', page === 'tasks');
+  document.getElementById('tabCalendar').classList.toggle('active', page === 'calendar');
+  if (page === 'calendar') renderCalendar();
+}
+
 // ── TIME TOGGLES ──────────────────────────────────────────────────────────────
 function togglePastStart() {
   pastStartOn = !pastStartOn;
   const btn = document.getElementById('btnPastStart');
   const inp = document.getElementById('iPastStart');
   if (pastStartOn) {
-    inp.value = toLocalDT(Date.now());   // ← local time, not UTC
+    inp.value = toLocalDT(Date.now());
     inp.style.display = '';
     btn.classList.add('active-past');
     btn.textContent = '📅 PAST START ✓';
@@ -545,7 +790,7 @@ function toggleDueDate() {
   if (dueDateOn) {
     const d = new Date();
     d.setDate(d.getDate() + 7);
-    inp.value = toLocalDT(d);            // ← local time, not UTC
+    inp.value = toLocalDT(d);
     inp.style.display = '';
     btn.classList.add('active-due');
     btn.textContent = '🗓 DUE DATE ✓';
@@ -570,7 +815,6 @@ function addTask() {
   const name = el.value.trim();
   if (!name) { el.focus(); return; }
 
-  // Past start time
   let createdAt = Date.now();
   if (pastStartOn) {
     const dtVal = document.getElementById('iPastStart').value;
@@ -585,7 +829,6 @@ function addTask() {
     }
   }
 
-  // Future due date
   let dueAt = null;
   if (dueDateOn) {
     const dtVal = document.getElementById('iDueDate').value;
@@ -606,13 +849,10 @@ function addTask() {
   const num = tasks.length + 1;
   tasksRef.push({
     id: 'T-' + String(num).padStart(3, '0'),
-    name,
-    assignee,
+    name, assignee,
     category: document.getElementById('iCategory').value,
-    createdAt,
-    dueAt,
-    status: 'active',
-    doneAt: null
+    createdAt, dueAt,
+    status: 'active', doneAt: null
   });
 
   el.value = '';
@@ -633,8 +873,7 @@ function confirmRemove(key, name) {
 }
 
 function closeConfirm() {
-  pendingRemoveKey  = null;
-  pendingRemoveName = '';
+  pendingRemoveKey = null; pendingRemoveName = '';
   document.getElementById('confirmOverlay').classList.add('hidden');
 }
 
@@ -647,25 +886,23 @@ function catById(id) {
   return cfg.categories.find(c => c.id === id)
       || { label: id ? id.toUpperCase() : '?', color: '#78909c', yellow: 3, orange: 7, red: 14 };
 }
-
 function daysSecs(cat, field) { return (cat[field] || 1) * 86400; }
-
 function fmtDuration(secs) {
   secs = Math.abs(Math.floor(secs));
   if (secs < 3600)  return Math.floor(secs / 60) + 'm';
   if (secs < 86400) return Math.floor(secs / 3600) + 'h ' + Math.floor((secs % 3600) / 60) + 'm';
   return Math.floor(secs / 86400) + 'd ' + Math.floor((secs % 86400) / 3600) + 'h';
 }
-
 function fmtDate(ts) {
   return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     + ' ' + new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
-
+function fmtTime(ts) {
+  return new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
 const FILL = { green:'#00c853', yellow:'#ffd600', orange:'#ff6d00', red:'#d50000', done:'#2e7d32' };
 
 // ── TASK META ─────────────────────────────────────────────────────────────────
@@ -687,15 +924,9 @@ function getTaskMeta(t, now) {
     else if (remaining <= daysSecs(cat, 'orange'))    { colorCls = 'orange'; statusLbl = 'URGENT';    }
     else if (remaining <= daysSecs(cat, 'red'))       { colorCls = 'yellow'; statusLbl = 'ATTENTION'; }
     else                                              { colorCls = 'green';  statusLbl = 'ON TRACK';  }
-
-    const timerTxt = remaining <= 0
-      ? '−' + fmtDuration(remaining)
-      : fmtDuration(remaining) + ' LEFT';
-
+    const timerTxt  = remaining <= 0 ? '−' + fmtDuration(remaining) : fmtDuration(remaining) + ' LEFT';
     const totalSpan = t.dueAt - t.createdAt;
-    const progPct   = totalSpan > 0
-      ? Math.min(100, Math.max(0, ((now - t.createdAt) / totalSpan) * 100)) : 0;
-
+    const progPct   = totalSpan > 0 ? Math.min(100, Math.max(0, ((now - t.createdAt) / totalSpan) * 100)) : 0;
     return { colorCls, statusLbl, timerTxt, progPct };
   }
 
@@ -704,7 +935,6 @@ function getTaskMeta(t, now) {
   else if (elapsed >= daysSecs(cat, 'orange')) { colorCls = 'orange'; statusLbl = 'URGENT';    }
   else if (elapsed >= daysSecs(cat, 'yellow')) { colorCls = 'yellow'; statusLbl = 'ATTENTION'; }
   else                                         { colorCls = 'green';  statusLbl = 'ON TRACK';  }
-
   const progPct = Math.min(100, (elapsed / daysSecs(cat, 'red')) * 100);
   return { colorCls, statusLbl, timerTxt: fmtDuration(elapsed), progPct };
 }
@@ -715,7 +945,6 @@ function render() {
   const cur = sel.value;
   sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
   if (cfg.categories.find(c => c.id === cur)) sel.value = cur;
-
   if (viewMode === 'table') renderTable();
   else renderBoard();
 }
@@ -723,29 +952,24 @@ function render() {
 function renderBoard() {
   const container = document.getElementById('mainContainer');
   container.className = 'board';
-
   if (!tasks.length) {
     container.innerHTML = `<div class="empty-state">NO TASKS IN QUEUE<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">ENTER A TASK ABOVE TO GET STARTED</span></div>`;
     document.getElementById('taskCount').textContent = '0 ACTIVE · 0 DONE';
     return;
   }
-
   const now = Date.now();
   let active = 0, done = 0;
-
   container.innerHTML = tasks.map(t => {
     const { colorCls, statusLbl, timerTxt, progPct } = getTaskMeta(t, now);
     const cat    = catById(t.category);
     const isDone = t.status === 'done';
     if (isDone) done++; else active++;
-
     const threshLine  = isDone ? '' : `<div class="card-thresh">⏱ Y:${cat.yellow}d · O:${cat.orange}d · R:${cat.red}d</div>`;
     const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
     const dueColor    = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
     const dueLine     = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : '';
     const safeKey     = esc(t._key);
     const safeName    = esc(t.name);
-
     return `
 <div class="card ${colorCls}">
   <div class="card-header">
@@ -764,34 +988,28 @@ function renderBoard() {
   </div>
 </div>`;
   }).join('');
-
   document.getElementById('taskCount').textContent = `${active} ACTIVE · ${done} DONE`;
 }
 
 function renderTable() {
   const container = document.getElementById('mainContainer');
   container.className = 'table-container';
-
   if (!tasks.length) {
     container.innerHTML = `<div class="tbl-empty">NO TASKS IN QUEUE<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">ENTER A TASK ABOVE TO GET STARTED</span></div>`;
     document.getElementById('taskCount').textContent = '0 ACTIVE · 0 DONE';
     return;
   }
-
   const now = Date.now();
   let active = 0, done = 0;
-
   const rows = tasks.map(t => {
     const { colorCls, statusLbl, timerTxt } = getTaskMeta(t, now);
     const cat    = catById(t.category);
     const isDone = t.status === 'done';
     if (isDone) done++; else active++;
-
     const safeKey  = esc(t._key);
     const safeName = esc(t.name);
     const doneBtn  = isDone ? '' :
       `<button class="tbl-btn-done" onclick="markDone('${safeKey}')">✓ DONE</button>`;
-
     return `
 <tr class="tr-${colorCls}">
   <td class="td-task">${safeName}</td>
@@ -803,13 +1021,11 @@ function renderTable() {
   <td><div class="tbl-actions">${doneBtn}<button class="tbl-btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button></div></td>
 </tr>`;
   }).join('');
-
   container.innerHTML = `
 <table class="task-table">
   <thead><tr><th>TASK</th><th>ASSIGNEE</th><th>CATEGORY</th><th>STATUS</th><th>PENDING TIME</th><th>DUE DATE</th><th>ACTIONS</th></tr></thead>
   <tbody>${rows}</tbody>
 </table>`;
-
   document.getElementById('taskCount').textContent = `${active} ACTIVE · ${done} DONE`;
 }
 
@@ -833,7 +1049,6 @@ function openSettings() {
   buildCatList();
   document.getElementById('overlay').classList.remove('hidden');
 }
-
 function closeSettings() { document.getElementById('overlay').classList.add('hidden'); }
 
 function buildAssigneeList() {
@@ -843,7 +1058,6 @@ function buildAssigneeList() {
   <button class="btn-rm-item" onclick="removeAssignee(${i})">✕</button>
 </div>`).join('');
 }
-
 function addAssigneeRow() { tmpAssignees.push(''); buildAssigneeList(); }
 function removeAssignee(i) { tmpAssignees.splice(i, 1); buildAssigneeList(); }
 
@@ -859,25 +1073,18 @@ function buildCatList() {
   <button class="btn-rm-cat" onclick="removeCat(${i})">✕</button>
 </div>`).join('');
 }
-
 function addCatRow() {
   tmpCats.push({ id: 'cat-' + Date.now(), label: '', color: '#888888', yellow: 3, orange: 7, red: 14 });
   buildCatList();
 }
-
-function removeCat(i) {
-  if (tmpCats.length <= 1) return;
-  tmpCats.splice(i, 1);
-  buildCatList();
-}
+function removeCat(i) { if (tmpCats.length <= 1) return; tmpCats.splice(i, 1); buildCatList(); }
 
 function saveSettings() {
   const cats = tmpCats.filter(c => c.label.trim());
   if (!cats.length) { alert('Please add at least one category.'); return; }
   for (const c of cats) {
     if (!(c.yellow < c.orange && c.orange < c.red)) {
-      alert(`"${c.label}": thresholds must be in order — YELLOW < ORANGE < RED`);
-      return;
+      alert(`"${c.label}": thresholds must be in order — YELLOW < ORANGE < RED`); return;
     }
   }
   cfg.categories = cats;
@@ -888,9 +1095,414 @@ function saveSettings() {
   render();
 }
 
-// Close modals on backdrop click
+// ── CALENDAR ──────────────────────────────────────────────────────────────────
+
+function updateCalEventCount() {
+  const el = document.getElementById('calEventCount');
+  if (el) el.textContent = events.length + ' EVENT' + (events.length === 1 ? '' : 'S');
+}
+
+function setCalView(view) {
+  calView = view;
+  ['Month','Week','Day'].forEach(v => {
+    document.getElementById('btnCal' + v).classList.toggle('active', v.toLowerCase() === view);
+  });
+  renderCalendar();
+}
+
+function calPrev() {
+  if (calView === 'month')     { calDate.setMonth(calDate.getMonth() - 1); }
+  else if (calView === 'week') { calDate.setDate(calDate.getDate() - 7); }
+  else                         { calDate.setDate(calDate.getDate() - 1); }
+  renderCalendar();
+}
+
+function calNext() {
+  if (calView === 'month')     { calDate.setMonth(calDate.getMonth() + 1); }
+  else if (calView === 'week') { calDate.setDate(calDate.getDate() + 7); }
+  else                         { calDate.setDate(calDate.getDate() + 1); }
+  renderCalendar();
+}
+
+function calToday() { calDate = new Date(); renderCalendar(); }
+
+function getCalTitle() {
+  if (calView === 'month') {
+    return calDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+  } else if (calView === 'week') {
+    const sun = new Date(calDate);
+    sun.setDate(sun.getDate() - sun.getDay());
+    const sat = new Date(sun); sat.setDate(sat.getDate() + 6);
+    return sun.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
+      + ' – ' + sat.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+  } else {
+    return calDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase();
+  }
+}
+
+function renderCalendar() {
+  document.getElementById('calTitle').textContent = getCalTitle();
+  if (calView === 'month')     renderMonthView();
+  else if (calView === 'week') renderWeekView();
+  else                         renderDayView();
+}
+
+// Helper: get events overlapping a day [dayStart, dayStart+86400000)
+function getEventsForDay(dayStart) {
+  const dayEnd = dayStart + 86400000;
+  return events.filter(e => {
+    const es = e.startAt;
+    const ee = e.endAt || (e.allDay ? es + 86400000 : es + 3600000);
+    return es < dayEnd && ee > dayStart;
+  }).sort((a, b) => a.startAt - b.startAt);
+}
+
+// ── MONTH VIEW ────────────────────────────────────────────────────────────────
+function renderMonthView() {
+  const container = document.getElementById('calMain');
+  const year  = calDate.getFullYear();
+  const month = calDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+
+  let cells = '';
+  for (let i = 0; i < totalCells; i++) {
+    const d = new Date(year, month, 1 - firstDay + i);
+    const dKey = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    const isToday = dKey === todayKey;
+    const otherMo = d.getMonth() !== month;
+    const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const dayEvts  = getEventsForDay(dayStart);
+    const maxShow  = 3;
+    const shown    = dayEvts.slice(0, maxShow);
+    const more     = dayEvts.length - maxShow;
+    const dateISO  = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+
+    const chips = shown.map(ev => {
+      const color = ev.color || EVENT_COLORS[0];
+      const timeStr = ev.allDay ? 'ALL DAY' : fmtTime(ev.startAt);
+      return `<div class="cal-event-chip" style="background:${color}33;color:${color};border-left:2px solid ${color}"
+        onclick="openEditEvent('${esc(ev._key)}',event)" title="${esc(ev.title)}">${timeStr} ${esc(ev.title)}</div>`;
+    }).join('');
+    const moreHtml = more > 0 ? `<div class="cal-event-more">+${more} more</div>` : '';
+
+    cells += `<div class="cal-day-cell${isToday?' today':''}${otherMo?' other-month':''}" onclick="openAddEventOnDay('${dateISO}')">
+  <div class="cal-day-num">${d.getDate()}</div>${chips}${moreHtml}
+</div>`;
+  }
+
+  container.innerHTML = `<div class="cal-month-view">
+  <div class="cal-daynames">
+    <div class="cal-dayname">SUN</div><div class="cal-dayname">MON</div><div class="cal-dayname">TUE</div>
+    <div class="cal-dayname">WED</div><div class="cal-dayname">THU</div><div class="cal-dayname">FRI</div>
+    <div class="cal-dayname">SAT</div>
+  </div>
+  <div class="cal-month-grid">${cells}</div>
+</div>`;
+}
+
+// ── WEEK VIEW ─────────────────────────────────────────────────────────────────
+function renderWeekView() {
+  const container = document.getElementById('calMain');
+  const sun = new Date(calDate); sun.setDate(sun.getDate() - sun.getDay()); sun.setHours(0,0,0,0);
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayTs = today.getTime();
+
+  // Build day columns
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(sun); d.setDate(d.getDate() + i);
+    days.push(d);
+  }
+
+  // Header
+  const dayNames = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const headerCols = days.map((d, i) => {
+    const isToday = d.getTime() === todayTs;
+    return `<div class="cal-week-col-name${isToday?' today-col':''}">${dayNames[i]} ${d.getDate()}</div>`;
+  }).join('');
+
+  // All-day events row
+  const allDayCols = days.map(d => {
+    const dayStart = d.getTime();
+    const allDayEvts = events.filter(e => e.allDay && e.startAt >= dayStart && e.startAt < dayStart + 86400000);
+    const chips = allDayEvts.map(ev => {
+      const color = ev.color || EVENT_COLORS[0];
+      return `<div class="cal-allday-chip" style="background:${color}44;color:${color}"
+        onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}</div>`;
+    }).join('');
+    return `<div class="cal-allday-col">${chips}</div>`;
+  }).join('');
+
+  // Time grid — 24 rows (one per hour)
+  const HOUR_H = 60;
+  let timeRows = '';
+  for (let h = 0; h < 24; h++) {
+    const label = h === 0 ? '12 AM' : h < 12 ? h + ' AM' : h === 12 ? '12 PM' : (h-12) + ' PM';
+    const slots = days.map((d, di) => {
+      const isToday = d.getTime() === todayTs;
+      const isoDate = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+      return `<div class="cal-time-col${isToday?' today-col':''}" onclick="openAddEventOnTime('${isoDate}',${h})"></div>`;
+    }).join('');
+    timeRows += `<div class="cal-hour-label">${label}</div>${slots}`;
+  }
+
+  // Positioned event blocks per day column
+  // We'll overlay them using a wrapper
+  const evBlocksByDay = days.map(d => {
+    const dayStart = d.getTime();
+    const dayEvts  = events.filter(e => !e.allDay && getEventsForDay(dayStart).includes(e));
+    return packAndRenderBlocks(dayEvts, dayStart, HOUR_H);
+  });
+
+  container.innerHTML = `<div class="cal-week-view">
+  <div class="cal-week-top">
+    <div class="cal-week-header">
+      <div class="cal-week-gutter"></div>${headerCols}
+    </div>
+    <div class="cal-allday-bar">
+      <div class="cal-allday-gutter">ALL DAY</div>${allDayCols}
+    </div>
+  </div>
+  <div class="cal-week-scroll">
+    <div style="display:grid;grid-template-columns:54px repeat(7,1fr);position:relative;">
+      <div style="grid-column:1;grid-row:1/${24+1}">${Array.from({length:24},(_,h)=>{
+        const label = h===0?'12 AM':h<12?h+' AM':h===12?'12 PM':(h-12)+' PM';
+        return `<div class="cal-hour-label">${label}</div>`;
+      }).join('')}</div>
+      ${days.map((d, di) => {
+        const isToday = d.getTime() === todayTs;
+        const isoDate = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+        const slots   = Array.from({length:24}, (_,h) =>
+          `<div class="cal-time-col${isToday?' today-col':''}" style="height:${HOUR_H}px" onclick="openAddEventOnTime('${isoDate}',${h})"></div>`
+        ).join('');
+        return `<div style="position:relative;border-right:1px solid var(--border);">${slots}${evBlocksByDay[di]}</div>`;
+      }).join('')}
+    </div>
+  </div>
+</div>`;
+}
+
+// ── DAY VIEW ──────────────────────────────────────────────────────────────────
+function renderDayView() {
+  const container = document.getElementById('calMain');
+  const d = new Date(calDate); d.setHours(0,0,0,0);
+  const dayStart = d.getTime();
+  const isoDate  = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  const HOUR_H   = 60;
+
+  const allDayEvts = events.filter(e => e.allDay && e.startAt >= dayStart && e.startAt < dayStart + 86400000);
+  const allDayChips = allDayEvts.map(ev => {
+    const color = ev.color || EVENT_COLORS[0];
+    return `<div class="cal-allday-chip" style="background:${color}44;color:${color};display:inline-block;margin-right:4px;margin-bottom:2px;padding:2px 8px;border-radius:3px;font-size:0.7rem;cursor:pointer"
+      onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}</div>`;
+  }).join('');
+
+  const timedEvts = events.filter(e => !e.allDay && getEventsForDay(dayStart).includes(e));
+  const evBlocks  = packAndRenderBlocks(timedEvts, dayStart, HOUR_H);
+
+  const hours = Array.from({length:24}, (_,h) => {
+    const label = h===0?'12 AM':h<12?h+' AM':h===12?'12 PM':(h-12)+' PM';
+    return `<div class="cal-day-time-col">${label}</div>
+<div class="cal-day-slot" style="height:${HOUR_H}px" onclick="openAddEventOnTime('${isoDate}',${h})"></div>`;
+  }).join('');
+
+  container.innerHTML = `<div class="cal-day-view">
+  <div class="cal-day-allday-bar">
+    <div class="cal-day-allday-gutter">ALL DAY</div>
+    <div class="cal-day-allday-content">${allDayChips || '<span style="font-size:0.65rem;color:#444">No all-day events</span>'}</div>
+  </div>
+  <div class="cal-day-scroll">
+    <div class="cal-day-grid">
+      <div>${Array.from({length:24},(_,h)=>{const lbl=h===0?'12 AM':h<12?h+' AM':h===12?'12 PM':(h-12)+' PM';return`<div class="cal-day-time-col">${lbl}</div>`}).join('')}</div>
+      <div style="position:relative;border-left:1px solid var(--border)">
+        ${Array.from({length:24},(_,h)=>`<div class="cal-day-slot" style="height:${HOUR_H}px" onclick="openAddEventOnTime('${isoDate}',${h})"></div>`).join('')}
+        ${evBlocks}
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+// ── EVENT BLOCK RENDERING (week/day) ──────────────────────────────────────────
+function packAndRenderBlocks(evts, dayStart, hourH) {
+  if (!evts.length) return '';
+  evts = evts.slice().sort((a,b) => a.startAt - b.startAt);
+
+  // Simple column assignment to avoid overlap
+  const cols = [];
+  evts.forEach(ev => {
+    const evEnd = ev.endAt || ev.startAt + 3600000;
+    let placed = false;
+    for (let c = 0; c < cols.length; c++) {
+      const last = cols[c][cols[c].length - 1];
+      const lastEnd = last.endAt || last.startAt + 3600000;
+      if (lastEnd <= ev.startAt) { cols[c].push(ev); ev._col = c; placed = true; break; }
+    }
+    if (!placed) { ev._col = cols.length; cols.push([ev]); }
+  });
+  const totalCols = cols.length;
+
+  return evts.map(ev => {
+    const color  = ev.color || EVENT_COLORS[0];
+    const evStart = Math.max(ev.startAt, dayStart);
+    const evEnd   = Math.min(ev.endAt || ev.startAt + 3600000, dayStart + 86400000);
+    const topPx   = ((evStart - dayStart) / 3600000) * hourH;
+    const htPx    = Math.max(18, ((evEnd - evStart) / 3600000) * hourH - 2);
+    const leftPct = (ev._col / totalCols) * 100;
+    const widthPct= (1 / totalCols) * 100 - 1;
+    const timeStr = fmtTime(ev.startAt);
+    return `<div class="cal-event-block"
+      style="top:${topPx}px;height:${htPx}px;left:${leftPct}%;width:${widthPct}%;background:${color}44;color:${color};border-left:3px solid ${color}"
+      onclick="openEditEvent('${esc(ev._key)}',event)" title="${esc(ev.title)}">
+      <strong>${esc(ev.title)}</strong><br>${timeStr}
+    </div>`;
+  }).join('');
+}
+
+// ── EVENT MODAL ───────────────────────────────────────────────────────────────
+function buildColorPalette(currentColor) {
+  document.getElementById('evColorPalette').innerHTML = EVENT_COLORS.map(c => {
+    const sel = c === currentColor ? ' selected' : '';
+    return `<div class="color-swatch${sel}" style="background:${c}" title="${c}"
+      onclick="selectEventColor('${c}')"></div>`;
+  }).join('');
+}
+
+function selectEventColor(color) {
+  selectedColor = color;
+  document.querySelectorAll('.color-swatch').forEach(sw => {
+    sw.classList.toggle('selected', sw.style.background === color || sw.title === color);
+  });
+}
+
+function toggleEventAllDay() {
+  const allDay = document.getElementById('evAllDay').checked;
+  document.getElementById('evDatetimeRows').style.display = allDay ? 'none' : '';
+  document.getElementById('evAllDayDateRow').style.display = allDay ? '' : 'none';
+}
+
+function openAddEvent(prefillDateISO, prefillHour) {
+  editingEventKey = null;
+  selectedColor   = EVENT_COLORS[0];
+  document.getElementById('eventModalTitle').textContent = '+ ADD EVENT';
+  document.getElementById('btnEventDelete').classList.add('hidden');
+  document.getElementById('evTitle').value = '';
+  document.getElementById('evDesc').value  = '';
+  document.getElementById('evAllDay').checked = false;
+  toggleEventAllDay();
+
+  const now = new Date();
+  if (prefillDateISO) {
+    const h = prefillHour !== undefined ? prefillHour : now.getHours();
+    document.getElementById('evStart').value = `${prefillDateISO}T${pad2(h)}:00`;
+    document.getElementById('evEnd').value   = `${prefillDateISO}T${pad2(h+1<=23?h+1:h)}:${h+1>23?'59':'00'}`;
+    document.getElementById('evDate').value  = prefillDateISO;
+  } else {
+    document.getElementById('evStart').value = toLocalDT(Date.now());
+    const endD = new Date(Date.now() + 3600000);
+    document.getElementById('evEnd').value   = toLocalDT(endD);
+    document.getElementById('evDate').value  = toLocalDate(Date.now());
+  }
+
+  buildColorPalette(selectedColor);
+  document.getElementById('eventOverlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('evTitle').focus(), 50);
+}
+
+function openAddEventOnDay(dateISO) {
+  openAddEvent(dateISO, undefined);
+}
+
+function openAddEventOnTime(dateISO, hour) {
+  openAddEvent(dateISO, hour);
+}
+
+function openEditEvent(key, e) {
+  if (e) { e.stopPropagation(); }
+  const ev = events.find(ev => ev._key === key);
+  if (!ev) return;
+
+  editingEventKey = key;
+  selectedColor   = ev.color || EVENT_COLORS[0];
+  document.getElementById('eventModalTitle').textContent = 'EDIT EVENT';
+  document.getElementById('btnEventDelete').classList.remove('hidden');
+  document.getElementById('evTitle').value = ev.title || '';
+  document.getElementById('evDesc').value  = ev.description || '';
+  document.getElementById('evAllDay').checked = !!ev.allDay;
+  toggleEventAllDay();
+
+  if (ev.allDay) {
+    document.getElementById('evDate').value = toLocalDate(ev.startAt);
+  } else {
+    document.getElementById('evStart').value = toLocalDT(ev.startAt);
+    document.getElementById('evEnd').value   = toLocalDT(ev.endAt || ev.startAt + 3600000);
+  }
+
+  buildColorPalette(selectedColor);
+  document.getElementById('eventOverlay').classList.remove('hidden');
+}
+
+function closeEventModal() {
+  editingEventKey = null;
+  document.getElementById('eventOverlay').classList.add('hidden');
+}
+
+function saveEvent() {
+  const title = document.getElementById('evTitle').value.trim();
+  if (!title) { document.getElementById('evTitle').focus(); alert('Please enter an event title.'); return; }
+
+  const allDay = document.getElementById('evAllDay').checked;
+  let startAt, endAt;
+
+  if (allDay) {
+    const dateVal = document.getElementById('evDate').value;
+    if (!dateVal) { alert('Please pick a date.'); return; }
+    startAt = new Date(dateVal + 'T00:00:00').getTime();
+    endAt   = startAt + 86400000;
+  } else {
+    const sv = document.getElementById('evStart').value;
+    const ev = document.getElementById('evEnd').value;
+    if (!sv || !ev) { alert('Please set start and end times.'); return; }
+    startAt = new Date(sv).getTime();
+    endAt   = new Date(ev).getTime();
+    if (endAt <= startAt) { alert('End time must be after start time.'); return; }
+  }
+
+  const data = {
+    title,
+    description: document.getElementById('evDesc').value.trim(),
+    allDay,
+    startAt,
+    endAt,
+    color: selectedColor
+  };
+
+  if (editingEventKey) {
+    eventsRef.child(editingEventKey).update(data);
+  } else {
+    eventsRef.push(data);
+  }
+
+  closeEventModal();
+}
+
+function deleteEditingEvent() {
+  if (!editingEventKey) return;
+  if (!confirm('Delete this event? This cannot be undone.')) return;
+  eventsRef.child(editingEventKey).remove();
+  closeEventModal();
+}
+
+// ── BACKDROP CLOSE ────────────────────────────────────────────────────────────
 document.getElementById('overlay').addEventListener('click', function(e) { if (e.target === this) closeSettings(); });
 document.getElementById('confirmOverlay').addEventListener('click', function(e) { if (e.target === this) closeConfirm(); });
+document.getElementById('eventOverlay').addEventListener('click', function(e) { if (e.target === this) closeEventModal(); });
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 refreshDatalist();
