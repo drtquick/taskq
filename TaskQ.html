@@ -132,6 +132,8 @@ input[type="date"] { color-scheme: dark; }
 .card-status  { font-size: 0.63rem; letter-spacing: 2px; margin-bottom: 10px; color: var(--muted); }
 .progress-bar  { height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 10px; overflow: hidden; }
 .progress-fill { height: 100%; border-radius: 2px; transition: width 60s linear, background-color 0.5s; }
+.card-notes { font-size: 0.72rem; color: var(--muted); line-height: 1.45; margin-bottom: 8px; white-space: pre-wrap; word-break: break-word; border-left: 2px solid var(--border); padding-left: 8px; }
+.card-time-spent { font-size: 0.6rem; color: var(--muted); letter-spacing: 1px; margin-bottom: 3px; }
 .card-actions { display: flex; gap: 8px; }
 .btn-done, .btn-edit, .btn-remove {
   flex: 1; padding: 5px; font-family: var(--font); font-size: 0.68rem; letter-spacing: 1px;
@@ -385,12 +387,16 @@ input[type="date"] { color-scheme: dark; }
 .edit-task-form-row label { display: block; font-size: 0.63rem; color: var(--muted); letter-spacing: 2px; margin-bottom: 5px; }
 .edit-task-form-row input[type="text"],
 .edit-task-form-row input[type="datetime-local"],
+.edit-task-form-row input[type="number"],
 .edit-task-form-row select,
 .edit-task-form-row textarea {
   width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
   font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none;
 }
 .edit-task-form-row textarea { min-height: 80px; resize: vertical; }
+.edit-task-form-row input[type="number"] { -moz-appearance: textfield; }
+.edit-task-form-row input[type="number"]::-webkit-outer-spin-button,
+.edit-task-form-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .edit-task-form-row input:focus, .edit-task-form-row select:focus, .edit-task-form-row textarea:focus { border-color: var(--accent); }
 .edit-task-toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .edit-task-toggle-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
@@ -441,6 +447,11 @@ input[type="date"] { color-scheme: dark; }
 .btn-print { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
 .btn-print:hover { border-color: var(--text); color: var(--text); }
 
+/* NOTES TOGGLE BUTTON */
+.btn-notes-toggle { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-notes-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.btn-notes-toggle.notes-on { border-color: var(--accent); color: var(--accent); background: rgba(255,107,0,0.1); }
+
 /* CATEGORY BOARD */
 .cat-board { flex: 1; padding: 16px 20px; display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; align-items: flex-start; }
 .cat-col { min-width: 260px; width: 260px; flex: 0 0 auto; display: flex; flex-direction: column; max-height: 100%; }
@@ -488,6 +499,128 @@ input[type="date"] { color-scheme: dark; }
   .cal-event-block { break-inside: avoid; }
   /* Page title as print header */
   .page-nav.no-print + * { margin-top: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE — TABLET  (≤ 1024px)
+═══════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .legend { gap: 6px; }
+  .legend-item { font-size: 0.62rem; gap: 4px; }
+  .datetime { font-size: 0.88rem; }
+  .header-right { gap: 10px; }
+  .cal-title { min-width: 180px; font-size: 0.9rem; }
+  /* Compress category grid slightly */
+  .cat-table-header,
+  .cat-row { grid-template-columns: 1fr 36px 62px 62px 62px 32px; gap: 5px; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE — MOBILE  (≤ 600px)
+═══════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+
+  /* ── HEADER ── */
+  .header { padding: 8px 12px; gap: 6px; }
+  .logo { font-size: 1.5rem; letter-spacing: 3px; }
+  .logo-sub { display: none; }
+  .header-right { gap: 8px; }
+  .legend  { display: none; }
+  .datetime { display: none; }
+  .user-name { display: none; }
+  .beta-badge { display: none; }
+  .btn-signout { padding: 5px 8px; font-size: 0.6rem; letter-spacing: 0; }
+  .settings-btn { padding: 6px 10px; font-size: 0.9rem; }
+
+  /* ── STATUS BAR ── */
+  .status-bar { padding: 3px 12px; font-size: 0.58rem; }
+
+  /* ── PAGE TABS ── */
+  .page-tab { padding: 8px 14px; font-size: 0.68rem; letter-spacing: 1px; min-height: 40px; }
+
+  /* ── TASK CONTROLS ── */
+  .controls { padding: 8px 10px; gap: 6px; }
+  /* Task name goes full width first */
+  .input-task { flex: 1 1 100%; min-width: 0; order: -1; }
+  /* Assignee + category share a row */
+  .input-assignee { flex: 1 1 calc(50% - 6px); width: auto; min-width: 0; }
+  .input-category  { flex: 1 1 calc(50% - 6px); width: auto; min-width: 0; }
+  /* Date inputs expand when visible */
+  .input-past { flex: 1 1 calc(50% - 3px); width: auto; min-width: 0; }
+  .input-due  { flex: 1 1 calc(50% - 3px); width: auto; min-width: 0; }
+  /* Time toggle buttons */
+  .btn-time { flex: 1 1 calc(50% - 6px); text-align: center; font-size: 0.68rem; padding: 7px 6px; }
+  /* ADD and CLEAR share a row */
+  .btn-add   { flex: 1 1 calc(50% - 6px); text-align: center; }
+  .btn-clear { flex: 1 1 calc(50% - 6px); text-align: center; }
+  /* View toggle fills row */
+  .view-toggle { flex: 1 1 100%; }
+  .btn-view { flex: 1; text-align: center; font-size: 0.68rem; padding: 7px 6px; }
+  /* Task count and print */
+  .task-count { margin-left: 0; flex: 1 1 100%; text-align: right; order: 99; font-size: 0.65rem; }
+  .btn-print { display: none; }
+
+  /* ── BOARD ── */
+  .board { padding: 10px; grid-template-columns: 1fr; }
+
+  /* ── TABLE — horizontal scroll handles overflow, just tighten padding ── */
+  .table-container { padding: 8px 10px; }
+  .task-table th, .task-table td { padding: 8px 8px; }
+  .td-task { max-width: 140px; font-size: 0.78rem; }
+
+  /* ── CATEGORY BOARD ── */
+  .cat-board { padding: 10px; }
+  .cat-col { min-width: 230px; width: 230px; }
+
+  /* ── CALENDAR TOOLBAR ── */
+  .cal-toolbar { padding: 8px 10px; gap: 6px; }
+  .cal-title { font-size: 0.78rem; min-width: 110px; letter-spacing: 0; }
+  .btn-cal-today { padding: 6px 10px; font-size: 0.65rem; }
+  .btn-cal-nav { padding: 6px 10px; }
+  .btn-cal-view { padding: 6px 10px; font-size: 0.65rem; letter-spacing: 0; }
+  .btn-add-event { margin-left: 0; padding: 6px 10px; font-size: 0.68rem; letter-spacing: 0; }
+  .cal-event-count { display: none; }
+
+  /* ── MODALS — bottom sheet ── */
+  .overlay,
+  .event-overlay,
+  .edit-task-overlay,
+  .create-ws-overlay { padding: 0; align-items: flex-end; }
+
+  .modal {
+    max-width: 100%; width: 100%; max-height: 93vh;
+    border-radius: 14px 14px 0 0; border-bottom: none; padding: 20px 14px;
+  }
+  .event-modal,
+  .edit-task-modal {
+    max-width: 100%; width: 100%; max-height: 93vh;
+    border-radius: 14px 14px 0 0; padding: 20px 14px;
+  }
+  .create-ws-modal {
+    max-width: 100%; width: 100%;
+    border-radius: 14px 14px 0 0; padding: 20px 14px;
+  }
+  .confirm-box { margin: 0 10px; padding: 20px 16px; }
+
+  /* ── SETTINGS CATEGORY TABLE — allow horizontal scroll ── */
+  .cat-table-header,
+  .cat-row { grid-template-columns: 1fr 34px 52px 52px 52px 30px; gap: 4px; }
+  .cat-row input[type="number"] { padding: 5px 2px; font-size: 0.72rem; }
+  .cat-row input[type="text"]   { padding: 5px 6px; font-size: 0.74rem; }
+
+  /* ── WORKSPACE SWITCHER ── */
+  .ws-btn { font-size: 0.68rem; padding: 5px 9px; letter-spacing: 1px; }
+  .ws-dropdown { min-width: 170px; }
+
+  /* ── CARD ADJUSTMENTS ── */
+  .card-timer { font-size: 1.25rem; }
+  .card { padding: 12px; }
+
+  /* ── MIN TOUCH TARGETS ── */
+  .btn-done, .btn-edit, .btn-remove { min-height: 36px; padding: 6px 5px; }
+  .tbl-btn-done, .tbl-btn-edit, .tbl-btn-remove { min-height: 36px; padding: 5px 9px; }
+  .btn-cal-nav, .btn-cal-today, .btn-cal-view, .btn-add-event { min-height: 36px; }
+  .ws-item { padding: 10px 14px; min-height: 40px; }
 }
 </style>
 </head>
@@ -542,7 +675,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v0.5</span>
+    <span class="beta-badge">β v0.7</span>
     <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
 </header>
@@ -573,6 +706,7 @@ input[type="date"] { color-scheme: dark; }
     <button class="btn btn-add" onclick="addTask()">+ ADD TASK</button>
     <button class="btn btn-clear" onclick="clearDone()">CLEAR DONE</button>
     <button class="btn btn-print no-print" onclick="window.print()" title="Print current view">🖨 PRINT</button>
+    <button class="btn btn-notes-toggle" id="btnNotesToggle" onclick="toggleCardNotes()" title="Show/hide notes on cards">📝 NOTES</button>
     <div class="view-toggle">
       <button class="btn-view active" id="btnBoard" onclick="setView('board')">🔲 BOARD</button>
       <button class="btn-view" id="btnTable" onclick="setView('table')">📋 TABLE</button>
@@ -656,6 +790,10 @@ input[type="date"] { color-scheme: dark; }
     <div class="edit-task-form-row">
       <label>NOTES (OPTIONAL)</label>
       <textarea id="etNotes" maxlength="1000" placeholder="Optional notes..."></textarea>
+    </div>
+    <div class="edit-task-form-row">
+      <label>TIME SPENT (HOURS — OPTIONAL)</label>
+      <input type="number" id="etTimeSpent" min="0" step="0.25" placeholder="e.g. 1.5">
     </div>
     <div class="edit-task-footer">
       <button class="btn-edit-cancel" onclick="closeEditTask()">CANCEL</button>
@@ -834,6 +972,7 @@ let dueDateOn         = false;
 let viewMode          = 'board';
 let tableSortCol      = null;   // 'name'|'assignee'|'category'|'status'|'timer'|'due'
 let tableSortDir      = 1;      // 1 = asc, -1 = desc
+let showCardNotes     = false;  // show notes on board/category cards
 let currentPage       = 'tasks';
 let calView           = 'month';
 let calDate           = new Date();
@@ -1291,6 +1430,9 @@ function openEditTask(key) {
   // Notes
   document.getElementById('etNotes').value = task.notes || '';
 
+  // Time spent
+  document.getElementById('etTimeSpent').value = task.timeSpent != null ? task.timeSpent : '';
+
   document.getElementById('editTaskOverlay').classList.remove('hidden');
   setTimeout(() => document.getElementById('etName').focus(), 50);
 }
@@ -1345,7 +1487,8 @@ function saveEditTask() {
     category: document.getElementById('etCategory').value,
     createdAt,
     dueAt,
-    notes: document.getElementById('etNotes').value.trim() || null
+    notes: document.getElementById('etNotes').value.trim() || null,
+    timeSpent: parseFloat(document.getElementById('etTimeSpent').value) || null
   });
   closeEditTask();
 }
@@ -1376,6 +1519,14 @@ function fmtTime(ts) {
 }
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtHours(h) {
+  if (!h && h !== 0) return '';
+  const hrs  = Math.floor(h);
+  const mins = Math.round((h - hrs) * 60);
+  if (hrs === 0)  return `${mins}m`;
+  if (mins === 0) return `${hrs}h`;
+  return `${hrs}h ${mins}m`;
 }
 const FILL = { green:'#00c853', yellow:'#ffd600', orange:'#ff6d00', red:'#d50000', done:'#2e7d32' };
 
@@ -1443,6 +1594,8 @@ function renderBoard() {
     const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
     const dueColor    = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
     const dueLine     = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : '';
+    const timeLine    = t.timeSpent != null ? `<div class="card-time-spent">⏲ TIME SPENT: ${fmtHours(t.timeSpent)}</div>` : '';
+    const notesLine   = (showCardNotes && t.notes) ? `<div class="card-notes">${esc(t.notes)}</div>` : '';
     const safeKey     = esc(t._key);
     const safeName    = esc(t.name);
     return `
@@ -1454,10 +1607,10 @@ function renderBoard() {
   <div class="card-name">${safeName}</div>
   <div class="card-assignee">${esc(t.assignee)}</div>
   <div class="card-timer ${colorCls}">${timerTxt}</div>
-  ${startedLine}${dueLine}${threshLine}
+  ${startedLine}${dueLine}${threshLine}${timeLine}
   <div class="card-status">${statusLbl}</div>
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
-  <div class="card-actions">
+  ${notesLine}<div class="card-actions">
     <button class="btn-done"   onclick="markDone('${safeKey}')">✓ MARK DONE</button>
     <button class="btn-edit"   onclick="openEditTask('${safeKey}')">✎ EDIT</button>
     <button class="btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button>
@@ -1471,6 +1624,13 @@ function sortTable(col) {
   if (tableSortCol === col) { tableSortDir *= -1; }
   else { tableSortCol = col; tableSortDir = 1; }
   renderTable();
+}
+
+function toggleCardNotes() {
+  showCardNotes = !showCardNotes;
+  const btn = document.getElementById('btnNotesToggle');
+  if (btn) btn.classList.toggle('notes-on', showCardNotes);
+  render();
 }
 
 function renderTable() {
@@ -1520,6 +1680,7 @@ function renderTable() {
     const safeName = esc(t.name);
     const doneBtn  = isDone ? '' :
       `<button class="tbl-btn-done" onclick="markDone('${safeKey}')">✓ DONE</button>`;
+    const timeCell = t.timeSpent != null ? fmtHours(t.timeSpent) : '—';
     return `
 <tr class="tr-${colorCls}">
   <td class="td-task">${safeName}</td>
@@ -1528,13 +1689,14 @@ function renderTable() {
   <td class="td-status ${colorCls}">${statusLbl}</td>
   <td class="td-timer ${colorCls}">${timerTxt}</td>
   <td class="td-muted">${t.dueAt ? fmtDate(t.dueAt) : '—'}</td>
+  <td class="td-muted">${timeCell}</td>
   <td><div class="tbl-actions">${doneBtn}<button class="tbl-btn-edit" onclick="openEditTask('${safeKey}')">✎ EDIT</button><button class="tbl-btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button></div></td>
 </tr>`;
   }).join('');
 
   container.innerHTML = `
 <table class="task-table">
-  <thead><tr>${th('name','TASK')}${th('assignee','ASSIGNEE')}${th('category','CATEGORY')}${th('status','STATUS')}${th('timer','PENDING TIME')}${th('due','DUE DATE')}<th>ACTIONS</th></tr></thead>
+  <thead><tr>${th('name','TASK')}${th('assignee','ASSIGNEE')}${th('category','CATEGORY')}${th('status','STATUS')}${th('timer','PENDING TIME')}${th('due','DUE DATE')}<th>TIME SPENT</th><th>ACTIONS</th></tr></thead>
   <tbody>${rows}</tbody>
 </table>`;
   document.getElementById('taskCount').textContent = `${active} ACTIVE · ${done} DONE`;
@@ -1560,16 +1722,18 @@ function renderCategoryBoard() {
       const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
       const dueColor = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
       const dueLine = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : '';
+      const timeLine = t.timeSpent != null ? `<div class="card-time-spent">⏲ TIME SPENT: ${fmtHours(t.timeSpent)}</div>` : '';
+      const notesLine = (showCardNotes && t.notes) ? `<div class="card-notes">${esc(t.notes)}</div>` : '';
       const safeKey = esc(t._key);
       const safeName = esc(t.name);
       return `<div class="card ${colorCls}">
   <div class="card-header"><span class="card-id">${esc(t.id)}</span><span class="card-assignee" style="font-size:0.63rem">${esc(t.assignee)}</span></div>
   <div class="card-name">${safeName}</div>
   <div class="card-timer ${colorCls}">${timerTxt}</div>
-  ${startedLine}${dueLine}
+  ${startedLine}${dueLine}${timeLine}
   <div class="card-status">${statusLbl}</div>
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
-  <div class="card-actions">
+  ${notesLine}<div class="card-actions">
     <button class="btn-done" onclick="markDone('${safeKey}')">✓ MARK DONE</button>
     <button class="btn-edit" onclick="openEditTask('${safeKey}')">✎ EDIT</button>
     <button class="btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button>
