@@ -691,6 +691,64 @@ input[type="date"] { color-scheme: dark; }
   .btn-cal-nav, .btn-cal-today, .btn-cal-view, .btn-add-event { min-height: 36px; }
   .ws-item { padding: 10px 14px; min-height: 40px; }
 }
+
+/* ── V1.1 ADDITIONS ──────────────────────────────────────────────────────── */
+
+/* EOD / EOB QUICK TIME BUTTONS */
+.quick-time-wrap { display: flex; gap: 4px; align-items: center; flex-wrap: nowrap; }
+.btn-quick-time { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 4px 7px; font-family: var(--font); font-size: 0.65rem; letter-spacing: 1px; border-radius: 3px; cursor: pointer; white-space: nowrap; transition: all 0.2s; flex-shrink: 0; }
+.btn-quick-time:hover { border-color: var(--yellow); color: var(--yellow); }
+
+/* MARK-AS-DONE BUTTON IN EDIT TASK MODAL */
+.btn-mark-done-modal { background: none; border: 1px solid var(--green); color: var(--green); padding: 7px 15px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; letter-spacing: 1px; transition: all 0.2s; }
+.btn-mark-done-modal:hover { background: var(--green); color: #000; }
+.btn-mark-done-modal.hidden { display: none; }
+
+/* CATEGORY BOARD — ADD TASK FOOTER */
+.cat-col-add { font-size: 0.65rem; color: var(--muted); letter-spacing: 2px; padding: 8px; text-align: center; border: 1px dashed var(--border); border-radius: 4px; cursor: pointer; margin-top: 4px; flex-shrink: 0; transition: all 0.15s; }
+.cat-col-add:hover { border-color: var(--accent); color: var(--accent); }
+
+/* CATEGORY COLUMN DRAG REORDER */
+.cat-col-header { cursor: grab; user-select: none; }
+.cat-col-header:active { cursor: grabbing; }
+.cat-col.col-drag-over > .cat-col-header { outline: 2px dashed var(--accent); outline-offset: 2px; }
+
+/* USER REPORT */
+.user-report-filter { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.user-report-select { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none; min-width: 200px; }
+.user-report-select:focus { border-color: var(--accent); }
+.report-section-title { font-size: 0.72rem; letter-spacing: 2px; color: var(--accent); margin: 16px 0 8px; text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+
+/* COPY EVENT DATE PICKER MODAL */
+.copy-event-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 360; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.copy-event-overlay.hidden { display: none; }
+.copy-event-modal { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 8px; width: 100%; max-width: 320px; padding: 24px; }
+.copy-event-title { font-size: 0.9rem; letter-spacing: 3px; color: var(--accent); margin-bottom: 16px; }
+.copy-event-modal label { display: block; font-size: 0.63rem; color: var(--muted); letter-spacing: 2px; margin-bottom: 5px; }
+.copy-event-modal input[type="date"] { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none; margin-bottom: 16px; }
+.copy-event-modal input[type="date"]:focus { border-color: var(--accent); }
+.copy-event-footer { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* EXPENSE CATEGORY IN SETTINGS */
+.expense-cat-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.expense-cat-row { display: flex; gap: 8px; align-items: center; }
+.expense-cat-row input[type="text"] { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 7px 10px; font-size: 0.8rem; border-radius: 4px; outline: none; text-transform: uppercase; }
+.expense-cat-row input[type="text"]:focus { border-color: var(--accent); }
+
+/* EVENT FORM — NUMBER INPUTS */
+.event-form-row input[type="number"] {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none;
+  -moz-appearance: textfield;
+}
+.event-form-row input[type="number"]:focus { border-color: var(--accent); }
+.event-form-row input[type="number"]::-webkit-outer-spin-button,
+.event-form-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.event-form-row select {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none;
+}
+.event-form-row select:focus { border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -744,7 +802,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v1.0</span>
+    <span class="beta-badge">β v1.1</span>
     <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
 </header>
@@ -771,12 +829,20 @@ input[type="date"] { color-scheme: dark; }
       <input class="input-assignee" id="iAssignee" type="text" placeholder="ASSIGNEE" maxlength="30" list="assigneeList" autocomplete="off">
       <select class="input-category" id="iCategory"></select>
       <button class="btn btn-time" id="btnPastStart" onclick="togglePastStart()" title="Set a past start date/time">📅 PAST START</button>
-      <input class="input-past" id="iPastStart" type="datetime-local" style="display:none">
+      <div class="quick-time-wrap" id="pastStartWrap" style="display:none">
+        <input class="input-past" id="iPastStart" type="datetime-local">
+        <button class="btn-quick-time" onclick="setQuickTime('iPastStart','eob')" title="End of Business — 5:00 PM">5PM</button>
+        <button class="btn-quick-time" onclick="setQuickTime('iPastStart','eod')" title="End of Day — 11:59 PM">11PM</button>
+      </div>
       <button class="btn btn-time" id="btnDueDate" onclick="toggleDueDate()" title="Set a future due date">🗓 DUE DATE</button>
-      <input class="input-due" id="iDueDate" type="datetime-local" style="display:none">
+      <div class="quick-time-wrap" id="dueDateWrap" style="display:none">
+        <input class="input-due" id="iDueDate" type="datetime-local">
+        <button class="btn-quick-time" onclick="setQuickTime('iDueDate','eob')" title="End of Business — 5:00 PM">5PM</button>
+        <button class="btn-quick-time" onclick="setQuickTime('iDueDate','eod')" title="End of Day — 11:59 PM">11PM</button>
+      </div>
       <button class="btn btn-urgent" id="btnUrgent" onclick="toggleUrgentMode()" title="Mark new task as urgent (24h deadline)">⚡ URGENT</button>
       <button class="btn btn-add" onclick="addTask()">+ ADD TASK</button>
-      <button class="btn btn-clear" onclick="clearDone()">CLEAR DONE</button>
+      <button class="btn btn-clear" onclick="clearForm()" title="Clear the task creation form">CLEAR</button>
       <div class="task-count" id="taskCount">0 ACTIVE · 0 DONE</div>
     </div>
     <!-- ROW 2: view controls -->
@@ -787,6 +853,7 @@ input[type="date"] { color-scheme: dark; }
       <button class="btn btn-bulk-toggle" id="btnBulk" onclick="toggleBulkMode()" title="Select multiple tasks for bulk actions">☑ BULK</button>
       <button class="btn btn-report" onclick="openExpenseReport()" title="Expense report">💰 EXPENSES</button>
       <button class="btn btn-report" onclick="openTimeReport()" title="Time log report">⏱ TIME LOG</button>
+      <button class="btn btn-report" onclick="openUserReport()" title="Person / assignee report">👤 PERSON</button>
       <div class="view-toggle">
         <button class="btn-view active" id="btnBoard" onclick="setView('board')">🔲 BOARD</button>
         <button class="btn-view" id="btnTable" onclick="setView('table')">📋 TABLE</button>
@@ -892,9 +959,18 @@ input[type="date"] { color-scheme: dark; }
       <div class="expense-items" id="etExpenseItems"></div>
       <button class="btn-add-expense" onclick="addExpenseItemRow()">+ ADD EXPENSE ITEM</button>
     </div>
+    <div class="edit-task-form-row">
+      <label>EXPENSE CATEGORY (OPTIONAL)</label>
+      <select id="etExpCat"></select>
+    </div>
+    <div class="edit-task-form-row">
+      <label>ESTIMATED BUDGET (OPTIONAL)</label>
+      <input type="number" id="etBudget" min="0" step="0.01" placeholder="e.g. 500.00">
+    </div>
     <div class="edit-task-footer" style="justify-content:space-between">
       <button class="btn-edit-cancel" onclick="copyTask()">⎘ COPY TASK</button>
       <div style="display:flex;gap:8px">
+        <button class="btn-mark-done-modal" id="btnMarkDoneModal" onclick="markDoneFromEdit()" title="Mark this task as done and close">✓ MARK DONE</button>
         <button class="btn-edit-cancel" onclick="closeEditTask()">CANCEL</button>
         <button class="btn-edit-save" onclick="saveEditTask()">SAVE CHANGES</button>
       </div>
@@ -943,6 +1019,13 @@ input[type="date"] { color-scheme: dark; }
       <div class="assignee-list" id="assigneeListSettings"></div>
       <button class="btn-add-item" onclick="addAssigneeRow()">+ ADD ASSIGNEE</button>
       <p style="font-size:0.65rem;color:var(--muted);margin-top:8px;">Saved names appear as autocomplete suggestions in the Assignee field.</p>
+    </div>
+
+    <div class="section">
+      <h3>Expense Categories</h3>
+      <div class="expense-cat-list" id="expenseCatList"></div>
+      <button class="btn-add-item" onclick="addExpenseCatRow()">+ ADD EXPENSE CATEGORY</button>
+      <p style="font-size:0.65rem;color:var(--muted);margin-top:8px;">Used to categorize expenses on tasks and events. Appears as a dropdown in the task and event edit forms.</p>
     </div>
 
     <div class="section">
@@ -1001,7 +1084,7 @@ input[type="date"] { color-scheme: dark; }
     <div class="event-time-row" id="evDatetimeRows">
       <div class="event-form-row">
         <label>START</label>
-        <input type="datetime-local" id="evStart">
+        <input type="datetime-local" id="evStart" oninput="evStartChanged()">
       </div>
       <div class="event-form-row">
         <label>END</label>
@@ -1023,6 +1106,22 @@ input[type="date"] { color-scheme: dark; }
     <div class="event-form-row">
       <label>NOTES (OPTIONAL)</label>
       <textarea id="evDesc" placeholder="Notes, details..."></textarea>
+    </div>
+    <div class="event-form-row">
+      <label>LOCATION (OPTIONAL)</label>
+      <input type="text" id="evLocation" placeholder="Address or place..." maxlength="150">
+    </div>
+    <div class="event-form-row">
+      <label>ASSIGNEE (OPTIONAL)</label>
+      <input type="text" id="evAssignee" placeholder="Person responsible..." maxlength="30" list="assigneeList" autocomplete="off">
+    </div>
+    <div class="event-form-row">
+      <label>EXPENSE CATEGORY (OPTIONAL)</label>
+      <select id="evExpCat"></select>
+    </div>
+    <div class="event-form-row">
+      <label>ESTIMATED BUDGET (OPTIONAL)</label>
+      <input type="number" id="evBudget" min="0" step="0.01" placeholder="e.g. 500.00">
     </div>
     <div class="event-form-row">
       <label>RECURRENCE</label>
@@ -1081,6 +1180,39 @@ input[type="date"] { color-scheme: dark; }
   </div>
 </div>
 
+<!-- USER / PERSON REPORT MODAL -->
+<div class="report-overlay hidden" id="userReportOverlay">
+  <div class="report-modal">
+    <div class="modal-header">
+      <div class="modal-title">👤 PERSON REPORT</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="report-btn-print" onclick="window.print()">🖨 PRINT</button>
+        <button class="modal-close" onclick="closeUserReport()">✕</button>
+      </div>
+    </div>
+    <div class="user-report-filter">
+      <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px;white-space:nowrap">SELECT PERSON</label>
+      <select class="user-report-select" id="userReportSelect" onchange="renderUserReport(this.value)">
+        <option value="">— SELECT —</option>
+      </select>
+    </div>
+    <div id="userReportContent"></div>
+  </div>
+</div>
+
+<!-- COPY EVENT DATE PICKER MODAL -->
+<div class="copy-event-overlay hidden" id="copyEventOverlay">
+  <div class="copy-event-modal">
+    <div class="copy-event-title">⎘ COPY EVENT</div>
+    <label>NEW DATE FOR COPY</label>
+    <input type="date" id="copyEventDate">
+    <div class="copy-event-footer">
+      <button class="btn-cancel-ws" onclick="closeCopyEventModal()">CANCEL</button>
+      <button class="btn-create-ws" onclick="confirmCopyEvent()">COPY</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -1110,6 +1242,7 @@ let wsListRef   = null;
 const DEFAULTS = {
   subtitle: 'CODDINGTON FAMILY TASKS',
   assignees: ['Trevor', 'Wife'],
+  expenseCategories: [],
   categories: [
     { id: 'chores',  label: 'CHORES',  color: '#4a9eff', yellow: 1,  orange: 3,  red: 7  },
     { id: 'errands', label: 'ERRANDS', color: '#f0a500', yellow: 2,  orange: 5,  red: 10 },
@@ -1140,6 +1273,10 @@ let selectedTasks     = new Set(); // keys of tasks selected in bulk mode
 let draggingTaskKey   = null;   // key of card being dragged in category board
 let urgentMode        = false;  // next task added will be marked urgent
 let tmpExpenseItems   = [];     // expense items being edited in modal
+let tmpExpenseCats    = [];     // expense categories being edited in settings
+let draggingColId     = null;   // category ID being dragged for column reorder
+let catColOrder       = [];     // ordered array of category IDs for category board
+let copyingEventKey   = null;   // event key pending copy with new date
 let currentPage       = 'tasks';
 let calView           = 'month';
 let calDate           = new Date();
@@ -1407,7 +1544,7 @@ function confirmCreateWs() {
 // ── SETTINGS SYNC ─────────────────────────────────────────────────────────────
 function pushSettingsToCloud() {
   if (!settingsRef) return;
-  settingsRef.set({ assignees: cfg.assignees || [], categories: cfg.categories || [], subtitle: cfg.subtitle || DEFAULTS.subtitle });
+  settingsRef.set({ assignees: cfg.assignees || [], categories: cfg.categories || [], subtitle: cfg.subtitle || DEFAULTS.subtitle, expenseCategories: cfg.expenseCategories || [] });
   if (currentWsId) saveLocal(`taskq_cfg_${currentWsId}`, cfg);
 }
 
@@ -1461,15 +1598,15 @@ function setPage(page) {
 // ── TIME TOGGLES ──────────────────────────────────────────────────────────────
 function togglePastStart() {
   pastStartOn = !pastStartOn;
-  const btn = document.getElementById('btnPastStart');
-  const inp = document.getElementById('iPastStart');
+  const btn  = document.getElementById('btnPastStart');
+  const wrap = document.getElementById('pastStartWrap');
   if (pastStartOn) {
-    inp.value = toLocalDT(Date.now());
-    inp.style.display = '';
+    document.getElementById('iPastStart').value = toLocalDT(Date.now());
+    wrap.style.display = '';
     btn.classList.add('active-past');
     btn.textContent = '📅 PAST START ✓';
   } else {
-    inp.style.display = 'none';
+    wrap.style.display = 'none';
     btn.classList.remove('active-past');
     btn.textContent = '📅 PAST START';
   }
@@ -1477,20 +1614,42 @@ function togglePastStart() {
 
 function toggleDueDate() {
   dueDateOn = !dueDateOn;
-  const btn = document.getElementById('btnDueDate');
-  const inp = document.getElementById('iDueDate');
+  const btn  = document.getElementById('btnDueDate');
+  const wrap = document.getElementById('dueDateWrap');
   if (dueDateOn) {
     const d = new Date();
     d.setDate(d.getDate() + 7);
-    inp.value = toLocalDT(d);
-    inp.style.display = '';
+    document.getElementById('iDueDate').value = toLocalDT(d);
+    wrap.style.display = '';
     btn.classList.add('active-due');
     btn.textContent = '🗓 DUE DATE ✓';
   } else {
-    inp.style.display = 'none';
+    wrap.style.display = 'none';
     btn.classList.remove('active-due');
     btn.textContent = '🗓 DUE DATE';
   }
+}
+
+// ── CLEAR FORM / QUICK TIME ───────────────────────────────────────────────────
+function clearForm() {
+  document.getElementById('iTask').value     = '';
+  document.getElementById('iAssignee').value = '';
+  const sel = document.getElementById('iCategory');
+  if (sel && sel.options.length) sel.selectedIndex = 0;
+  if (pastStartOn) togglePastStart();
+  if (dueDateOn)   toggleDueDate();
+  if (urgentMode)  toggleUrgentMode();
+  document.getElementById('iTask').focus();
+}
+
+function setQuickTime(inputId, type) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  const d = el.value ? new Date(el.value) : new Date();
+  if (isNaN(d.getTime())) return;
+  if (type === 'eob') { d.setHours(17, 0, 0, 0); }  // 5:00 PM
+  else                { d.setHours(23, 59, 0, 0); }  // 11:59 PM
+  el.value = toLocalDT(d);
 }
 
 // ── VIEW TOGGLE ───────────────────────────────────────────────────────────────
@@ -1608,17 +1767,19 @@ function copyTask() {
   const num = tasks.length + 1;
   tasksRef.push({
     id: 'T-' + String(num).padStart(3, '0'),
-    name:         src.name + ' (COPY)',
-    assignee:     src.assignee,
-    category:     src.category,
-    createdAt:    Date.now(),
-    dueAt:        src.dueAt || null,
-    notes:        src.notes || null,
-    timeSpent:    null,
-    urgent:       src.urgent || null,
-    expenseItems: src.expenseItems ? JSON.parse(JSON.stringify(src.expenseItems)) : null,
-    status:       'active',
-    doneAt:       null
+    name:             src.name + ' (COPY)',
+    assignee:         src.assignee,
+    category:         src.category,
+    createdAt:        Date.now(),
+    dueAt:            src.dueAt || null,
+    notes:            src.notes || null,
+    timeSpent:        null,
+    urgent:           src.urgent || null,
+    expenseItems:     src.expenseItems ? JSON.parse(JSON.stringify(src.expenseItems)) : null,
+    expenseCategory:  src.expenseCategory || null,
+    estimatedBudget:  src.estimatedBudget || null,
+    status:           'active',
+    doneAt:           null
   });
   closeEditTask();
 }
@@ -1685,6 +1846,8 @@ function bulkCopy() {
       timeSpent: null,
       urgent: src.urgent || null,
       expenseItems: src.expenseItems ? JSON.parse(JSON.stringify(src.expenseItems)) : null,
+      expenseCategory: src.expenseCategory || null,
+      estimatedBudget: src.estimatedBudget || null,
       status: 'active', doneAt: null
     });
   });
@@ -1693,13 +1856,88 @@ function bulkCopy() {
   render();
 }
 
+// ── CATEGORY COLUMN ORDER ─────────────────────────────────────────────────────
+function loadCatColOrder() {
+  if (!currentWsId) { catColOrder = []; return; }
+  try {
+    const saved = JSON.parse(localStorage.getItem(`taskq_col_order_${currentWsId}`));
+    catColOrder = Array.isArray(saved) ? saved : cfg.categories.map(c => c.id);
+  } catch { catColOrder = cfg.categories.map(c => c.id); }
+}
+
+function saveCatColOrder() {
+  if (currentWsId) localStorage.setItem(`taskq_col_order_${currentWsId}`, JSON.stringify(catColOrder));
+}
+
+function getOrderedCategories() {
+  if (!catColOrder.length) loadCatColOrder();
+  const catMap = {};
+  cfg.categories.forEach(c => { catMap[c.id] = c; });
+  const ordered = catColOrder.filter(id => catMap[id]).map(id => catMap[id]);
+  cfg.categories.forEach(c => { if (!catColOrder.includes(c.id)) ordered.push(c); });
+  return ordered;
+}
+
 // ── CATEGORY DRAG-AND-DROP ────────────────────────────────────────────────────
-function catDragStart(key) { draggingTaskKey = key; }
-function catDrop(catId, colCards) {
-  colCards.classList.remove('drag-over');
+function catDragStart(key, e) {
+  draggingTaskKey = key;
+  draggingColId   = null;
+  if (e) e.stopPropagation();
+}
+
+function catDrop(catId, colEl) {
+  if (draggingColId) { catColDrop(catId, colEl); return; }
+  const colCards = colEl.classList.contains('cat-col-cards')
+    ? colEl
+    : colEl.querySelector('.cat-col-cards');
+  if (colCards) colCards.classList.remove('drag-over');
   if (!draggingTaskKey) return;
   tasksRef.child(draggingTaskKey).update({ category: catId });
   draggingTaskKey = null;
+}
+
+// Called when a card is dropped directly onto another card (not the column gutter)
+function catCardDrop(catId, e) {
+  if (!draggingTaskKey) return;
+  e.stopPropagation();
+  const colCards = e.currentTarget.closest('.cat-col-cards');
+  if (colCards) colCards.classList.remove('drag-over');
+  tasksRef.child(draggingTaskKey).update({ category: catId });
+  draggingTaskKey = null;
+}
+
+// Column header drag — reorder columns
+function catColDragStart(catId, e) {
+  draggingColId   = catId;
+  draggingTaskKey = null;
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function catColDragEnd() {
+  draggingColId = null;
+}
+
+function catColDrop(catId, colEl) {
+  if (!draggingColId || draggingColId === catId) { draggingColId = null; return; }
+  const ordered = getOrderedCategories().map(c => c.id);
+  const fromIdx = ordered.indexOf(draggingColId);
+  const toIdx   = ordered.indexOf(catId);
+  if (fromIdx !== -1 && toIdx !== -1) {
+    ordered.splice(fromIdx, 1);
+    ordered.splice(toIdx, 0, draggingColId);
+  }
+  catColOrder = ordered;
+  saveCatColOrder();
+  draggingColId = null;
+  renderCategoryBoard();
+}
+
+// Switch to board view with category pre-selected — from category board "Add Task"
+function addTaskFromCatBoard(catId) {
+  setView('board');
+  const sel = document.getElementById('iCategory');
+  if (sel) sel.value = catId;
+  setTimeout(() => document.getElementById('iTask').focus(), 80);
 }
 
 // ── EXPENSE REPORT ────────────────────────────────────────────────────────────
@@ -1805,6 +2043,114 @@ function openTimeReport() {
 }
 function closeTimeReport() { document.getElementById('timeReportOverlay').classList.add('hidden'); }
 
+// ── USER / PERSON REPORT ──────────────────────────────────────────────────────
+function openUserReport() {
+  // Build assignee list from cfg.assignees + any assignees found in tasks/events
+  const assigneeSet = new Set(cfg.assignees || []);
+  tasks.forEach(t => { if (t.assignee) assigneeSet.add(t.assignee); });
+  events.forEach(e => { if (e.assignee) assigneeSet.add(e.assignee); });
+  const sorted = Array.from(assigneeSet).sort((a, b) => a.localeCompare(b));
+
+  const sel = document.getElementById('userReportSelect');
+  sel.innerHTML = '<option value="">— SELECT PERSON —</option>' +
+    sorted.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('');
+
+  document.getElementById('userReportContent').innerHTML = '';
+  document.getElementById('userReportOverlay').classList.remove('hidden');
+}
+
+function closeUserReport() {
+  document.getElementById('userReportOverlay').classList.add('hidden');
+}
+
+function renderUserReport(assignee) {
+  const el = document.getElementById('userReportContent');
+  if (!assignee) { el.innerHTML = ''; return; }
+
+  const now = Date.now();
+  const myTasks  = tasks.filter(t => t.assignee === assignee);
+  const myEvents = events.filter(e => e.assignee === assignee);
+
+  // Tasks section
+  const activeTasks  = myTasks.filter(t => t.status !== 'done').sort((a, b) => {
+    const aOver = a.dueAt && a.dueAt < now;
+    const bOver = b.dueAt && b.dueAt < now;
+    if (aOver && !bOver) return -1;
+    if (!aOver && bOver) return 1;
+    if (a.dueAt && b.dueAt) return a.dueAt - b.dueAt;
+    if (a.dueAt) return -1;
+    if (b.dueAt) return 1;
+    return 0;
+  });
+  const doneTasks    = myTasks.filter(t => t.status === 'done');
+
+  let taskRows = '';
+  activeTasks.forEach(t => {
+    const cat    = catById(t.category);
+    const overdue = t.dueAt && t.dueAt < now;
+    const meta   = getTaskMeta(t);
+    taskRows += `<tr class="tr-${meta.cls}" onclick="openEditTask('${esc(t._key)}')" style="cursor:pointer">
+      <td class="td-task">${esc(t.name)}${t.urgent ? ' <span style="color:var(--orange)">⚡</span>' : ''}</td>
+      <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
+      <td class="td-muted" style="${overdue?'color:var(--red)':''}">${t.dueAt ? fmtDate(t.dueAt) : '—'}</td>
+      <td class="td-muted">${overdue ? '<span style="color:var(--red)">OVERDUE</span>' : 'ACTIVE'}</td>
+    </tr>`;
+  });
+
+  const taskSection = `<div class="report-section-title">TASKS — ACTIVE (${activeTasks.length})</div>` +
+    (activeTasks.length
+      ? `<table class="task-table">
+          <thead><tr><th>TASK</th><th>CATEGORY</th><th>DUE</th><th>STATUS</th></tr></thead>
+          <tbody>${taskRows}</tbody>
+        </table>`
+      : `<div style="font-size:0.75rem;color:var(--muted);padding:8px 0">No active tasks.</div>`) +
+    `<div class="report-section-title">TASKS — DONE (${doneTasks.length})</div>` +
+    (doneTasks.length
+      ? `<div style="font-size:0.75rem;color:var(--muted);padding:4px 0">${doneTasks.length} completed task${doneTasks.length !== 1 ? 's' : ''}.</div>`
+      : `<div style="font-size:0.75rem;color:var(--muted);padding:4px 0">None.</div>`);
+
+  // Events section — upcoming events (startAt >= today midnight)
+  const todayMidnight = new Date(); todayMidnight.setHours(0,0,0,0);
+  const upcomingEvents = myEvents
+    .filter(e => e.startAt >= todayMidnight.getTime())
+    .sort((a, b) => a.startAt - b.startAt);
+  const pastEvents = myEvents.filter(e => e.startAt < todayMidnight.getTime());
+
+  let evRows = '';
+  upcomingEvents.forEach(ev => {
+    const cat = catById(ev.category);
+    const dateStr = ev.allDay ? fmtDate(ev.startAt) : fmtDate(ev.startAt) + ' ' + fmtTime(ev.startAt);
+    evRows += `<tr onclick="openEditEvent('${esc(ev._key)}',event)" style="cursor:pointer">
+      <td class="td-task">${esc(ev.title)}</td>
+      <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
+      <td class="td-muted">${dateStr}</td>
+      <td class="td-muted">${ev.location ? esc(ev.location) : '—'}</td>
+    </tr>`;
+  });
+
+  const evSection = `<div class="report-section-title">EVENTS — UPCOMING (${upcomingEvents.length})</div>` +
+    (upcomingEvents.length
+      ? `<table class="task-table">
+          <thead><tr><th>EVENT</th><th>CATEGORY</th><th>DATE / TIME</th><th>LOCATION</th></tr></thead>
+          <tbody>${evRows}</tbody>
+        </table>`
+      : `<div style="font-size:0.75rem;color:var(--muted);padding:8px 0">No upcoming events.</div>`) +
+    `<div class="report-section-title">EVENTS — PAST (${pastEvents.length})</div>` +
+    (pastEvents.length
+      ? `<div style="font-size:0.75rem;color:var(--muted);padding:4px 0">${pastEvents.length} past event${pastEvents.length !== 1 ? 's' : ''}.</div>`
+      : `<div style="font-size:0.75rem;color:var(--muted);padding:4px 0">None.</div>`);
+
+  // Summary bar
+  const overdueCt = activeTasks.filter(t => t.dueAt && t.dueAt < now).length;
+  const summaryBar = `<div class="report-totals" style="margin-bottom:12px;display:flex;gap:24px;flex-wrap:wrap">
+    <div>ACTIVE TASKS: <strong style="color:var(--accent)">${activeTasks.length}</strong></div>
+    ${overdueCt ? `<div>OVERDUE: <strong style="color:var(--red)">${overdueCt}</strong></div>` : ''}
+    <div>UPCOMING EVENTS: <strong style="color:var(--accent)">${upcomingEvents.length}</strong></div>
+  </div>`;
+
+  el.innerHTML = summaryBar + taskSection + evSection;
+}
+
 // ── EDIT TASK ─────────────────────────────────────────────────────────────────
 let editingTaskKey = null;
 
@@ -1841,6 +2187,13 @@ function openEditTask(key) {
 
   // Urgent
   document.getElementById('etUrgent').checked = !!task.urgent;
+
+  // Mark-done button visibility
+  document.getElementById('btnMarkDoneModal').classList.toggle('hidden', task.status === 'done');
+
+  // Expense category + estimated budget
+  buildExpenseCatSelect('etExpCat', task.expenseCategory || '');
+  document.getElementById('etBudget').value = task.estimatedBudget != null ? task.estimatedBudget : '';
 
   // Expense items (new format) — with backward compat for old single expense
   if (task.expenseItems && task.expenseItems.length) {
@@ -1904,6 +2257,9 @@ function saveEditTask() {
   const expItems = tmpExpenseItems.filter(item => Number(item.amount) > 0)
     .map(item => ({ desc: (item.desc || '').trim(), amount: Number(item.amount), taxDed: !!item.taxDed }));
 
+  const expCat   = document.getElementById('etExpCat').value || null;
+  const budgetVal = parseFloat(document.getElementById('etBudget').value);
+
   tasksRef.child(editingTaskKey).update({
     name,
     assignee,
@@ -1914,10 +2270,18 @@ function saveEditTask() {
     timeSpent: parseFloat(document.getElementById('etTimeSpent').value) || null,
     urgent: document.getElementById('etUrgent').checked || null,
     expenseItems: expItems.length ? expItems : null,
+    expenseCategory: expCat,
+    estimatedBudget: !isNaN(budgetVal) && budgetVal > 0 ? budgetVal : null,
     // Clear old format fields
     expense: null,
     taxDeductible: null
   });
+  closeEditTask();
+}
+
+function markDoneFromEdit() {
+  if (!editingTaskKey) return;
+  markDone(editingTaskKey);
   closeEditTask();
 }
 
@@ -1926,6 +2290,29 @@ function closeEditTask() {
   tmpExpenseItems = [];
   document.getElementById('editTaskOverlay').classList.add('hidden');
 }
+
+// ── EXPENSE CATEGORY HELPERS ──────────────────────────────────────────────────
+function buildExpenseCatSelect(selectId, currentVal) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const cats = cfg.expenseCategories || [];
+  sel.innerHTML = '<option value="">— NONE —</option>' +
+    cats.map(c => `<option value="${esc(c)}"${c === currentVal ? ' selected' : ''}>${esc(c)}</option>`).join('');
+  if (currentVal && cats.includes(currentVal)) sel.value = currentVal;
+}
+
+function buildExpenseCatList() {
+  const el = document.getElementById('expenseCatList');
+  if (!el) return;
+  el.innerHTML = tmpExpenseCats.map((c, i) => `
+<div class="expense-cat-row">
+  <input type="text" value="${esc(c)}" placeholder="CATEGORY NAME" maxlength="40"
+    oninput="tmpExpenseCats[${i}]=this.value.toUpperCase();this.value=this.value.toUpperCase()">
+  <button class="btn-rm-item" onclick="removeExpenseCat(${i})">✕</button>
+</div>`).join('');
+}
+function addExpenseCatRow() { tmpExpenseCats.push(''); buildExpenseCatList(); }
+function removeExpenseCat(i) { tmpExpenseCats.splice(i, 1); buildExpenseCatList(); }
 
 // ── EXPENSE ITEM MANAGEMENT ───────────────────────────────────────────────────
 function buildExpenseItemList() {
@@ -2257,7 +2644,7 @@ function renderCategoryBoard() {
   // Category board always shows active tasks only (done tasks optionally shown if showDone)
   const displayTasks = showDone ? tasks : tasks.filter(t => t.status !== 'done');
 
-  const cols = cfg.categories.map(cat => {
+  const cols = getOrderedCategories().map(cat => {
     const catTasks = displayTasks.filter(t => t.category === cat.id);
     const cards = catTasks.map(t => {
       const { colorCls, statusLbl, timerTxt, progPct } = getTaskMeta(t, now);
@@ -2269,12 +2656,16 @@ function renderCategoryBoard() {
       const exp2 = getTaskExpense(t);
       const expLine = exp2 ? `<div class="card-expense">💰 $${exp2.total.toFixed(2)}${exp2.taxDed > 0 ? ' · TAX DED.' : ''}</div>` : '';
       const notesLine = (showCardNotes && t.notes) ? `<div class="card-notes">${esc(t.notes)}</div>` : '';
-      const safeKey = esc(t._key);
+      const safeKey  = esc(t._key);
       const safeName = esc(t.name);
+      const safeCat  = esc(cat.id);
       const actionBtn = isDone
         ? `<button class="btn-reopen" onclick="markPending('${safeKey}')">↩ REOPEN</button>`
         : `<button class="btn-done"   onclick="markDone('${safeKey}')">✓ MARK DONE</button>`;
-      return `<div class="card ${colorCls}" draggable="true" ondragstart="catDragStart('${safeKey}')">
+      return `<div class="card ${colorCls}" draggable="true"
+  ondragstart="catDragStart('${safeKey}',event)"
+  ondragover="event.preventDefault()"
+  ondrop="event.preventDefault();catCardDrop('${safeCat}',event)">
   <div class="card-header"><span class="card-id">${esc(t.id)}</span><span class="card-assignee" style="font-size:0.63rem">${esc(t.assignee)}</span></div>
   <div class="card-name">${safeName}</div>
   <div class="card-timer ${colorCls}">${timerTxt}</div>
@@ -2288,16 +2679,24 @@ function renderCategoryBoard() {
   </div>
 </div>`;
     }).join('');
-    return `<div class="cat-col">
-  <div class="cat-col-header" style="border-top-color:${cat.color}">
-    <span style="color:${cat.color}">${esc(cat.label)}</span>
+    return `<div class="cat-col"
+  ondragover="event.preventDefault()"
+  ondrop="event.preventDefault();catDrop('${esc(cat.id)}',this)">
+  <div class="cat-col-header" style="border-top-color:${cat.color}"
+    draggable="true"
+    ondragstart="catColDragStart('${esc(cat.id)}',event)"
+    ondragend="catColDragEnd()"
+    ondragover="event.preventDefault()"
+    ondrop="event.preventDefault();catColDrop('${esc(cat.id)}',this.parentElement)">
+    <span style="color:${cat.color}" title="Drag to reorder columns">${esc(cat.label)}</span>
     <span class="cat-col-count">${catTasks.length}</span>
   </div>
   <div class="cat-col-cards"
     ondragover="event.preventDefault()"
-    ondragenter="event.preventDefault();this.classList.add('drag-over')"
+    ondragenter="event.preventDefault();if(draggingTaskKey)this.classList.add('drag-over')"
     ondragleave="this.classList.remove('drag-over')"
-    ondrop="event.preventDefault();catDrop('${esc(cat.id)}',this)">${cards || `<div class="cat-col-empty">EMPTY — DROP HERE</div>`}</div>
+    ondrop="event.preventDefault();event.stopPropagation();catDrop('${esc(cat.id)}',this)">${cards || `<div class="cat-col-empty">EMPTY — DROP HERE</div>`}</div>
+  <div class="cat-col-add" onclick="addTaskFromCatBoard('${esc(cat.id)}')">+ ADD TASK</div>
 </div>`;
   }).join('');
 
@@ -2319,10 +2718,12 @@ tick();
 
 // ── SETTINGS MODAL ────────────────────────────────────────────────────────────
 function openSettings() {
-  tmpCats      = JSON.parse(JSON.stringify(cfg.categories));
-  tmpAssignees = JSON.parse(JSON.stringify(cfg.assignees || []));
+  tmpCats        = JSON.parse(JSON.stringify(cfg.categories));
+  tmpAssignees   = JSON.parse(JSON.stringify(cfg.assignees || []));
+  tmpExpenseCats = JSON.parse(JSON.stringify(cfg.expenseCategories || []));
   buildAssigneeList();
   buildCatList();
+  buildExpenseCatList();
   // Pre-fill subtitle
   document.getElementById('subtitleInput').value = cfg.subtitle || DEFAULTS.subtitle;
   // Pre-fill workspace rename field
@@ -2370,14 +2771,56 @@ function saveSettings() {
       alert(`"${c.label}": thresholds must be in order — YELLOW < ORANGE < RED`); return;
     }
   }
-  cfg.categories = cats;
-  cfg.assignees  = tmpAssignees.map(a => a.trim()).filter(Boolean);
-  cfg.subtitle   = document.getElementById('subtitleInput').value.trim().toUpperCase() || DEFAULTS.subtitle;
+  cfg.categories       = cats;
+  cfg.assignees        = tmpAssignees.map(a => a.trim()).filter(Boolean);
+  cfg.expenseCategories = tmpExpenseCats.map(c => c.trim()).filter(Boolean);
+  cfg.subtitle         = document.getElementById('subtitleInput').value.trim().toUpperCase() || DEFAULTS.subtitle;
   applySubtitle();
   pushSettingsToCloud();
   refreshDatalist();
   closeSettings();
   render();
+}
+
+// ── EVENT TIME HELPERS ────────────────────────────────────────────────────────
+// Auto-advance end time when start changes
+function evStartChanged() {
+  const sv = document.getElementById('evStart').value;
+  if (!sv) return;
+  const start = new Date(sv);
+  if (isNaN(start.getTime())) return;
+  document.getElementById('evEnd').value = toLocalDT(new Date(start.getTime() + 3600000));
+}
+
+// Attach mouse scroll wheel to event date/time fields
+function attachScrollHandlers() {
+  ['evStart', 'evEnd'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      if (!this.value) return;
+      const d = new Date(this.value);
+      if (isNaN(d.getTime())) return;
+      const dir  = e.deltaY > 0 ? 1 : -1;
+      const mins = e.shiftKey ? 60 : 15;
+      d.setMinutes(d.getMinutes() + dir * mins);
+      this.value = toLocalDT(d);
+      if (id === 'evStart') evStartChanged();
+    }, { passive: false });
+  });
+  ['evDateStart', 'evDateEnd'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      if (!this.value) return;
+      const d = new Date(this.value + 'T12:00:00');
+      if (isNaN(d.getTime())) return;
+      d.setDate(d.getDate() + (e.deltaY > 0 ? 1 : -1));
+      this.value = toLocalDate(d);
+    }, { passive: false });
+  });
 }
 
 // ── CALENDAR ──────────────────────────────────────────────────────────────────
@@ -2716,13 +3159,17 @@ function openAddEvent(prefillDateISO, prefillHour) {
   document.getElementById('eventModalTitle').textContent = '+ ADD EVENT';
   document.getElementById('btnEventDelete').classList.add('hidden');
   document.getElementById('btnEventCopy').classList.add('hidden');
-  document.getElementById('evTitle').value = '';
-  document.getElementById('evDesc').value  = '';
+  document.getElementById('evTitle').value    = '';
+  document.getElementById('evDesc').value     = '';
+  document.getElementById('evLocation').value = '';
+  document.getElementById('evAssignee').value = '';
+  document.getElementById('evBudget').value   = '';
   document.getElementById('evAllDay').checked = false;
   toggleEventAllDay();
   document.getElementById('evRecurrence').value = 'none';
   document.getElementById('evRecurEnd').value   = '';
   toggleEventRecurrence();
+  buildExpenseCatSelect('evExpCat', '');
 
   const now = new Date();
   const today = toLocalDate(Date.now());
@@ -2762,8 +3209,12 @@ function openEditEvent(key, e) {
   document.getElementById('eventModalTitle').textContent = 'EDIT EVENT';
   document.getElementById('btnEventDelete').classList.remove('hidden');
   document.getElementById('btnEventCopy').classList.remove('hidden');
-  document.getElementById('evTitle').value = ev.title || '';
-  document.getElementById('evDesc').value  = ev.description || '';
+  document.getElementById('evTitle').value    = ev.title       || '';
+  document.getElementById('evDesc').value     = ev.description  || '';
+  document.getElementById('evLocation').value = ev.location     || '';
+  document.getElementById('evAssignee').value = ev.assignee     || '';
+  document.getElementById('evBudget').value   = ev.estimatedBudget != null ? ev.estimatedBudget : '';
+  buildExpenseCatSelect('evExpCat', ev.expenseCategory || '');
   document.getElementById('evAllDay').checked = !!ev.allDay;
   toggleEventAllDay();
 
@@ -2823,15 +3274,20 @@ function saveEvent() {
   const recurEnd = (recurVal && recurVal !== 'none' && recurEndVal)
     ? new Date(recurEndVal + 'T23:59:59').getTime() : null;
 
+  const evBudgetVal = parseFloat(document.getElementById('evBudget').value);
   const data = {
     title,
-    description: document.getElementById('evDesc').value.trim(),
+    description:     document.getElementById('evDesc').value.trim() || null,
     allDay,
     startAt,
     endAt,
-    category: document.getElementById('evCategory').value,
-    recurrence: (recurVal && recurVal !== 'none') ? recurVal : null,
-    recurEnd: recurEnd
+    category:        document.getElementById('evCategory').value,
+    location:        document.getElementById('evLocation').value.trim() || null,
+    assignee:        document.getElementById('evAssignee').value.trim() || null,
+    estimatedBudget: !isNaN(evBudgetVal) && evBudgetVal > 0 ? evBudgetVal : null,
+    expenseCategory: document.getElementById('evExpCat').value || null,
+    recurrence:      (recurVal && recurVal !== 'none') ? recurVal : null,
+    recurEnd:        recurEnd
   };
 
   if (editingEventKey) {
@@ -2845,15 +3301,43 @@ function saveEvent() {
 
 function copyEvent() {
   if (!editingEventKey) return;
-  const src = events.find(e => e._key === editingEventKey);
-  if (!src) return;
-  eventsRef.push({
-    title: src.title + ' (COPY)',
-    description: src.description || '',
-    allDay: src.allDay, startAt: src.startAt,
-    endAt: src.endAt, category: src.category
-  });
+  copyingEventKey = editingEventKey;
+  const src = events.find(e => e._key === copyingEventKey);
   closeEventModal();
+  // Pre-fill with source event's date
+  document.getElementById('copyEventDate').value = src ? toLocalDate(src.startAt) : toLocalDate(Date.now());
+  document.getElementById('copyEventOverlay').classList.remove('hidden');
+}
+
+function closeCopyEventModal() {
+  copyingEventKey = null;
+  document.getElementById('copyEventOverlay').classList.add('hidden');
+}
+
+function confirmCopyEvent() {
+  if (!copyingEventKey) return;
+  const src = events.find(e => e._key === copyingEventKey);
+  if (!src) { closeCopyEventModal(); return; }
+  const newDateVal = document.getElementById('copyEventDate').value;
+  if (!newDateVal) { alert('Please select a date for the copy.'); return; }
+  const newDayStart  = new Date(newDateVal + 'T00:00:00').getTime();
+  const origDayStart = new Date(toLocalDate(src.startAt) + 'T00:00:00').getTime();
+  const offset       = newDayStart - origDayStart;
+  eventsRef.push({
+    title:           src.title + ' (COPY)',
+    description:     src.description || null,
+    allDay:          src.allDay,
+    startAt:         src.startAt + offset,
+    endAt:           src.endAt ? src.endAt + offset : null,
+    category:        src.category,
+    location:        src.location || null,
+    assignee:        src.assignee || null,
+    estimatedBudget: src.estimatedBudget || null,
+    expenseCategory: src.expenseCategory || null,
+    recurrence:      null,
+    recurEnd:        null
+  });
+  closeCopyEventModal();
 }
 
 function deleteEditingEvent() {
@@ -2871,6 +3355,8 @@ document.getElementById('createWsOverlay').addEventListener('click', function(e)
 document.getElementById('editTaskOverlay').addEventListener('click', function(e) { if (e.target === this) closeEditTask(); });
 document.getElementById('expenseReportOverlay').addEventListener('click', function(e) { if (e.target === this) closeExpenseReport(); });
 document.getElementById('timeReportOverlay').addEventListener('click', function(e) { if (e.target === this) closeTimeReport(); });
+document.getElementById('userReportOverlay').addEventListener('click', function(e) { if (e.target === this) closeUserReport(); });
+document.getElementById('copyEventOverlay').addEventListener('click', function(e) { if (e.target === this) closeCopyEventModal(); });
 
 // Close workspace dropdown when clicking outside it
 document.addEventListener('click', function(e) {
@@ -2879,6 +3365,8 @@ document.addEventListener('click', function(e) {
 });
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
+attachScrollHandlers();
+loadCatColOrder();
 render();
 </script>
 </body>
