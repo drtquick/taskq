@@ -47,6 +47,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .btn-signout:hover { border-color: var(--accent); color: var(--accent); }
 .settings-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); cursor: pointer; padding: 7px 12px; font-size: 1rem; border-radius: 4px; transition: background 0.2s; }
 .settings-btn:hover { background: var(--accent); }
+.beta-badge { font-size: 0.6rem; color: var(--accent); border: 1px solid var(--accent); padding: 2px 7px; border-radius: 10px; letter-spacing: 1px; opacity: 0.7; }
 
 /* STATUS BAR */
 .status-bar { background: #0a0a0a; border-bottom: 1px solid var(--border); padding: 4px 20px; font-size: 0.65rem; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
@@ -147,6 +148,9 @@ input[type="date"] { color-scheme: dark; }
 .task-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 .task-table thead tr { border-bottom: 2px solid var(--accent); }
 .task-table th { text-align: left; padding: 10px 12px; font-size: 0.63rem; letter-spacing: 2px; color: var(--muted); font-weight: normal; white-space: nowrap; }
+.tbl-sort-th { cursor: pointer; user-select: none; }
+.tbl-sort-th:hover { color: var(--text); }
+.tbl-sort-active { color: var(--accent) !important; }
 .task-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
 .task-table tbody tr:hover { background: var(--surface2); }
 .task-table td { padding: 10px 12px; vertical-align: middle; }
@@ -381,11 +385,13 @@ input[type="date"] { color-scheme: dark; }
 .edit-task-form-row label { display: block; font-size: 0.63rem; color: var(--muted); letter-spacing: 2px; margin-bottom: 5px; }
 .edit-task-form-row input[type="text"],
 .edit-task-form-row input[type="datetime-local"],
-.edit-task-form-row select {
+.edit-task-form-row select,
+.edit-task-form-row textarea {
   width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
   font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none;
 }
-.edit-task-form-row input:focus, .edit-task-form-row select:focus { border-color: var(--accent); }
+.edit-task-form-row textarea { min-height: 80px; resize: vertical; }
+.edit-task-form-row input:focus, .edit-task-form-row select:focus, .edit-task-form-row textarea:focus { border-color: var(--accent); }
 .edit-task-toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .edit-task-toggle-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
 .edit-task-toggle-row label { font-size: 0.78rem; color: var(--text); cursor: pointer; }
@@ -394,6 +400,59 @@ input[type="date"] { color-scheme: dark; }
 .btn-edit-save { background: var(--accent); color: white; border: none; padding: 7px 15px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; letter-spacing: 1px; }
 
 ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* PRINT BUTTON */
+.btn-print { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-print:hover { border-color: var(--text); color: var(--text); }
+
+/* CATEGORY BOARD */
+.cat-board { flex: 1; padding: 16px 20px; display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; align-items: flex-start; }
+.cat-col { min-width: 260px; width: 260px; flex: 0 0 auto; display: flex; flex-direction: column; max-height: 100%; }
+.cat-col-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; margin-bottom: 8px; border-radius: 4px; border-top: 3px solid var(--accent); background: var(--surface); font-size: 0.78rem; letter-spacing: 2px; font-weight: bold; }
+.cat-col-count { font-size: 0.65rem; background: var(--surface2); padding: 2px 8px; border-radius: 10px; color: var(--muted); }
+.cat-col-cards { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; padding-bottom: 8px; }
+.cat-col-empty { font-size: 0.65rem; color: var(--muted); letter-spacing: 2px; padding: 16px; text-align: center; border: 1px dashed var(--border); border-radius: 4px; }
+
+/* PRINT STYLES */
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: white !important; color: black !important; }
+  /* Hide chrome */
+  .no-print, .auth-screen, .header, .status-bar, .page-nav, .controls, .cal-toolbar,
+  .confirm-overlay, .edit-task-overlay, .overlay, .event-overlay,
+  .card-actions, .tbl-actions, .cal-view-toggle { display: none !important; }
+  /* Show correct page as block */
+  .tasks-page, .cal-page { display: block !important; overflow: visible !important; }
+  /* Board */
+  .board { display: flex !important; flex-wrap: wrap; gap: 12px; overflow: visible !important; background: white !important; padding: 12px !important; }
+  .col { min-width: 180px; flex: 1; break-inside: avoid; }
+  .col-header { background: white !important; color: black !important; border-bottom: 2px solid #333 !important; }
+  .col-header .col-count { color: #555 !important; }
+  .card { background: white !important; border: 1px solid #ccc !important; break-inside: avoid; margin-bottom: 6px; }
+  .card-name { color: black !important; }
+  .card-meta { color: #555 !important; }
+  .card-due { color: black !important; }
+  .card-dot { -webkit-print-color-adjust: exact !important; }
+  /* Table */
+  .table-wrap { overflow: visible !important; background: white !important; }
+  table { width: 100% !important; border-collapse: collapse; }
+  th { background: #eee !important; color: black !important; border: 1px solid #ccc !important; padding: 6px 8px; font-size: 0.72rem; }
+  td { background: white !important; color: black !important; border: 1px solid #eee !important; padding: 5px 8px; font-size: 0.78rem; }
+  tr:nth-child(even) td { background: #f9f9f9 !important; }
+  /* Calendar */
+  .cal-main, #calMain { overflow: visible !important; background: white !important; }
+  .cal-month-view, .cal-month-grid { overflow: visible !important; }
+  .cal-day-cell { background: white !important; color: black !important; border: 1px solid #ccc !important; break-inside: avoid; }
+  .cal-day-num { color: black !important; }
+  .cal-dayname { color: black !important; background: #eee !important; border: 1px solid #ccc !important; }
+  .cal-event-chip { break-inside: avoid; font-size: 0.65rem !important; }
+  .cal-week-grid, .cal-day-grid { overflow: visible !important; }
+  .cal-week-col-name, .cal-allday-col { background: #eee !important; color: black !important; }
+  .cal-time-label { color: #555 !important; }
+  .cal-event-block { break-inside: avoid; }
+  /* Page title as print header */
+  .page-nav.no-print + * { margin-top: 0; }
+}
 </style>
 </head>
 <body>
@@ -418,7 +477,7 @@ input[type="date"] { color-scheme: dark; }
   </div>
 </div>
 
-<header class="header">
+<header class="header no-print">
   <div>
     <div class="logo">TASKQ</div>
     <div class="logo-sub">CODDINGTON FAMILY TASKS</div>
@@ -435,17 +494,18 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
+    <span class="beta-badge">β v0.5</span>
     <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
 </header>
 
-<div class="status-bar">
+<div class="status-bar no-print">
   <div class="status-dot" id="statusDot"></div>
   <span id="statusText">CONNECTING...</span>
 </div>
 
 <!-- PAGE NAV TABS -->
-<nav class="page-nav">
+<nav class="page-nav no-print">
   <button class="page-tab active" id="tabTasks" onclick="setPage('tasks')">🔲 TASKS</button>
   <button class="page-tab" id="tabCalendar" onclick="setPage('calendar')">📅 CALENDAR</button>
 </nav>
@@ -464,9 +524,11 @@ input[type="date"] { color-scheme: dark; }
     <input class="input-due" id="iDueDate" type="datetime-local" style="display:none">
     <button class="btn btn-add" onclick="addTask()">+ ADD TASK</button>
     <button class="btn btn-clear" onclick="clearDone()">CLEAR DONE</button>
+    <button class="btn btn-print no-print" onclick="window.print()" title="Print current view">🖨 PRINT</button>
     <div class="view-toggle">
       <button class="btn-view active" id="btnBoard" onclick="setView('board')">🔲 BOARD</button>
       <button class="btn-view" id="btnTable" onclick="setView('table')">📋 TABLE</button>
+      <button class="btn-view" id="btnCategory" onclick="setView('category')">🏷 CATEGORY</button>
     </div>
     <div class="task-count" id="taskCount">0 ACTIVE · 0 DONE</div>
   </div>
@@ -490,7 +552,8 @@ input[type="date"] { color-scheme: dark; }
       <button class="btn-cal-view" id="btnCalDay" onclick="setCalView('day')">DAY</button>
     </div>
     <span class="cal-event-count" id="calEventCount"></span>
-    <button class="btn-add-event" onclick="openAddEvent()">+ ADD EVENT</button>
+    <button class="btn-add-event no-print" onclick="openAddEvent()">+ ADD EVENT</button>
+    <button class="btn-add-event no-print" onclick="window.print()" title="Print calendar">🖨 PRINT</button>
   </div>
   <div class="cal-main" id="calMain"></div>
 </div>
@@ -541,6 +604,10 @@ input[type="date"] { color-scheme: dark; }
     <div class="edit-task-form-row" id="etDueDateRow" style="display:none">
       <label>DUE DATE</label>
       <input type="datetime-local" id="etDueDate">
+    </div>
+    <div class="edit-task-form-row">
+      <label>NOTES (OPTIONAL)</label>
+      <textarea id="etNotes" maxlength="1000" placeholder="Optional notes..."></textarea>
     </div>
     <div class="edit-task-footer">
       <button class="btn-edit-cancel" onclick="closeEditTask()">CANCEL</button>
@@ -624,12 +691,12 @@ input[type="date"] { color-scheme: dark; }
       </div>
     </div>
     <div class="event-form-row">
-      <label>DESCRIPTION (OPTIONAL)</label>
+      <label>NOTES (OPTIONAL)</label>
       <textarea id="evDesc" placeholder="Notes, details..."></textarea>
     </div>
     <div class="event-form-row">
-      <label>COLOR</label>
-      <div class="event-color-palette" id="evColorPalette"></div>
+      <label>CATEGORY</label>
+      <select id="evCategory" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font);padding:8px 12px;font-size:0.82rem;border-radius:4px;outline:none;"></select>
     </div>
     <div class="event-modal-footer">
       <button class="btn-event-delete hidden" id="btnEventDelete" onclick="deleteEditingEvent()">✕ DELETE</button>
@@ -688,6 +755,8 @@ let tmpAssignees      = [];
 let pastStartOn       = false;
 let dueDateOn         = false;
 let viewMode          = 'board';
+let tableSortCol      = null;   // 'name'|'assignee'|'category'|'status'|'timer'|'due'
+let tableSortDir      = 1;      // 1 = asc, -1 = desc
 let currentPage       = 'tasks';
 let calView           = 'month';
 let calDate           = new Date();
@@ -872,6 +941,7 @@ function setView(mode) {
   viewMode = mode;
   document.getElementById('btnBoard').classList.toggle('active', mode === 'board');
   document.getElementById('btnTable').classList.toggle('active', mode === 'table');
+  document.getElementById('btnCategory').classList.toggle('active', mode === 'category');
   render();
 }
 
@@ -975,6 +1045,9 @@ function openEditTask(key) {
   document.getElementById('etDueDateRow').style.display = hasDue ? '' : 'none';
   document.getElementById('etDueDate').value = hasDue ? toLocalDT(task.dueAt) : '';
 
+  // Notes
+  document.getElementById('etNotes').value = task.notes || '';
+
   document.getElementById('editTaskOverlay').classList.remove('hidden');
   setTimeout(() => document.getElementById('etName').focus(), 50);
 }
@@ -1028,7 +1101,8 @@ function saveEditTask() {
     assignee,
     category: document.getElementById('etCategory').value,
     createdAt,
-    dueAt
+    dueAt,
+    notes: document.getElementById('etNotes').value.trim() || null
   });
   closeEditTask();
 }
@@ -1103,6 +1177,7 @@ function render() {
   sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
   if (cfg.categories.find(c => c.id === cur)) sel.value = cur;
   if (viewMode === 'table') renderTable();
+  else if (viewMode === 'category') renderCategoryBoard();
   else renderBoard();
 }
 
@@ -1149,6 +1224,12 @@ function renderBoard() {
   document.getElementById('taskCount').textContent = `${active} ACTIVE · ${done} DONE`;
 }
 
+function sortTable(col) {
+  if (tableSortCol === col) { tableSortDir *= -1; }
+  else { tableSortCol = col; tableSortDir = 1; }
+  renderTable();
+}
+
 function renderTable() {
   const container = document.getElementById('mainContainer');
   container.className = 'table-container';
@@ -1159,9 +1240,37 @@ function renderTable() {
   }
   const now = Date.now();
   let active = 0, done = 0;
-  const rows = tasks.map(t => {
-    const { colorCls, statusLbl, timerTxt } = getTaskMeta(t, now);
-    const cat    = catById(t.category);
+
+  // Build meta for each task so we can sort by derived fields
+  const withMeta = tasks.map(t => {
+    const meta = getTaskMeta(t, now);
+    const cat  = catById(t.category);
+    const sortStatusOrder = { 'red': 0, 'orange': 1, 'yellow': 2, 'green': 3, 'done': 4 };
+    return { t, cat, meta, sortStatusOrder: sortStatusOrder[meta.colorCls] ?? 5 };
+  });
+
+  // Apply sort
+  if (tableSortCol) {
+    withMeta.sort((a, b) => {
+      let va, vb;
+      if (tableSortCol === 'name')     { va = (a.t.name || '').toLowerCase(); vb = (b.t.name || '').toLowerCase(); }
+      else if (tableSortCol === 'assignee') { va = (a.t.assignee || '').toLowerCase(); vb = (b.t.assignee || '').toLowerCase(); }
+      else if (tableSortCol === 'category') { va = a.cat.label.toLowerCase(); vb = b.cat.label.toLowerCase(); }
+      else if (tableSortCol === 'status')   { va = a.sortStatusOrder; vb = b.sortStatusOrder; }
+      else if (tableSortCol === 'timer')    { va = a.t.createdAt || 0; vb = b.t.createdAt || 0; }
+      else if (tableSortCol === 'due')      { va = a.t.dueAt || Infinity; vb = b.t.dueAt || Infinity; }
+      if (va < vb) return -1 * tableSortDir;
+      if (va > vb) return  1 * tableSortDir;
+      return 0;
+    });
+  }
+
+  const arrow = col => tableSortCol === col ? (tableSortDir === 1 ? ' ▲' : ' ▼') : '';
+  const th = (col, label) =>
+    `<th class="tbl-sort-th${tableSortCol === col ? ' tbl-sort-active' : ''}" onclick="sortTable('${col}')">${label}${arrow(col)}</th>`;
+
+  const rows = withMeta.map(({ t, cat, meta }) => {
+    const { colorCls, statusLbl, timerTxt } = meta;
     const isDone = t.status === 'done';
     if (isDone) done++; else active++;
     const safeKey  = esc(t._key);
@@ -1179,11 +1288,61 @@ function renderTable() {
   <td><div class="tbl-actions">${doneBtn}<button class="tbl-btn-edit" onclick="openEditTask('${safeKey}')">✎ EDIT</button><button class="tbl-btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button></div></td>
 </tr>`;
   }).join('');
+
   container.innerHTML = `
 <table class="task-table">
-  <thead><tr><th>TASK</th><th>ASSIGNEE</th><th>CATEGORY</th><th>STATUS</th><th>PENDING TIME</th><th>DUE DATE</th><th>ACTIONS</th></tr></thead>
+  <thead><tr>${th('name','TASK')}${th('assignee','ASSIGNEE')}${th('category','CATEGORY')}${th('status','STATUS')}${th('timer','PENDING TIME')}${th('due','DUE DATE')}<th>ACTIONS</th></tr></thead>
   <tbody>${rows}</tbody>
 </table>`;
+  document.getElementById('taskCount').textContent = `${active} ACTIVE · ${done} DONE`;
+}
+
+function renderCategoryBoard() {
+  const container = document.getElementById('mainContainer');
+  container.className = 'cat-board';
+  if (!tasks.length) {
+    container.innerHTML = `<div class="empty-state">NO TASKS IN QUEUE<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">ENTER A TASK ABOVE TO GET STARTED</span></div>`;
+    document.getElementById('taskCount').textContent = '0 ACTIVE · 0 DONE';
+    return;
+  }
+  const now = Date.now();
+  let active = 0, done = 0;
+  tasks.forEach(t => { if (t.status === 'done') done++; else active++; });
+  const activeTasks = tasks.filter(t => t.status !== 'done');
+
+  const cols = cfg.categories.map(cat => {
+    const catTasks = activeTasks.filter(t => t.category === cat.id);
+    const cards = catTasks.map(t => {
+      const { colorCls, statusLbl, timerTxt, progPct } = getTaskMeta(t, now);
+      const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
+      const dueColor = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
+      const dueLine = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : '';
+      const safeKey = esc(t._key);
+      const safeName = esc(t.name);
+      return `<div class="card ${colorCls}">
+  <div class="card-header"><span class="card-id">${esc(t.id)}</span><span class="card-assignee" style="font-size:0.63rem">${esc(t.assignee)}</span></div>
+  <div class="card-name">${safeName}</div>
+  <div class="card-timer ${colorCls}">${timerTxt}</div>
+  ${startedLine}${dueLine}
+  <div class="card-status">${statusLbl}</div>
+  <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
+  <div class="card-actions">
+    <button class="btn-done" onclick="markDone('${safeKey}')">✓ MARK DONE</button>
+    <button class="btn-edit" onclick="openEditTask('${safeKey}')">✎ EDIT</button>
+    <button class="btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button>
+  </div>
+</div>`;
+    }).join('');
+    return `<div class="cat-col">
+  <div class="cat-col-header" style="border-top-color:${cat.color}">
+    <span style="color:${cat.color}">${esc(cat.label)}</span>
+    <span class="cat-col-count">${catTasks.length}</span>
+  </div>
+  <div class="cat-col-cards">${cards || `<div class="cat-col-empty">EMPTY</div>`}</div>
+</div>`;
+  }).join('');
+
+  container.innerHTML = cols;
   document.getElementById('taskCount').textContent = `${active} ACTIVE · ${done} DONE`;
 }
 
@@ -1341,7 +1500,7 @@ function renderMonthView() {
     const dateISO  = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
 
     const chips = shown.map(ev => {
-      const color = ev.color || EVENT_COLORS[0];
+      const color = catById(ev.category).color;
       const timeStr = ev.allDay ? 'ALL DAY' : fmtTime(ev.startAt);
       return `<div class="cal-event-chip" style="background:${color}33;color:${color};border-left:2px solid ${color}"
         onclick="openEditEvent('${esc(ev._key)}',event)" title="${esc(ev.title)}">${timeStr} ${esc(ev.title)}</div>`;
@@ -1390,7 +1549,7 @@ function renderWeekView() {
     const dayStart = d.getTime();
     const allDayEvts = events.filter(e => e.allDay && e.startAt >= dayStart && e.startAt < dayStart + 86400000);
     const chips = allDayEvts.map(ev => {
-      const color = ev.color || EVENT_COLORS[0];
+      const color = catById(ev.category).color;
       return `<div class="cal-allday-chip" style="background:${color}44;color:${color}"
         onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}</div>`;
     }).join('');
@@ -1456,7 +1615,7 @@ function renderDayView() {
 
   const allDayEvts = events.filter(e => e.allDay && e.startAt >= dayStart && e.startAt < dayStart + 86400000);
   const allDayChips = allDayEvts.map(ev => {
-    const color = ev.color || EVENT_COLORS[0];
+    const color = catById(ev.category).color;
     return `<div class="cal-allday-chip" style="background:${color}44;color:${color};display:inline-block;margin-right:4px;margin-bottom:2px;padding:2px 8px;border-radius:3px;font-size:0.7rem;cursor:pointer"
       onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}</div>`;
   }).join('');
@@ -1507,7 +1666,7 @@ function packAndRenderBlocks(evts, dayStart, hourH) {
   const totalCols = cols.length;
 
   return evts.map(ev => {
-    const color  = ev.color || EVENT_COLORS[0];
+    const color  = catById(ev.category).color;
     const evStart = Math.max(ev.startAt, dayStart);
     const evEnd   = Math.min(ev.endAt || ev.startAt + 3600000, dayStart + 86400000);
     const topPx   = ((evStart - dayStart) / 3600000) * hourH;
@@ -1524,19 +1683,13 @@ function packAndRenderBlocks(evts, dayStart, hourH) {
 }
 
 // ── EVENT MODAL ───────────────────────────────────────────────────────────────
-function buildColorPalette(currentColor) {
-  document.getElementById('evColorPalette').innerHTML = EVENT_COLORS.map(c => {
-    const sel = c === currentColor ? ' selected' : '';
-    return `<div class="color-swatch${sel}" style="background:${c}" title="${c}"
-      onclick="selectEventColor('${c}')"></div>`;
-  }).join('');
-}
-
-function selectEventColor(color) {
-  selectedColor = color;
-  document.querySelectorAll('.color-swatch').forEach(sw => {
-    sw.classList.toggle('selected', sw.style.background === color || sw.title === color);
-  });
+function buildEventCategorySelect(currentCatId) {
+  const sel = document.getElementById('evCategory');
+  sel.innerHTML = cfg.categories.map(c =>
+    `<option value="${c.id}" style="color:${c.color}">${c.label}</option>`
+  ).join('');
+  const defaultId = currentCatId || cfg.categories[0]?.id || '';
+  if (cfg.categories.find(c => c.id === defaultId)) sel.value = defaultId;
 }
 
 function toggleEventAllDay() {
@@ -1547,7 +1700,6 @@ function toggleEventAllDay() {
 
 function openAddEvent(prefillDateISO, prefillHour) {
   editingEventKey = null;
-  selectedColor   = EVENT_COLORS[0];
   document.getElementById('eventModalTitle').textContent = '+ ADD EVENT';
   document.getElementById('btnEventDelete').classList.add('hidden');
   document.getElementById('evTitle').value = '';
@@ -1568,7 +1720,7 @@ function openAddEvent(prefillDateISO, prefillHour) {
     document.getElementById('evDate').value  = toLocalDate(Date.now());
   }
 
-  buildColorPalette(selectedColor);
+  buildEventCategorySelect();
   document.getElementById('eventOverlay').classList.remove('hidden');
   setTimeout(() => document.getElementById('evTitle').focus(), 50);
 }
@@ -1587,7 +1739,6 @@ function openEditEvent(key, e) {
   if (!ev) return;
 
   editingEventKey = key;
-  selectedColor   = ev.color || EVENT_COLORS[0];
   document.getElementById('eventModalTitle').textContent = 'EDIT EVENT';
   document.getElementById('btnEventDelete').classList.remove('hidden');
   document.getElementById('evTitle').value = ev.title || '';
@@ -1602,7 +1753,7 @@ function openEditEvent(key, e) {
     document.getElementById('evEnd').value   = toLocalDT(ev.endAt || ev.startAt + 3600000);
   }
 
-  buildColorPalette(selectedColor);
+  buildEventCategorySelect(ev.category);
   document.getElementById('eventOverlay').classList.remove('hidden');
 }
 
@@ -1638,7 +1789,7 @@ function saveEvent() {
     allDay,
     startAt,
     endAt,
-    color: selectedColor
+    category: document.getElementById('evCategory').value
   };
 
   if (editingEventKey) {
