@@ -14,6 +14,24 @@
 }
 body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display: flex; flex-direction: column; }
 
+/* AUTH SCREEN */
+.auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; }
+.auth-screen.hidden { display: none; }
+.auth-box { text-align: center; padding: 40px; }
+.auth-logo { font-size: 3.2rem; font-weight: 900; letter-spacing: 10px; color: var(--accent); line-height: 1; }
+.auth-logo-sub { font-size: 0.65rem; color: var(--muted); letter-spacing: 5px; margin-top: 4px; margin-bottom: 50px; }
+.auth-tagline { font-size: 0.75rem; color: var(--muted); letter-spacing: 2px; margin-bottom: 28px; }
+.auth-btn {
+  display: inline-flex; align-items: center; gap: 12px;
+  background: white; color: #222; border: none; padding: 14px 28px;
+  font-family: var(--font); font-size: 0.88rem; letter-spacing: 1px; font-weight: bold;
+  border-radius: 4px; cursor: pointer; transition: background 0.2s;
+}
+.auth-btn:hover { background: #f0f0f0; }
+.auth-btn svg { flex-shrink: 0; }
+.auth-note { font-size: 0.62rem; color: #444; letter-spacing: 1px; margin-top: 22px; }
+.auth-error { font-size: 0.72rem; color: var(--red); letter-spacing: 1px; margin-top: 16px; display: none; }
+
 /* HEADER */
 .header { background: #111; border-bottom: 2px solid var(--accent); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 .logo { font-size: 1.9rem; font-weight: 900; letter-spacing: 5px; color: var(--accent); line-height: 1; }
@@ -23,6 +41,10 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .legend { display: flex; gap: 10px; align-items: center; }
 .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.68rem; color: var(--muted); }
 .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.user-info { display: flex; align-items: center; gap: 10px; }
+.user-name { font-size: 0.72rem; color: var(--muted); letter-spacing: 1px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-signout { background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer; padding: 5px 10px; font-family: var(--font); font-size: 0.68rem; letter-spacing: 1px; border-radius: 4px; transition: all 0.2s; }
+.btn-signout:hover { border-color: var(--accent); color: var(--accent); }
 .settings-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); cursor: pointer; padding: 7px 12px; font-size: 1rem; border-radius: 4px; transition: background 0.2s; }
 .settings-btn:hover { background: var(--accent); }
 
@@ -47,8 +69,8 @@ input[type="datetime-local"] { color-scheme: dark; }
 .input-task     { flex: 1; min-width: 200px; }
 .input-assignee { width: 150px; }
 .input-category { width: 150px; }
-.input-past  { width: 210px; border-color: var(--accent) !important; }
-.input-due   { width: 210px; border-color: var(--yellow) !important; }
+.input-past { width: 210px; border-color: var(--accent) !important; }
+.input-due  { width: 210px; border-color: var(--yellow) !important; }
 
 .btn { padding: 8px 16px; font-family: var(--font); font-size: 0.78rem; letter-spacing: 1px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
 .btn:hover { opacity: 0.82; }
@@ -114,16 +136,15 @@ input[type="datetime-local"] { color-scheme: dark; }
 .task-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
 .task-table tbody tr:hover { background: var(--surface2); }
 .task-table td { padding: 10px 12px; vertical-align: middle; }
-/* Left-border color stripe via first td */
 .task-table tbody tr td:first-child { border-left: 3px solid transparent; padding-left: 10px; }
 .task-table tbody tr.tr-green  td:first-child { border-left-color: var(--green); }
 .task-table tbody tr.tr-yellow td:first-child { border-left-color: var(--yellow); }
 .task-table tbody tr.tr-orange td:first-child { border-left-color: var(--orange); }
 .task-table tbody tr.tr-red    td:first-child { border-left-color: var(--red); }
 .task-table tbody tr.tr-done   td:first-child { border-left-color: #2e7d32; }
-.task-table tbody tr.tr-done   { opacity: 0.55; }
-.td-task   { font-weight: bold; max-width: 280px; word-break: break-word; }
-.td-muted  { color: var(--muted); font-size: 0.78rem; }
+.task-table tbody tr.tr-done { opacity: 0.55; }
+.td-task  { font-weight: bold; max-width: 280px; word-break: break-word; }
+.td-muted { color: var(--muted); font-size: 0.78rem; }
 .td-timer.green  { color: var(--green);  font-weight: bold; }
 .td-timer.yellow { color: var(--yellow); font-weight: bold; }
 .td-timer.orange { color: var(--orange); font-weight: bold; }
@@ -166,7 +187,6 @@ input[type="datetime-local"] { color-scheme: dark; }
 .modal-close:hover { color: var(--text); }
 .section { margin-bottom: 24px; }
 .section h3 { font-size: 0.68rem; letter-spacing: 3px; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; }
-
 .assignee-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
 .assignee-row { display: flex; gap: 8px; align-items: center; }
 .assignee-row input[type="text"] {
@@ -178,7 +198,6 @@ input[type="datetime-local"] { color-scheme: dark; }
 .btn-rm-item:hover { border-color: var(--red); color: var(--red); }
 .btn-add-item { background: var(--surface2); border: 1px dashed var(--border); color: var(--muted); cursor: pointer; padding: 7px; border-radius: 4px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; width: 100%; }
 .btn-add-item:hover { border-color: var(--accent); color: var(--accent); }
-
 .cat-table-header { display: grid; grid-template-columns: 1fr 36px 70px 70px 70px 32px; gap: 6px; align-items: center; margin-bottom: 6px; padding: 0 2px; }
 .cat-table-header span { font-size: 0.6rem; color: var(--muted); letter-spacing: 1px; text-align: center; }
 .cat-table-header span:first-child { text-align: left; }
@@ -204,6 +223,26 @@ input[type="datetime-local"] { color-scheme: dark; }
 </head>
 <body>
 
+<!-- AUTH SCREEN -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">TASKQ</div>
+    <div class="auth-logo-sub">CODDINGTON FAMILY TASKS</div>
+    <div class="auth-tagline">PRIVATE FAMILY BOARD · SIGN IN TO CONTINUE</div>
+    <button class="auth-btn" onclick="signIn()">
+      <svg width="20" height="20" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      SIGN IN WITH GOOGLE
+    </button>
+    <div class="auth-error" id="authError">SIGN-IN FAILED — PLEASE TRY AGAIN</div>
+    <div class="auth-note">Only authorized users can access this board.</div>
+  </div>
+</div>
+
 <header class="header">
   <div>
     <div class="logo">TASKQ</div>
@@ -217,6 +256,10 @@ input[type="datetime-local"] { color-scheme: dark; }
       <div class="legend-item"><div class="legend-dot" style="background:#d50000"></div>OVERDUE</div>
     </div>
     <div class="datetime" id="datetime">-- --- -- · --:--</div>
+    <div class="user-info" id="userInfo" style="display:none">
+      <span class="user-name" id="userName"></span>
+      <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
+    </div>
     <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
 </header>
@@ -246,7 +289,7 @@ input[type="datetime-local"] { color-scheme: dark; }
 </div>
 
 <div id="mainContainer" class="board">
-  <div class="empty-state">CONNECTING TO LIVE DATABASE...<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">PLEASE WAIT</span></div>
+  <div class="empty-state">SIGNING IN...<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">PLEASE WAIT</span></div>
 </div>
 
 <!-- CONFIRM REMOVE DIALOG -->
@@ -265,7 +308,10 @@ input[type="datetime-local"] { color-scheme: dark; }
 <div class="overlay hidden" id="overlay">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">⚙ TASKQ SETTINGS</div>
+      <div>
+        <div class="modal-title">⚙ TASKQ SETTINGS</div>
+        <div style="font-size:0.62rem;margin-top:4px;letter-spacing:1px;" id="settingsSyncBadge">☁ SYNCING...</div>
+      </div>
       <button class="modal-close" onclick="closeSettings()">✕</button>
     </div>
 
@@ -303,6 +349,7 @@ input[type="datetime-local"] { color-scheme: dark; }
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 
 <script>
 // ── FIREBASE ──────────────────────────────────────────────────────────────────
@@ -316,8 +363,11 @@ const firebaseConfig = {
   appId: "1:614008966022:web:0af7e103d26ac539caba07"
 };
 firebase.initializeApp(firebaseConfig);
-const db       = firebase.database();
-const tasksRef = db.ref('tasks');
+const db          = firebase.database();
+const tasksRef    = db.ref('tasks');
+const settingsRef = db.ref('settings');
+const auth        = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
 
 // ── DEFAULTS ──────────────────────────────────────────────────────────────────
 const DEFAULTS = {
@@ -333,15 +383,17 @@ const DEFAULTS = {
 };
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let cfg          = loadLocal('taskq_settings_v3', DEFAULTS);
-let tasks        = [];
-let tmpCats      = [];
-let tmpAssignees = [];
-let pastStartOn  = false;
-let dueDateOn    = false;
-let viewMode     = 'board';
+let cfg               = loadLocal('taskq_settings_v3', DEFAULTS);
+let tasks             = [];
+let tmpCats           = [];
+let tmpAssignees      = [];
+let pastStartOn       = false;
+let dueDateOn         = false;
+let viewMode          = 'board';
 let pendingRemoveKey  = null;
 let pendingRemoveName = '';
+let settingsSynced    = false;
+let listenersActive   = false;
 
 // ── LOCAL STORAGE ─────────────────────────────────────────────────────────────
 function loadLocal(key, fallback) {
@@ -349,6 +401,108 @@ function loadLocal(key, fallback) {
   catch { return JSON.parse(JSON.stringify(fallback)); }
 }
 function saveLocal(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+// ── DATETIME HELPER — local time string for datetime-local inputs ─────────────
+// toISOString() returns UTC; this returns YYYY-MM-DDTHH:mm in the user's local zone
+function toLocalDT(date) {
+  const d   = new Date(date);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function signIn() {
+  document.getElementById('authError').style.display = 'none';
+  auth.signInWithPopup(googleProvider).catch(() => {
+    document.getElementById('authError').style.display = 'block';
+  });
+}
+
+function signOut() {
+  auth.signOut();
+}
+
+auth.onAuthStateChanged(user => {
+  if (user) {
+    // Hide auth screen, show user info
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('userInfo').style.display = 'flex';
+    document.getElementById('userName').textContent = user.displayName || user.email;
+
+    // Start Firebase listeners (only once)
+    if (!listenersActive) {
+      listenersActive = true;
+      setupListeners();
+    }
+  } else {
+    // Show auth screen, hide user info, detach listeners
+    document.getElementById('authScreen').classList.remove('hidden');
+    document.getElementById('userInfo').style.display = 'none';
+    if (listenersActive) {
+      tasksRef.off();
+      settingsRef.off();
+      listenersActive = false;
+      settingsSynced  = false;
+      tasks = [];
+    }
+  }
+});
+
+// ── FIREBASE LISTENERS (called only after sign-in) ───────────────────────────
+function setupListeners() {
+  // Connection status
+  db.ref('.info/connected').on('value', snap => {
+    const on = snap.val() === true;
+    document.getElementById('statusDot').className = 'status-dot' + (on ? ' connected' : '');
+    document.getElementById('statusText').textContent = on
+      ? 'LIVE · ALL CHANGES SYNC IN REAL TIME'
+      : 'RECONNECTING...';
+    updateSettingsSyncUI();
+  });
+
+  // Settings sync
+  settingsRef.on('value', snapshot => {
+    const cloudCfg = snapshot.val();
+    if (cloudCfg && cloudCfg.categories && cloudCfg.categories.length) {
+      cfg = { ...DEFAULTS, ...cloudCfg };
+      saveLocal('taskq_settings_v3', cfg);
+      refreshDatalist();
+      render();
+    } else if (!settingsSynced) {
+      // Cloud empty on first-ever run — push defaults up
+      pushSettingsToCloud();
+    }
+    settingsSynced = true;
+    updateSettingsSyncUI();
+  });
+
+  // Tasks sync
+  tasksRef.on('value', snapshot => {
+    tasks = [];
+    snapshot.forEach(child => tasks.push({ _key: child.key, ...child.val() }));
+    tasks.sort((a, b) => a.createdAt - b.createdAt);
+    render();
+  });
+}
+
+// ── SETTINGS SYNC ─────────────────────────────────────────────────────────────
+function pushSettingsToCloud() {
+  settingsRef.set({ assignees: cfg.assignees || [], categories: cfg.categories || [] });
+  saveLocal('taskq_settings_v3', cfg);
+}
+
+function updateSettingsSyncUI() {
+  const el = document.getElementById('settingsSyncBadge');
+  if (!el) return;
+  const connected = document.getElementById('statusDot').classList.contains('connected');
+  if (settingsSynced && connected) {
+    el.textContent = '☁ SYNCED';  el.style.color = 'var(--green)';
+  } else if (!connected) {
+    el.textContent = '☁ OFFLINE'; el.style.color = 'var(--muted)';
+  } else {
+    el.textContent = '☁ SYNCING...'; el.style.color = 'var(--yellow)';
+  }
+}
 
 // ── ASSIGNEE AUTOCOMPLETE ─────────────────────────────────────────────────────
 function refreshDatalist() {
@@ -362,7 +516,7 @@ function saveAssigneeIfNew(name) {
   if (!list.find(a => a.toLowerCase() === name.toLowerCase())) {
     list.push(name);
     cfg.assignees = list;
-    saveLocal('taskq_settings_v3', cfg);
+    pushSettingsToCloud();
     refreshDatalist();
   }
 }
@@ -373,8 +527,7 @@ function togglePastStart() {
   const btn = document.getElementById('btnPastStart');
   const inp = document.getElementById('iPastStart');
   if (pastStartOn) {
-    const now = new Date(); now.setSeconds(0, 0);
-    inp.value = now.toISOString().slice(0, 16);
+    inp.value = toLocalDT(Date.now());   // ← local time, not UTC
     inp.style.display = '';
     btn.classList.add('active-past');
     btn.textContent = '📅 PAST START ✓';
@@ -390,11 +543,9 @@ function toggleDueDate() {
   const btn = document.getElementById('btnDueDate');
   const inp = document.getElementById('iDueDate');
   if (dueDateOn) {
-    // Default to 7 days from now
     const d = new Date();
     d.setDate(d.getDate() + 7);
-    d.setSeconds(0, 0);
-    inp.value = d.toISOString().slice(0, 16);
+    inp.value = toLocalDT(d);            // ← local time, not UTC
     inp.style.display = '';
     btn.classList.add('active-due');
     btn.textContent = '🗓 DUE DATE ✓';
@@ -491,22 +642,6 @@ function clearDone() {
   tasks.filter(t => t.status === 'done').forEach(t => tasksRef.child(t._key).remove());
 }
 
-// ── FIREBASE LISTENER ─────────────────────────────────────────────────────────
-tasksRef.on('value', snapshot => {
-  tasks = [];
-  snapshot.forEach(child => tasks.push({ _key: child.key, ...child.val() }));
-  tasks.sort((a, b) => a.createdAt - b.createdAt);
-  render();
-});
-
-db.ref('.info/connected').on('value', snap => {
-  const on = snap.val() === true;
-  document.getElementById('statusDot').className = 'status-dot' + (on ? ' connected' : '');
-  document.getElementById('statusText').textContent = on
-    ? 'LIVE · ALL CHANGES SYNC IN REAL TIME'
-    : 'RECONNECTING...';
-});
-
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function catById(id) {
   return cfg.categories.find(c => c.id === id)
@@ -533,7 +668,7 @@ function esc(s) {
 
 const FILL = { green:'#00c853', yellow:'#ffd600', orange:'#ff6d00', red:'#d50000', done:'#2e7d32' };
 
-// ── TASK META: unified color / status / timer ─────────────────────────────────
+// ── TASK META ─────────────────────────────────────────────────────────────────
 function getTaskMeta(t, now) {
   const isDone  = t.status === 'done';
   const cat     = catById(t.category);
@@ -544,37 +679,26 @@ function getTaskMeta(t, now) {
     return { colorCls: 'done', statusLbl: 'DONE', timerTxt: fmtDuration(dispSecs), progPct: 100 };
   }
 
-  // ── Due-date countdown mode ──────────────────────────────────────
   if (t.dueAt) {
-    const remaining = (t.dueAt - now) / 1000;   // positive = time left
+    const remaining = (t.dueAt - now) / 1000;
     let colorCls, statusLbl;
-
-    if (remaining <= 0) {
-      colorCls = 'red';    statusLbl = 'OVERDUE';
-    } else if (remaining <= daysSecs(cat, 'yellow')) {
-      colorCls = 'red';    statusLbl = 'DUE SOON';
-    } else if (remaining <= daysSecs(cat, 'orange')) {
-      colorCls = 'orange'; statusLbl = 'URGENT';
-    } else if (remaining <= daysSecs(cat, 'red')) {
-      colorCls = 'yellow'; statusLbl = 'ATTENTION';
-    } else {
-      colorCls = 'green';  statusLbl = 'ON TRACK';
-    }
+    if      (remaining <= 0)                          { colorCls = 'red';    statusLbl = 'OVERDUE';   }
+    else if (remaining <= daysSecs(cat, 'yellow'))    { colorCls = 'red';    statusLbl = 'DUE SOON';  }
+    else if (remaining <= daysSecs(cat, 'orange'))    { colorCls = 'orange'; statusLbl = 'URGENT';    }
+    else if (remaining <= daysSecs(cat, 'red'))       { colorCls = 'yellow'; statusLbl = 'ATTENTION'; }
+    else                                              { colorCls = 'green';  statusLbl = 'ON TRACK';  }
 
     const timerTxt = remaining <= 0
-      ? '−' + fmtDuration(remaining)         // overdue: show how long past
-      : fmtDuration(remaining) + ' LEFT';    // show time remaining
+      ? '−' + fmtDuration(remaining)
+      : fmtDuration(remaining) + ' LEFT';
 
-    // Progress = % of window between createdAt and dueAt consumed
     const totalSpan = t.dueAt - t.createdAt;
     const progPct   = totalSpan > 0
-      ? Math.min(100, Math.max(0, ((now - t.createdAt) / totalSpan) * 100))
-      : 0;
+      ? Math.min(100, Math.max(0, ((now - t.createdAt) / totalSpan) * 100)) : 0;
 
     return { colorCls, statusLbl, timerTxt, progPct };
   }
 
-  // ── Elapsed mode (no due date) ───────────────────────────────────
   let colorCls, statusLbl;
   if      (elapsed >= daysSecs(cat, 'red'))    { colorCls = 'red';    statusLbl = 'OVERDUE';   }
   else if (elapsed >= daysSecs(cat, 'orange')) { colorCls = 'orange'; statusLbl = 'URGENT';    }
@@ -587,7 +711,6 @@ function getTaskMeta(t, now) {
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function render() {
-  // Keep category dropdown in sync
   const sel = document.getElementById('iCategory');
   const cur = sel.value;
   sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
@@ -597,7 +720,6 @@ function render() {
   else renderBoard();
 }
 
-// ── BOARD VIEW ────────────────────────────────────────────────────────────────
 function renderBoard() {
   const container = document.getElementById('mainContainer');
   container.className = 'board';
@@ -617,18 +739,12 @@ function renderBoard() {
     const isDone = t.status === 'done';
     if (isDone) done++; else active++;
 
-    const threshLine = isDone ? '' :
-      `<div class="card-thresh">⏱ Y:${cat.yellow}d · O:${cat.orange}d · R:${cat.red}d</div>`;
-
+    const threshLine  = isDone ? '' : `<div class="card-thresh">⏱ Y:${cat.yellow}d · O:${cat.orange}d · R:${cat.red}d</div>`;
     const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
-
-    const dueColor = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
-    const dueLine  = t.dueAt
-      ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>`
-      : '';
-
-    const safeKey  = esc(t._key);
-    const safeName = esc(t.name);
+    const dueColor    = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
+    const dueLine     = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : '';
+    const safeKey     = esc(t._key);
+    const safeName    = esc(t.name);
 
     return `
 <div class="card ${colorCls}">
@@ -639,14 +755,12 @@ function renderBoard() {
   <div class="card-name">${safeName}</div>
   <div class="card-assignee">${esc(t.assignee)}</div>
   <div class="card-timer ${colorCls}">${timerTxt}</div>
-  ${startedLine}
-  ${dueLine}
-  ${threshLine}
+  ${startedLine}${dueLine}${threshLine}
   <div class="card-status">${statusLbl}</div>
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
   <div class="card-actions">
     <button class="btn-done"   onclick="markDone('${safeKey}')">✓ MARK DONE</button>
-    <button class="btn-remove" onclick="confirmRemove('${safeKey}', '${safeName}')">✕ REMOVE</button>
+    <button class="btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button>
   </div>
 </div>`;
   }).join('');
@@ -654,7 +768,6 @@ function renderBoard() {
   document.getElementById('taskCount').textContent = `${active} ACTIVE · ${done} DONE`;
 }
 
-// ── TABLE VIEW ────────────────────────────────────────────────────────────────
 function renderTable() {
   const container = document.getElementById('mainContainer');
   container.className = 'table-container';
@@ -687,28 +800,13 @@ function renderTable() {
   <td class="td-status ${colorCls}">${statusLbl}</td>
   <td class="td-timer ${colorCls}">${timerTxt}</td>
   <td class="td-muted">${t.dueAt ? fmtDate(t.dueAt) : '—'}</td>
-  <td>
-    <div class="tbl-actions">
-      ${doneBtn}
-      <button class="tbl-btn-remove" onclick="confirmRemove('${safeKey}', '${safeName}')">✕ REMOVE</button>
-    </div>
-  </td>
+  <td><div class="tbl-actions">${doneBtn}<button class="tbl-btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button></div></td>
 </tr>`;
   }).join('');
 
   container.innerHTML = `
 <table class="task-table">
-  <thead>
-    <tr>
-      <th>TASK</th>
-      <th>ASSIGNEE</th>
-      <th>CATEGORY</th>
-      <th>STATUS</th>
-      <th>PENDING TIME</th>
-      <th>DUE DATE</th>
-      <th>ACTIONS</th>
-    </tr>
-  </thead>
+  <thead><tr><th>TASK</th><th>ASSIGNEE</th><th>CATEGORY</th><th>STATUS</th><th>PENDING TIME</th><th>DUE DATE</th><th>ACTIONS</th></tr></thead>
   <tbody>${rows}</tbody>
 </table>`;
 
@@ -741,8 +839,7 @@ function closeSettings() { document.getElementById('overlay').classList.add('hid
 function buildAssigneeList() {
   document.getElementById('assigneeListSettings').innerHTML = tmpAssignees.map((a, i) => `
 <div class="assignee-row">
-  <input type="text" value="${esc(a)}" placeholder="NAME" maxlength="40"
-    oninput="tmpAssignees[${i}]=this.value">
+  <input type="text" value="${esc(a)}" placeholder="NAME" maxlength="40" oninput="tmpAssignees[${i}]=this.value">
   <button class="btn-rm-item" onclick="removeAssignee(${i})">✕</button>
 </div>`).join('');
 }
@@ -756,12 +853,9 @@ function buildCatList() {
   <input type="text" value="${esc(c.label)}" placeholder="NAME" maxlength="14"
     oninput="tmpCats[${i}].label=this.value.toUpperCase();this.value=this.value.toUpperCase()">
   <input type="color" value="${c.color}" oninput="tmpCats[${i}].color=this.value">
-  <input type="number" class="yellow-input" value="${c.yellow}" min="0.5" max="365" step="0.5"
-    oninput="tmpCats[${i}].yellow=parseFloat(this.value)||1">
-  <input type="number" class="orange-input" value="${c.orange}" min="1"   max="365" step="0.5"
-    oninput="tmpCats[${i}].orange=parseFloat(this.value)||2">
-  <input type="number" class="red-input"    value="${c.red}"    min="1"   max="365" step="0.5"
-    oninput="tmpCats[${i}].red=parseFloat(this.value)||3">
+  <input type="number" class="yellow-input" value="${c.yellow}" min="0.5" max="365" step="0.5" oninput="tmpCats[${i}].yellow=parseFloat(this.value)||1">
+  <input type="number" class="orange-input" value="${c.orange}" min="1"   max="365" step="0.5" oninput="tmpCats[${i}].orange=parseFloat(this.value)||2">
+  <input type="number" class="red-input"    value="${c.red}"    min="1"   max="365" step="0.5" oninput="tmpCats[${i}].red=parseFloat(this.value)||3">
   <button class="btn-rm-cat" onclick="removeCat(${i})">✕</button>
 </div>`).join('');
 }
@@ -788,19 +882,15 @@ function saveSettings() {
   }
   cfg.categories = cats;
   cfg.assignees  = tmpAssignees.map(a => a.trim()).filter(Boolean);
-  saveLocal('taskq_settings_v3', cfg);
+  pushSettingsToCloud();
   refreshDatalist();
   closeSettings();
   render();
 }
 
 // Close modals on backdrop click
-document.getElementById('overlay').addEventListener('click', function(e) {
-  if (e.target === this) closeSettings();
-});
-document.getElementById('confirmOverlay').addEventListener('click', function(e) {
-  if (e.target === this) closeConfirm();
-});
+document.getElementById('overlay').addEventListener('click', function(e) { if (e.target === this) closeSettings(); });
+document.getElementById('confirmOverlay').addEventListener('click', function(e) { if (e.target === this) closeConfirm(); });
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 refreshDatalist();
