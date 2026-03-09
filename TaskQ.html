@@ -132,13 +132,14 @@ input[type="date"] { color-scheme: dark; }
 .progress-bar  { height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 10px; overflow: hidden; }
 .progress-fill { height: 100%; border-radius: 2px; transition: width 60s linear, background-color 0.5s; }
 .card-actions { display: flex; gap: 8px; }
-.btn-done, .btn-remove {
+.btn-done, .btn-edit, .btn-remove {
   flex: 1; padding: 5px; font-family: var(--font); font-size: 0.68rem; letter-spacing: 1px;
   border: 1px solid var(--border); border-radius: 3px; cursor: pointer;
   background: var(--surface2); color: var(--muted); transition: all 0.2s;
 }
-.btn-done:hover   { border-color: var(--green); color: var(--green); }
-.btn-remove:hover { border-color: var(--red);   color: var(--red); }
+.btn-done:hover   { border-color: var(--green);  color: var(--green); }
+.btn-edit:hover   { border-color: var(--accent); color: var(--accent); }
+.btn-remove:hover { border-color: var(--red);    color: var(--red); }
 .card.done .btn-done { display: none; }
 
 /* TABLE VIEW */
@@ -170,13 +171,14 @@ input[type="date"] { color-scheme: dark; }
 .td-status.done   { color: #4caf50;       font-size: 0.72rem; letter-spacing: 1px; }
 .cat-badge { font-size: 0.63rem; padding: 2px 8px; border-radius: 3px; letter-spacing: 1px; font-weight: bold; white-space: nowrap; }
 .tbl-actions { display: flex; gap: 6px; white-space: nowrap; }
-.tbl-btn-done, .tbl-btn-remove {
+.tbl-btn-done, .tbl-btn-edit, .tbl-btn-remove {
   padding: 4px 8px; font-family: var(--font); font-size: 0.63rem; letter-spacing: 1px;
   border: 1px solid var(--border); border-radius: 3px; cursor: pointer;
   background: var(--surface2); color: var(--muted); transition: all 0.2s;
 }
-.tbl-btn-done:hover   { border-color: var(--green); color: var(--green); }
-.tbl-btn-remove:hover { border-color: var(--red);   color: var(--red); }
+.tbl-btn-done:hover   { border-color: var(--green);  color: var(--green); }
+.tbl-btn-edit:hover   { border-color: var(--accent); color: var(--accent); }
+.tbl-btn-remove:hover { border-color: var(--red);    color: var(--red); }
 .tbl-empty { text-align: center; padding: 70px 20px; color: var(--muted); font-size: 0.85rem; letter-spacing: 2px; }
 
 /* CONFIRM DIALOG */
@@ -369,6 +371,28 @@ input[type="date"] { color-scheme: dark; }
 .btn-event-cancel { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 7px 15px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; }
 .btn-event-save { background: var(--accent); color: white; border: none; padding: 7px 15px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; letter-spacing: 1px; }
 
+/* EDIT TASK MODAL */
+.edit-task-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 350; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.edit-task-overlay.hidden { display: none; }
+.edit-task-modal { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 8px; width: 100%; max-width: 500px; padding: 24px; max-height: 90vh; overflow-y: auto; }
+.edit-task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.edit-task-title { font-size: 0.9rem; letter-spacing: 3px; color: var(--accent); }
+.edit-task-form-row { margin-bottom: 14px; }
+.edit-task-form-row label { display: block; font-size: 0.63rem; color: var(--muted); letter-spacing: 2px; margin-bottom: 5px; }
+.edit-task-form-row input[type="text"],
+.edit-task-form-row input[type="datetime-local"],
+.edit-task-form-row select {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none;
+}
+.edit-task-form-row input:focus, .edit-task-form-row select:focus { border-color: var(--accent); }
+.edit-task-toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.edit-task-toggle-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+.edit-task-toggle-row label { font-size: 0.78rem; color: var(--text); cursor: pointer; }
+.edit-task-footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 8px; }
+.btn-edit-cancel { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 7px 15px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; }
+.btn-edit-save { background: var(--accent); color: white; border: none; padding: 7px 15px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; letter-spacing: 1px; }
+
 ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 </style>
 </head>
@@ -479,6 +503,48 @@ input[type="date"] { color-scheme: dark; }
     <div class="confirm-btns">
       <button class="btn-confirm-cancel" onclick="closeConfirm()">CANCEL</button>
       <button class="btn-confirm-ok" id="confirmOkBtn">REMOVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT TASK MODAL -->
+<div class="edit-task-overlay hidden" id="editTaskOverlay">
+  <div class="edit-task-modal">
+    <div class="edit-task-header">
+      <div class="edit-task-title">✎ EDIT TASK</div>
+      <button class="modal-close" onclick="closeEditTask()">✕</button>
+    </div>
+    <div class="edit-task-form-row">
+      <label>TASK NAME</label>
+      <input type="text" id="etName" maxlength="80" onkeydown="if(event.key==='Enter')saveEditTask()">
+    </div>
+    <div class="edit-task-form-row">
+      <label>ASSIGNEE</label>
+      <input type="text" id="etAssignee" maxlength="30" list="assigneeList" autocomplete="off">
+    </div>
+    <div class="edit-task-form-row">
+      <label>CATEGORY</label>
+      <select id="etCategory"></select>
+    </div>
+    <div class="edit-task-toggle-row">
+      <input type="checkbox" id="etPastStartOn" onchange="toggleEtPastStart()">
+      <label for="etPastStartOn">CUSTOM START DATE</label>
+    </div>
+    <div class="edit-task-form-row" id="etPastStartRow" style="display:none">
+      <label>STARTED AT</label>
+      <input type="datetime-local" id="etPastStart">
+    </div>
+    <div class="edit-task-toggle-row">
+      <input type="checkbox" id="etDueDateOn" onchange="toggleEtDueDate()">
+      <label for="etDueDateOn">DUE DATE</label>
+    </div>
+    <div class="edit-task-form-row" id="etDueDateRow" style="display:none">
+      <label>DUE DATE</label>
+      <input type="datetime-local" id="etDueDate">
+    </div>
+    <div class="edit-task-footer">
+      <button class="btn-edit-cancel" onclick="closeEditTask()">CANCEL</button>
+      <button class="btn-edit-save" onclick="saveEditTask()">SAVE CHANGES</button>
     </div>
   </div>
 </div>
@@ -706,14 +772,14 @@ function setupListeners() {
 
   tasksRef.on('value', snapshot => {
     tasks = [];
-    snapshot.forEach(child => tasks.push({ _key: child.key, ...child.val() }));
+    snapshot.forEach(child => { tasks.push({ _key: child.key, ...child.val() }); });
     tasks.sort((a, b) => a.createdAt - b.createdAt);
     render();
   });
 
   eventsRef.on('value', snapshot => {
     events = [];
-    snapshot.forEach(child => events.push({ _key: child.key, ...child.val() }));
+    snapshot.forEach(child => { events.push({ _key: child.key, ...child.val() }); });
     events.sort((a, b) => a.startAt - b.startAt);
     if (currentPage === 'calendar') renderCalendar();
     updateCalEventCount();
@@ -881,6 +947,97 @@ function clearDone() {
   tasks.filter(t => t.status === 'done').forEach(t => tasksRef.child(t._key).remove());
 }
 
+// ── EDIT TASK ─────────────────────────────────────────────────────────────────
+let editingTaskKey = null;
+
+function openEditTask(key) {
+  const task = tasks.find(t => t._key === key);
+  if (!task) return;
+  editingTaskKey = key;
+
+  document.getElementById('etName').value      = task.name || '';
+  document.getElementById('etAssignee').value  = (task.assignee === '—' ? '' : task.assignee) || '';
+
+  // Populate category select
+  const sel = document.getElementById('etCategory');
+  sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+  sel.value = task.category || cfg.categories[0]?.id || '';
+
+  // Past start
+  const hasPastStart = !!task.createdAt;
+  document.getElementById('etPastStartOn').checked = true;
+  document.getElementById('etPastStartRow').style.display = '';
+  document.getElementById('etPastStart').value = toLocalDT(task.createdAt || Date.now());
+
+  // Due date
+  const hasDue = !!task.dueAt;
+  document.getElementById('etDueDateOn').checked = hasDue;
+  document.getElementById('etDueDateRow').style.display = hasDue ? '' : 'none';
+  document.getElementById('etDueDate').value = hasDue ? toLocalDT(task.dueAt) : '';
+
+  document.getElementById('editTaskOverlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('etName').focus(), 50);
+}
+
+function toggleEtPastStart() {
+  const on  = document.getElementById('etPastStartOn').checked;
+  document.getElementById('etPastStartRow').style.display = on ? '' : 'none';
+  if (on && !document.getElementById('etPastStart').value) {
+    document.getElementById('etPastStart').value = toLocalDT(Date.now());
+  }
+}
+
+function toggleEtDueDate() {
+  const on = document.getElementById('etDueDateOn').checked;
+  document.getElementById('etDueDateRow').style.display = on ? '' : 'none';
+  if (on && !document.getElementById('etDueDate').value) {
+    const d = new Date(); d.setDate(d.getDate() + 7);
+    document.getElementById('etDueDate').value = toLocalDT(d);
+  }
+}
+
+function saveEditTask() {
+  const name = document.getElementById('etName').value.trim();
+  if (!name) { document.getElementById('etName').focus(); alert('Task name cannot be empty.'); return; }
+
+  const pastOn = document.getElementById('etPastStartOn').checked;
+  let createdAt = Date.now();
+  if (pastOn) {
+    const dtVal = document.getElementById('etPastStart').value;
+    if (dtVal) {
+      const parsed = new Date(dtVal).getTime();
+      if (!isNaN(parsed)) createdAt = parsed;
+    }
+  }
+
+  const dueOn = document.getElementById('etDueDateOn').checked;
+  let dueAt = null;
+  if (dueOn) {
+    const dtVal = document.getElementById('etDueDate').value;
+    if (dtVal) {
+      const parsed = new Date(dtVal).getTime();
+      if (!isNaN(parsed)) dueAt = parsed;
+    }
+  }
+
+  const assignee = document.getElementById('etAssignee').value.trim() || '—';
+  saveAssigneeIfNew(assignee === '—' ? null : assignee);
+
+  tasksRef.child(editingTaskKey).update({
+    name,
+    assignee,
+    category: document.getElementById('etCategory').value,
+    createdAt,
+    dueAt
+  });
+  closeEditTask();
+}
+
+function closeEditTask() {
+  editingTaskKey = null;
+  document.getElementById('editTaskOverlay').classList.add('hidden');
+}
+
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function catById(id) {
   return cfg.categories.find(c => c.id === id)
@@ -984,6 +1141,7 @@ function renderBoard() {
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
   <div class="card-actions">
     <button class="btn-done"   onclick="markDone('${safeKey}')">✓ MARK DONE</button>
+    <button class="btn-edit"   onclick="openEditTask('${safeKey}')">✎ EDIT</button>
     <button class="btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button>
   </div>
 </div>`;
@@ -1018,7 +1176,7 @@ function renderTable() {
   <td class="td-status ${colorCls}">${statusLbl}</td>
   <td class="td-timer ${colorCls}">${timerTxt}</td>
   <td class="td-muted">${t.dueAt ? fmtDate(t.dueAt) : '—'}</td>
-  <td><div class="tbl-actions">${doneBtn}<button class="tbl-btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button></div></td>
+  <td><div class="tbl-actions">${doneBtn}<button class="tbl-btn-edit" onclick="openEditTask('${safeKey}')">✎ EDIT</button><button class="tbl-btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button></div></td>
 </tr>`;
   }).join('');
   container.innerHTML = `
