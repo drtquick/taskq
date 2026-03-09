@@ -143,7 +143,6 @@ input[type="date"] { color-scheme: dark; }
 .btn-done:hover   { border-color: var(--green);  color: var(--green); }
 .btn-edit:hover   { border-color: var(--accent); color: var(--accent); }
 .btn-remove:hover { border-color: var(--red);    color: var(--red); }
-.card.done .btn-done { display: none; }
 
 /* TABLE VIEW */
 .table-container { flex: 1; padding: 16px 20px; overflow-x: auto; overflow-y: auto; }
@@ -452,6 +451,55 @@ input[type="date"] { color-scheme: dark; }
 .btn-notes-toggle:hover { border-color: var(--accent); color: var(--accent); }
 .btn-notes-toggle.notes-on { border-color: var(--accent); color: var(--accent); background: rgba(255,107,0,0.1); }
 
+/* SHOW DONE / BULK / REPORT BUTTONS */
+.btn-show-done  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-show-done:hover  { border-color: var(--green); color: var(--green); }
+.btn-show-done.done-on { border-color: var(--green); color: var(--green); background: rgba(0,200,83,0.1); }
+.btn-bulk-toggle { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-bulk-toggle:hover { border-color: var(--yellow); color: var(--yellow); }
+.btn-bulk-toggle.bulk-on { border-color: var(--yellow); color: var(--yellow); background: rgba(255,214,0,0.1); }
+.btn-report  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-report:hover { border-color: var(--accent); color: var(--accent); }
+
+/* BULK ACTION BAR */
+.bulk-bar { background: rgba(255,214,0,0.07); border-bottom: 1px solid var(--yellow); padding: 7px 20px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
+.bulk-bar.hidden { display: none; }
+.bulk-count { font-size: 0.72rem; color: var(--yellow); letter-spacing: 1px; margin-right: 4px; }
+.btn-bulk-remove { background: none; border: 1px solid var(--red); color: var(--red); padding: 5px 12px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+.btn-bulk-remove:hover { background: var(--red); color: white; }
+.btn-bulk-copy   { background: none; border: 1px solid var(--accent); color: var(--accent); padding: 5px 12px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+.btn-bulk-copy:hover { background: var(--accent); color: white; }
+.btn-bulk-done   { background: none; border: 1px solid var(--green); color: var(--green); padding: 5px 12px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+.btn-bulk-done:hover { background: var(--green); color: white; }
+.btn-bulk-cancel { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 5px 12px; font-family: var(--font); font-size: 0.72rem; border-radius: 4px; cursor: pointer; }
+
+/* CARD BULK SELECTION */
+.card-select-wrap { display: flex; align-items: center; gap: 8px; }
+.card-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: var(--yellow); flex-shrink: 0; }
+.card.selected-task { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.tbl-checkbox { width: 15px; height: 15px; cursor: pointer; accent-color: var(--yellow); }
+
+/* REOPEN BUTTON */
+.btn-reopen { flex: 1; padding: 5px; font-family: var(--font); font-size: 0.68rem; letter-spacing: 1px; border: 1px solid var(--green); border-radius: 3px; cursor: pointer; background: var(--surface2); color: var(--green); transition: all 0.2s; }
+.btn-reopen:hover { background: var(--green); color: #000; }
+.tbl-btn-reopen { padding: 4px 8px; font-family: var(--font); font-size: 0.63rem; letter-spacing: 1px; border: 1px solid var(--green); border-radius: 3px; cursor: pointer; background: var(--surface2); color: var(--green); transition: all 0.2s; }
+.tbl-btn-reopen:hover { background: var(--green); color: #000; }
+
+/* EXPENSE DISPLAY ON CARDS */
+.card-expense { font-size: 0.6rem; color: var(--muted); letter-spacing: 1px; margin-bottom: 3px; }
+
+/* REPORT MODAL */
+.report-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 350; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.report-overlay.hidden { display: none; }
+.report-modal { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 8px; width: 100%; max-width: 780px; padding: 24px; max-height: 90vh; overflow-y: auto; }
+.report-modal .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.report-totals { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; gap: 30px; justify-content: flex-end; font-size: 0.82rem; flex-wrap: wrap; }
+.report-btn-print { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 5px 12px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; }
+.report-btn-print:hover { border-color: var(--text); color: var(--text); }
+
+/* DRAG-AND-DROP CATEGORY */
+.cat-col-cards.drag-over { background: rgba(255,107,0,0.08); border: 1px dashed var(--accent); border-radius: 4px; }
+
 /* CATEGORY BOARD */
 .cat-board { flex: 1; padding: 16px 20px; display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; align-items: flex-start; }
 .cat-col { min-width: 260px; width: 260px; flex: 0 0 auto; display: flex; flex-direction: column; max-height: 100%; }
@@ -649,7 +697,7 @@ input[type="date"] { color-scheme: dark; }
 <header class="header no-print">
   <div>
     <div class="logo">TASKQ</div>
-    <div class="logo-sub">CODDINGTON FAMILY TASKS</div>
+    <div class="logo-sub" id="logoSub">CODDINGTON FAMILY TASKS</div>
   </div>
   <!-- WORKSPACE SWITCHER -->
   <div class="ws-switcher" id="wsSwitcher">
@@ -675,7 +723,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v0.7</span>
+    <span class="beta-badge">β v0.9</span>
     <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
 </header>
@@ -707,12 +755,24 @@ input[type="date"] { color-scheme: dark; }
     <button class="btn btn-clear" onclick="clearDone()">CLEAR DONE</button>
     <button class="btn btn-print no-print" onclick="window.print()" title="Print current view">🖨 PRINT</button>
     <button class="btn btn-notes-toggle" id="btnNotesToggle" onclick="toggleCardNotes()" title="Show/hide notes on cards">📝 NOTES</button>
+    <button class="btn btn-show-done" id="btnShowDone" onclick="toggleShowDone()" title="Show/hide completed tasks">👁 SHOW DONE</button>
+    <button class="btn btn-bulk-toggle" id="btnBulk" onclick="toggleBulkMode()" title="Select multiple tasks for bulk actions">☑ BULK</button>
+    <button class="btn btn-report" onclick="openExpenseReport()" title="Expense report">💰 EXPENSES</button>
+    <button class="btn btn-report" onclick="openTimeReport()" title="Time log report">⏱ TIME LOG</button>
     <div class="view-toggle">
       <button class="btn-view active" id="btnBoard" onclick="setView('board')">🔲 BOARD</button>
       <button class="btn-view" id="btnTable" onclick="setView('table')">📋 TABLE</button>
       <button class="btn-view" id="btnCategory" onclick="setView('category')">🏷 CATEGORY</button>
     </div>
     <div class="task-count" id="taskCount">0 ACTIVE · 0 DONE</div>
+  </div>
+  <!-- BULK ACTION BAR -->
+  <div class="bulk-bar hidden" id="bulkBar">
+    <span class="bulk-count" id="bulkCount">0 SELECTED</span>
+    <button class="btn-bulk-done"   onclick="bulkMarkDone()">✓ MARK DONE</button>
+    <button class="btn-bulk-copy"   onclick="bulkCopy()">⎘ COPY</button>
+    <button class="btn-bulk-remove" onclick="bulkRemove()">✕ REMOVE</button>
+    <button class="btn-bulk-cancel" onclick="toggleBulkMode()">✕ CANCEL</button>
   </div>
   <div id="mainContainer" class="board">
     <div class="empty-state">SIGNING IN...<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">PLEASE WAIT</span></div>
@@ -795,9 +855,20 @@ input[type="date"] { color-scheme: dark; }
       <label>TIME SPENT (HOURS — OPTIONAL)</label>
       <input type="number" id="etTimeSpent" min="0" step="0.25" placeholder="e.g. 1.5">
     </div>
-    <div class="edit-task-footer">
-      <button class="btn-edit-cancel" onclick="closeEditTask()">CANCEL</button>
-      <button class="btn-edit-save" onclick="saveEditTask()">SAVE CHANGES</button>
+    <div class="edit-task-form-row">
+      <label>EXPENSE AMOUNT ($) — OPTIONAL</label>
+      <input type="number" id="etExpense" min="0" step="0.01" placeholder="e.g. 24.99">
+    </div>
+    <div class="edit-task-toggle-row">
+      <input type="checkbox" id="etTaxDeductible">
+      <label for="etTaxDeductible">EXPENSE IS TAX DEDUCTIBLE</label>
+    </div>
+    <div class="edit-task-footer" style="justify-content:space-between">
+      <button class="btn-edit-cancel" onclick="copyTask()">⎘ COPY TASK</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-edit-cancel" onclick="closeEditTask()">CANCEL</button>
+        <button class="btn-edit-save" onclick="saveEditTask()">SAVE CHANGES</button>
+      </div>
     </div>
   </div>
 </div>
@@ -811,6 +882,17 @@ input[type="date"] { color-scheme: dark; }
         <div style="font-size:0.62rem;margin-top:4px;letter-spacing:1px;" id="settingsSyncBadge">☁ SYNCING...</div>
       </div>
       <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="section">
+      <h3>App</h3>
+      <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px;">APP SUBTITLE</label>
+      <div style="margin-top:6px;">
+        <input type="text" id="subtitleInput" maxlength="50" placeholder="e.g. CODDINGTON FAMILY TASKS"
+               style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font);padding:8px 12px;font-size:0.82rem;border-radius:4px;outline:none;letter-spacing:1px;"
+               onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <p style="font-size:0.65rem;color:var(--muted);margin-top:6px;">Shown under the TASKQ logo in the header and on the sign-in screen.</p>
     </div>
 
     <div class="section">
@@ -898,9 +980,15 @@ input[type="date"] { color-scheme: dark; }
       </div>
     </div>
     <div id="evAllDayDateRow" style="display:none">
-      <div class="event-form-row">
-        <label>DATE</label>
-        <input type="date" id="evDate">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="event-form-row" style="margin-bottom:0">
+          <label>START DATE</label>
+          <input type="date" id="evDateStart">
+        </div>
+        <div class="event-form-row" style="margin-bottom:0">
+          <label>END DATE (OPTIONAL)</label>
+          <input type="date" id="evDateEnd">
+        </div>
       </div>
     </div>
     <div class="event-form-row">
@@ -914,10 +1002,39 @@ input[type="date"] { color-scheme: dark; }
     <div class="event-modal-footer">
       <button class="btn-event-delete hidden" id="btnEventDelete" onclick="deleteEditingEvent()">✕ DELETE</button>
       <div class="event-modal-footer-right">
+        <button class="btn-event-cancel hidden" id="btnEventCopy" onclick="copyEvent()" style="border:1px solid var(--accent);color:var(--accent)">⎘ COPY</button>
         <button class="btn-event-cancel" onclick="closeEventModal()">CANCEL</button>
         <button class="btn-event-save" onclick="saveEvent()">SAVE EVENT</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- EXPENSE REPORT MODAL -->
+<div class="report-overlay hidden" id="expenseReportOverlay">
+  <div class="report-modal">
+    <div class="modal-header">
+      <div class="modal-title">💰 EXPENSE REPORT</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="report-btn-print" onclick="window.print()">🖨 PRINT</button>
+        <button class="modal-close" onclick="closeExpenseReport()">✕</button>
+      </div>
+    </div>
+    <div id="expenseReportContent"></div>
+  </div>
+</div>
+
+<!-- TIME REPORT MODAL -->
+<div class="report-overlay hidden" id="timeReportOverlay">
+  <div class="report-modal">
+    <div class="modal-header">
+      <div class="modal-title">⏱ TIME LOG REPORT</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="report-btn-print" onclick="window.print()">🖨 PRINT</button>
+        <button class="modal-close" onclick="closeTimeReport()">✕</button>
+      </div>
+    </div>
+    <div id="timeReportContent"></div>
   </div>
 </div>
 
@@ -948,6 +1065,7 @@ let wsListRef   = null;
 
 // ── DEFAULTS ──────────────────────────────────────────────────────────────────
 const DEFAULTS = {
+  subtitle: 'CODDINGTON FAMILY TASKS',
   assignees: ['Trevor', 'Wife'],
   categories: [
     { id: 'chores',  label: 'CHORES',  color: '#4a9eff', yellow: 1,  orange: 3,  red: 7  },
@@ -973,6 +1091,10 @@ let viewMode          = 'board';
 let tableSortCol      = null;   // 'name'|'assignee'|'category'|'status'|'timer'|'due'
 let tableSortDir      = 1;      // 1 = asc, -1 = desc
 let showCardNotes     = false;  // show notes on board/category cards
+let showDone          = false;  // show completed tasks in board/table views
+let bulkMode          = false;  // bulk-selection mode active
+let selectedTasks     = new Set(); // keys of tasks selected in bulk mode
+let draggingTaskKey   = null;   // key of card being dragged in category board
 let currentPage       = 'tasks';
 let calView           = 'month';
 let calDate           = new Date();
@@ -1057,6 +1179,7 @@ function attachDataListeners() {
     if (cloudCfg && cloudCfg.categories && cloudCfg.categories.length) {
       cfg = { ...DEFAULTS, ...cloudCfg };
       saveLocal(`taskq_cfg_${currentWsId}`, cfg);
+      applySubtitle();
       refreshDatalist();
       render();
     } else if (!settingsSynced) {
@@ -1239,8 +1362,15 @@ function confirmCreateWs() {
 // ── SETTINGS SYNC ─────────────────────────────────────────────────────────────
 function pushSettingsToCloud() {
   if (!settingsRef) return;
-  settingsRef.set({ assignees: cfg.assignees || [], categories: cfg.categories || [] });
+  settingsRef.set({ assignees: cfg.assignees || [], categories: cfg.categories || [], subtitle: cfg.subtitle || DEFAULTS.subtitle });
   if (currentWsId) saveLocal(`taskq_cfg_${currentWsId}`, cfg);
+}
+
+function applySubtitle() {
+  const sub = cfg.subtitle || DEFAULTS.subtitle;
+  const el = document.getElementById('logoSub');
+  if (el) el.textContent = sub;
+  document.title = `TaskQ \u2014 ${sub}`;
 }
 
 function updateSettingsSyncUI() {
@@ -1399,6 +1529,197 @@ function clearDone() {
   tasks.filter(t => t.status === 'done').forEach(t => tasksRef.child(t._key).remove());
 }
 
+function markPending(key) {
+  tasksRef.child(key).update({ status: 'active', doneAt: null });
+}
+
+// ── SHOW DONE TOGGLE ──────────────────────────────────────────────────────────
+function toggleShowDone() {
+  showDone = !showDone;
+  const btn = document.getElementById('btnShowDone');
+  if (btn) btn.classList.toggle('done-on', showDone);
+  render();
+}
+
+// ── COPY TASK ─────────────────────────────────────────────────────────────────
+function copyTask() {
+  if (!editingTaskKey) return;
+  const src = tasks.find(t => t._key === editingTaskKey);
+  if (!src) return;
+  const num = tasks.length + 1;
+  tasksRef.push({
+    id: 'T-' + String(num).padStart(3, '0'),
+    name:         src.name + ' (COPY)',
+    assignee:     src.assignee,
+    category:     src.category,
+    createdAt:    Date.now(),
+    dueAt:        src.dueAt || null,
+    notes:        src.notes || null,
+    timeSpent:    null,
+    expense:      src.expense != null ? src.expense : null,
+    taxDeductible: src.taxDeductible || false,
+    status:       'active',
+    doneAt:       null
+  });
+  closeEditTask();
+}
+
+// ── BULK MODE ─────────────────────────────────────────────────────────────────
+function toggleBulkMode() {
+  bulkMode = !bulkMode;
+  selectedTasks.clear();
+  const btn     = document.getElementById('btnBulk');
+  const bulkBar = document.getElementById('bulkBar');
+  if (btn)     btn.classList.toggle('bulk-on', bulkMode);
+  if (bulkBar) bulkBar.classList.toggle('hidden', !bulkMode);
+  updateBulkCount();
+  render();
+}
+
+function toggleTaskSelect(key, checked) {
+  if (checked) { selectedTasks.add(key); }
+  else         { selectedTasks.delete(key); }
+  updateBulkCount();
+  // Re-highlight cards without full re-render
+  document.querySelectorAll('.card').forEach(c => {
+    const cb = c.querySelector('.card-checkbox');
+    if (cb) c.classList.toggle('selected-task', cb.checked);
+  });
+}
+
+function updateBulkCount() {
+  const el = document.getElementById('bulkCount');
+  if (el) el.textContent = `${selectedTasks.size} SELECTED`;
+}
+
+function bulkMarkDone() {
+  if (!selectedTasks.size) return;
+  const now = Date.now();
+  selectedTasks.forEach(key => tasksRef.child(key).update({ status: 'done', doneAt: now }));
+  selectedTasks.clear();
+  updateBulkCount();
+  render();
+}
+
+function bulkRemove() {
+  if (!selectedTasks.size) return;
+  const count = selectedTasks.size;
+  if (!confirm(`Remove ${count} selected task${count > 1 ? 's' : ''}? This cannot be undone.`)) return;
+  selectedTasks.forEach(key => tasksRef.child(key).remove());
+  selectedTasks.clear();
+  updateBulkCount();
+  render();
+}
+
+function bulkCopy() {
+  if (!selectedTasks.size) return;
+  let num = tasks.length;
+  selectedTasks.forEach(key => {
+    const src = tasks.find(t => t._key === key);
+    if (!src) return;
+    num++;
+    tasksRef.push({
+      id: 'T-' + String(num).padStart(3, '0'),
+      name: src.name + ' (COPY)', assignee: src.assignee,
+      category: src.category, createdAt: Date.now(),
+      dueAt: src.dueAt || null, notes: src.notes || null,
+      timeSpent: null, expense: src.expense != null ? src.expense : null,
+      taxDeductible: src.taxDeductible || false,
+      status: 'active', doneAt: null
+    });
+  });
+  selectedTasks.clear();
+  updateBulkCount();
+  render();
+}
+
+// ── CATEGORY DRAG-AND-DROP ────────────────────────────────────────────────────
+function catDragStart(key) { draggingTaskKey = key; }
+function catDrop(catId, colCards) {
+  colCards.classList.remove('drag-over');
+  if (!draggingTaskKey) return;
+  tasksRef.child(draggingTaskKey).update({ category: catId });
+  draggingTaskKey = null;
+}
+
+// ── EXPENSE REPORT ────────────────────────────────────────────────────────────
+function openExpenseReport() {
+  const expTasks = tasks.filter(t => t.expense != null && Number(t.expense) > 0)
+    .sort((a, b) => (catById(a.category).label).localeCompare(catById(b.category).label));
+  if (!expTasks.length) { alert('No tasks with expenses found.'); return; }
+  let total = 0, taxTotal = 0;
+  const rows = expTasks.map(t => {
+    const cat = catById(t.category);
+    const amt = Number(t.expense);
+    total += amt;
+    if (t.taxDeductible) taxTotal += amt;
+    return `<tr class="tr-${t.status === 'done' ? 'done' : 'green'}">
+      <td class="td-task">${esc(t.name)}</td>
+      <td class="td-muted">${esc(t.assignee)}</td>
+      <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
+      <td style="text-align:right;font-weight:bold">$${amt.toFixed(2)}</td>
+      <td style="text-align:center;color:var(--green)">${t.taxDeductible ? '✓' : ''}</td>
+      <td class="td-muted">${t.status === 'done' ? 'DONE' : 'ACTIVE'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('expenseReportContent').innerHTML = `
+<table class="task-table">
+  <thead><tr><th>TASK</th><th>ASSIGNEE</th><th>CATEGORY</th><th style="text-align:right">AMOUNT</th><th>TAX DED.</th><th>STATUS</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+<div class="report-totals">
+  <div>TOTAL EXPENSES: <strong style="color:var(--accent)">$${total.toFixed(2)}</strong></div>
+  <div>TAX DEDUCTIBLE: <strong style="color:var(--green)">$${taxTotal.toFixed(2)}</strong></div>
+  <div style="color:var(--muted)">NON-DEDUCTIBLE: <strong>$${(total - taxTotal).toFixed(2)}</strong></div>
+</div>`;
+  document.getElementById('expenseReportOverlay').classList.remove('hidden');
+}
+function closeExpenseReport() { document.getElementById('expenseReportOverlay').classList.add('hidden'); }
+
+// ── TIME REPORT ───────────────────────────────────────────────────────────────
+function openTimeReport() {
+  const timeTasks = tasks.filter(t => t.timeSpent != null && Number(t.timeSpent) > 0);
+  if (!timeTasks.length) { alert('No tasks with time logged found.'); return; }
+  let grandTotal = 0;
+  const byAssignee = {};
+  timeTasks.forEach(t => {
+    const key = t.assignee || '—';
+    if (!byAssignee[key]) byAssignee[key] = { tasks: [], total: 0 };
+    byAssignee[key].tasks.push(t);
+    byAssignee[key].total += Number(t.timeSpent);
+    grandTotal += Number(t.timeSpent);
+  });
+  let rows = '';
+  Object.entries(byAssignee).sort(([a],[b]) => a.localeCompare(b)).forEach(([assignee, data]) => {
+    data.tasks.sort((a,b) => (catById(a.category).label).localeCompare(catById(b.category).label))
+      .forEach(t => {
+        const cat = catById(t.category);
+        rows += `<tr class="tr-${t.status === 'done' ? 'done' : 'green'}">
+          <td class="td-task">${esc(t.name)}</td>
+          <td class="td-muted">${esc(assignee)}</td>
+          <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
+          <td style="text-align:right;font-weight:bold">${fmtHours(t.timeSpent)}</td>
+          <td class="td-muted">${t.status === 'done' ? 'DONE' : 'ACTIVE'}</td>
+        </tr>`;
+      });
+    rows += `<tr style="border-top:2px solid var(--border)">
+      <td colspan="3" style="text-align:right;color:var(--muted);font-size:0.72rem;letter-spacing:1px">SUBTOTAL — ${esc(assignee)}</td>
+      <td style="text-align:right;color:var(--accent);font-weight:bold">${fmtHours(data.total)}</td>
+      <td></td>
+    </tr>`;
+  });
+  document.getElementById('timeReportContent').innerHTML = `
+<table class="task-table">
+  <thead><tr><th>TASK</th><th>ASSIGNEE</th><th>CATEGORY</th><th style="text-align:right">TIME SPENT</th><th>STATUS</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+<div class="report-totals">
+  <div>TOTAL TIME LOGGED: <strong style="color:var(--accent)">${fmtHours(grandTotal)}</strong></div>
+</div>`;
+  document.getElementById('timeReportOverlay').classList.remove('hidden');
+}
+function closeTimeReport() { document.getElementById('timeReportOverlay').classList.add('hidden'); }
+
 // ── EDIT TASK ─────────────────────────────────────────────────────────────────
 let editingTaskKey = null;
 
@@ -1432,6 +1753,10 @@ function openEditTask(key) {
 
   // Time spent
   document.getElementById('etTimeSpent').value = task.timeSpent != null ? task.timeSpent : '';
+
+  // Expense
+  document.getElementById('etExpense').value = task.expense != null ? task.expense : '';
+  document.getElementById('etTaxDeductible').checked = !!task.taxDeductible;
 
   document.getElementById('editTaskOverlay').classList.remove('hidden');
   setTimeout(() => document.getElementById('etName').focus(), 50);
@@ -1488,7 +1813,9 @@ function saveEditTask() {
     createdAt,
     dueAt,
     notes: document.getElementById('etNotes').value.trim() || null,
-    timeSpent: parseFloat(document.getElementById('etTimeSpent').value) || null
+    timeSpent: parseFloat(document.getElementById('etTimeSpent').value) || null,
+    expense:      parseFloat(document.getElementById('etExpense').value) || null,
+    taxDeductible: document.getElementById('etTaxDeductible').checked
   });
   closeEditTask();
 }
@@ -1578,40 +1905,75 @@ function render() {
 function renderBoard() {
   const container = document.getElementById('mainContainer');
   container.className = 'board';
-  if (!tasks.length) {
-    container.innerHTML = `<div class="empty-state">NO TASKS IN QUEUE<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">ENTER A TASK ABOVE TO GET STARTED</span></div>`;
-    document.getElementById('taskCount').textContent = '0 ACTIVE · 0 DONE';
+  const now = Date.now();
+  const urgencyOrder = { red: 0, orange: 1, yellow: 2, green: 3, done: 4 };
+
+  // Count all tasks first
+  let active = 0, done = 0;
+  tasks.forEach(t => { if (t.status === 'done') done++; else active++; });
+
+  // Filter based on showDone toggle
+  const displayTasks = showDone ? tasks : tasks.filter(t => t.status !== 'done');
+
+  if (!displayTasks.length) {
+    const msg = !tasks.length
+      ? 'NO TASKS IN QUEUE<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">ENTER A TASK ABOVE TO GET STARTED</span>'
+      : 'ALL TASKS COMPLETE<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">TOGGLE "SHOW DONE" TO SEE COMPLETED TASKS</span>';
+    container.innerHTML = `<div class="empty-state">${msg}</div>`;
+    document.getElementById('taskCount').textContent = `${active} ACTIVE · ${done} DONE`;
     return;
   }
-  const now = Date.now();
-  let active = 0, done = 0;
-  container.innerHTML = tasks.map(t => {
+
+  // Sort by urgency (most overdue first), done tasks last
+  const sorted = displayTasks.slice().sort((a, b) => {
+    const ma = getTaskMeta(a, now);
+    const mb = getTaskMeta(b, now);
+    const oa = urgencyOrder[ma.colorCls] ?? 5;
+    const ob = urgencyOrder[mb.colorCls] ?? 5;
+    if (oa !== ob) return oa - ob;
+    // Within same urgency, oldest first
+    return a.createdAt - b.createdAt;
+  });
+
+  container.innerHTML = sorted.map(t => {
     const { colorCls, statusLbl, timerTxt, progPct } = getTaskMeta(t, now);
     const cat    = catById(t.category);
     const isDone = t.status === 'done';
-    if (isDone) done++; else active++;
+    const safeKey  = esc(t._key);
+    const safeName = esc(t.name);
+    const isSelected = selectedTasks.has(t._key);
+
     const threshLine  = isDone ? '' : `<div class="card-thresh">⏱ Y:${cat.yellow}d · O:${cat.orange}d · R:${cat.red}d</div>`;
     const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
     const dueColor    = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
     const dueLine     = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : '';
     const timeLine    = t.timeSpent != null ? `<div class="card-time-spent">⏲ TIME SPENT: ${fmtHours(t.timeSpent)}</div>` : '';
+    const expLine     = t.expense != null ? `<div class="card-expense">💰 $${Number(t.expense).toFixed(2)}${t.taxDeductible ? ' · TAX DED.' : ''}</div>` : '';
     const notesLine   = (showCardNotes && t.notes) ? `<div class="card-notes">${esc(t.notes)}</div>` : '';
-    const safeKey     = esc(t._key);
-    const safeName    = esc(t.name);
+
+    const checkboxHtml = bulkMode
+      ? `<input type="checkbox" class="card-checkbox" ${isSelected ? 'checked' : ''} onchange="toggleTaskSelect('${safeKey}',this.checked)">`
+      : '';
+    const idBadge = `<div class="card-select-wrap">${checkboxHtml}<span class="card-id">${esc(t.id)}</span></div>`;
+
+    const actionBtn = isDone
+      ? `<button class="btn-reopen"  onclick="markPending('${safeKey}')">↩ REOPEN</button>`
+      : `<button class="btn-done"    onclick="markDone('${safeKey}')">✓ MARK DONE</button>`;
+
     return `
-<div class="card ${colorCls}">
+<div class="card ${colorCls}${isSelected ? ' selected-task' : ''}">
   <div class="card-header">
-    <span class="card-id">${esc(t.id)}</span>
+    ${idBadge}
     <span class="card-category" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span>
   </div>
   <div class="card-name">${safeName}</div>
   <div class="card-assignee">${esc(t.assignee)}</div>
   <div class="card-timer ${colorCls}">${timerTxt}</div>
-  ${startedLine}${dueLine}${threshLine}${timeLine}
+  ${startedLine}${dueLine}${threshLine}${timeLine}${expLine}
   <div class="card-status">${statusLbl}</div>
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
   ${notesLine}<div class="card-actions">
-    <button class="btn-done"   onclick="markDone('${safeKey}')">✓ MARK DONE</button>
+    ${actionBtn}
     <button class="btn-edit"   onclick="openEditTask('${safeKey}')">✎ EDIT</button>
     <button class="btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button>
   </div>
@@ -1672,17 +2034,27 @@ function renderTable() {
   const th = (col, label) =>
     `<th class="tbl-sort-th${tableSortCol === col ? ' tbl-sort-active' : ''}" onclick="sortTable('${col}')">${label}${arrow(col)}</th>`;
 
-  const rows = withMeta.map(({ t, cat, meta }) => {
+  // Count all tasks and filter for display
+  tasks.forEach(t => { if (t.status === 'done') done++; else active++; });
+  const displayMeta = showDone ? withMeta : withMeta.filter(({ t }) => t.status !== 'done');
+
+  const rows = displayMeta.map(({ t, cat, meta }) => {
     const { colorCls, statusLbl, timerTxt } = meta;
-    const isDone = t.status === 'done';
-    if (isDone) done++; else active++;
+    const isDone   = t.status === 'done';
     const safeKey  = esc(t._key);
     const safeName = esc(t.name);
-    const doneBtn  = isDone ? '' :
-      `<button class="tbl-btn-done" onclick="markDone('${safeKey}')">✓ DONE</button>`;
+    const isSelected = selectedTasks.has(t._key);
+    const cbCell   = bulkMode
+      ? `<td><input type="checkbox" class="tbl-checkbox" ${isSelected ? 'checked' : ''} onchange="toggleTaskSelect('${safeKey}',this.checked)"></td>`
+      : '';
+    const statusBtn = isDone
+      ? `<button class="tbl-btn-reopen" onclick="markPending('${safeKey}')">↩ REOPEN</button>`
+      : `<button class="tbl-btn-done"   onclick="markDone('${safeKey}')">✓ DONE</button>`;
     const timeCell = t.timeSpent != null ? fmtHours(t.timeSpent) : '—';
+    const expCell  = t.expense   != null ? `$${Number(t.expense).toFixed(2)}${t.taxDeductible ? ' ✓' : ''}` : '—';
     return `
-<tr class="tr-${colorCls}">
+<tr class="tr-${colorCls}${isSelected ? ' selected-task' : ''}">
+  ${cbCell}
   <td class="td-task">${safeName}</td>
   <td class="td-muted">${esc(t.assignee)}</td>
   <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
@@ -1690,13 +2062,15 @@ function renderTable() {
   <td class="td-timer ${colorCls}">${timerTxt}</td>
   <td class="td-muted">${t.dueAt ? fmtDate(t.dueAt) : '—'}</td>
   <td class="td-muted">${timeCell}</td>
-  <td><div class="tbl-actions">${doneBtn}<button class="tbl-btn-edit" onclick="openEditTask('${safeKey}')">✎ EDIT</button><button class="tbl-btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button></div></td>
+  <td class="td-muted">${expCell}</td>
+  <td><div class="tbl-actions">${statusBtn}<button class="tbl-btn-edit" onclick="openEditTask('${safeKey}')">✎ EDIT</button><button class="tbl-btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button></div></td>
 </tr>`;
   }).join('');
 
+  const cbHeader = bulkMode ? '<th style="width:30px"></th>' : '';
   container.innerHTML = `
 <table class="task-table">
-  <thead><tr>${th('name','TASK')}${th('assignee','ASSIGNEE')}${th('category','CATEGORY')}${th('status','STATUS')}${th('timer','PENDING TIME')}${th('due','DUE DATE')}<th>TIME SPENT</th><th>ACTIONS</th></tr></thead>
+  <thead><tr>${cbHeader}${th('name','TASK')}${th('assignee','ASSIGNEE')}${th('category','CATEGORY')}${th('status','STATUS')}${th('timer','PENDING TIME')}${th('due','DUE DATE')}<th>TIME SPENT</th><th>EXPENSE</th><th>ACTIONS</th></tr></thead>
   <tbody>${rows}</tbody>
 </table>`;
   document.getElementById('taskCount').textContent = `${active} ACTIVE · ${done} DONE`;
@@ -1713,28 +2087,34 @@ function renderCategoryBoard() {
   const now = Date.now();
   let active = 0, done = 0;
   tasks.forEach(t => { if (t.status === 'done') done++; else active++; });
-  const activeTasks = tasks.filter(t => t.status !== 'done');
+  // Category board always shows active tasks only (done tasks optionally shown if showDone)
+  const displayTasks = showDone ? tasks : tasks.filter(t => t.status !== 'done');
 
   const cols = cfg.categories.map(cat => {
-    const catTasks = activeTasks.filter(t => t.category === cat.id);
+    const catTasks = displayTasks.filter(t => t.category === cat.id);
     const cards = catTasks.map(t => {
       const { colorCls, statusLbl, timerTxt, progPct } = getTaskMeta(t, now);
+      const isDone = t.status === 'done';
       const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
       const dueColor = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
       const dueLine = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : '';
       const timeLine = t.timeSpent != null ? `<div class="card-time-spent">⏲ TIME SPENT: ${fmtHours(t.timeSpent)}</div>` : '';
+      const expLine  = t.expense  != null ? `<div class="card-expense">💰 $${Number(t.expense).toFixed(2)}${t.taxDeductible ? ' · TAX DED.' : ''}</div>` : '';
       const notesLine = (showCardNotes && t.notes) ? `<div class="card-notes">${esc(t.notes)}</div>` : '';
       const safeKey = esc(t._key);
       const safeName = esc(t.name);
-      return `<div class="card ${colorCls}">
+      const actionBtn = isDone
+        ? `<button class="btn-reopen" onclick="markPending('${safeKey}')">↩ REOPEN</button>`
+        : `<button class="btn-done"   onclick="markDone('${safeKey}')">✓ MARK DONE</button>`;
+      return `<div class="card ${colorCls}" draggable="true" ondragstart="catDragStart('${safeKey}')">
   <div class="card-header"><span class="card-id">${esc(t.id)}</span><span class="card-assignee" style="font-size:0.63rem">${esc(t.assignee)}</span></div>
   <div class="card-name">${safeName}</div>
   <div class="card-timer ${colorCls}">${timerTxt}</div>
-  ${startedLine}${dueLine}${timeLine}
+  ${startedLine}${dueLine}${timeLine}${expLine}
   <div class="card-status">${statusLbl}</div>
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
   ${notesLine}<div class="card-actions">
-    <button class="btn-done" onclick="markDone('${safeKey}')">✓ MARK DONE</button>
+    ${actionBtn}
     <button class="btn-edit" onclick="openEditTask('${safeKey}')">✎ EDIT</button>
     <button class="btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button>
   </div>
@@ -1745,7 +2125,11 @@ function renderCategoryBoard() {
     <span style="color:${cat.color}">${esc(cat.label)}</span>
     <span class="cat-col-count">${catTasks.length}</span>
   </div>
-  <div class="cat-col-cards">${cards || `<div class="cat-col-empty">EMPTY</div>`}</div>
+  <div class="cat-col-cards"
+    ondragover="event.preventDefault()"
+    ondragenter="this.classList.add('drag-over')"
+    ondragleave="this.classList.remove('drag-over')"
+    ondrop="catDrop('${esc(cat.id)}',this)">${cards || `<div class="cat-col-empty">EMPTY — DROP HERE</div>`}</div>
 </div>`;
   }).join('');
 
@@ -1771,6 +2155,8 @@ function openSettings() {
   tmpAssignees = JSON.parse(JSON.stringify(cfg.assignees || []));
   buildAssigneeList();
   buildCatList();
+  // Pre-fill subtitle
+  document.getElementById('subtitleInput').value = cfg.subtitle || DEFAULTS.subtitle;
   // Pre-fill workspace rename field
   const wsInput = document.getElementById('wsRenameInput');
   if (wsInput && currentWsId && userWsList[currentWsId]) {
@@ -1818,6 +2204,8 @@ function saveSettings() {
   }
   cfg.categories = cats;
   cfg.assignees  = tmpAssignees.map(a => a.trim()).filter(Boolean);
+  cfg.subtitle   = document.getElementById('subtitleInput').value.trim().toUpperCase() || DEFAULTS.subtitle;
+  applySubtitle();
   pushSettingsToCloud();
   refreshDatalist();
   closeSettings();
@@ -1956,10 +2344,11 @@ function renderWeekView() {
     return `<div class="cal-week-col-name${isToday?' today-col':''}">${dayNames[i]} ${d.getDate()}</div>`;
   }).join('');
 
-  // All-day events row
+  // All-day events row (includes multi-day events that span this day)
   const allDayCols = days.map(d => {
     const dayStart = d.getTime();
-    const allDayEvts = events.filter(e => e.allDay && e.startAt >= dayStart && e.startAt < dayStart + 86400000);
+    const dayEnd   = dayStart + 86400000;
+    const allDayEvts = events.filter(e => e.allDay && e.startAt < dayEnd && (e.endAt || e.startAt + 86400000) > dayStart);
     const chips = allDayEvts.map(ev => {
       const color = catById(ev.category).color;
       return `<div class="cal-allday-chip" style="background:${color}44;color:${color}"
@@ -2025,7 +2414,8 @@ function renderDayView() {
   const isoDate  = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
   const HOUR_H   = 60;
 
-  const allDayEvts = events.filter(e => e.allDay && e.startAt >= dayStart && e.startAt < dayStart + 86400000);
+  const dayEnd2    = dayStart + 86400000;
+  const allDayEvts = events.filter(e => e.allDay && e.startAt < dayEnd2 && (e.endAt || e.startAt + 86400000) > dayStart);
   const allDayChips = allDayEvts.map(ev => {
     const color = catById(ev.category).color;
     return `<div class="cal-allday-chip" style="background:${color}44;color:${color};display:inline-block;margin-right:4px;margin-bottom:2px;padding:2px 8px;border-radius:3px;font-size:0.7rem;cursor:pointer"
@@ -2114,22 +2504,26 @@ function openAddEvent(prefillDateISO, prefillHour) {
   editingEventKey = null;
   document.getElementById('eventModalTitle').textContent = '+ ADD EVENT';
   document.getElementById('btnEventDelete').classList.add('hidden');
+  document.getElementById('btnEventCopy').classList.add('hidden');
   document.getElementById('evTitle').value = '';
   document.getElementById('evDesc').value  = '';
   document.getElementById('evAllDay').checked = false;
   toggleEventAllDay();
 
   const now = new Date();
+  const today = toLocalDate(Date.now());
   if (prefillDateISO) {
     const h = prefillHour !== undefined ? prefillHour : now.getHours();
-    document.getElementById('evStart').value = `${prefillDateISO}T${pad2(h)}:00`;
-    document.getElementById('evEnd').value   = `${prefillDateISO}T${pad2(h+1<=23?h+1:h)}:${h+1>23?'59':'00'}`;
-    document.getElementById('evDate').value  = prefillDateISO;
+    document.getElementById('evStart').value    = `${prefillDateISO}T${pad2(h)}:00`;
+    document.getElementById('evEnd').value      = `${prefillDateISO}T${pad2(h+1<=23?h+1:h)}:${h+1>23?'59':'00'}`;
+    document.getElementById('evDateStart').value = prefillDateISO;
+    document.getElementById('evDateEnd').value   = prefillDateISO;
   } else {
-    document.getElementById('evStart').value = toLocalDT(Date.now());
+    document.getElementById('evStart').value    = toLocalDT(Date.now());
     const endD = new Date(Date.now() + 3600000);
-    document.getElementById('evEnd').value   = toLocalDT(endD);
-    document.getElementById('evDate').value  = toLocalDate(Date.now());
+    document.getElementById('evEnd').value      = toLocalDT(endD);
+    document.getElementById('evDateStart').value = today;
+    document.getElementById('evDateEnd').value   = today;
   }
 
   buildEventCategorySelect();
@@ -2153,13 +2547,17 @@ function openEditEvent(key, e) {
   editingEventKey = key;
   document.getElementById('eventModalTitle').textContent = 'EDIT EVENT';
   document.getElementById('btnEventDelete').classList.remove('hidden');
+  document.getElementById('btnEventCopy').classList.remove('hidden');
   document.getElementById('evTitle').value = ev.title || '';
   document.getElementById('evDesc').value  = ev.description || '';
   document.getElementById('evAllDay').checked = !!ev.allDay;
   toggleEventAllDay();
 
   if (ev.allDay) {
-    document.getElementById('evDate').value = toLocalDate(ev.startAt);
+    document.getElementById('evDateStart').value = toLocalDate(ev.startAt);
+    // endAt is stored as exclusive day end; show last day inclusive
+    const evEndTs = ev.endAt ? ev.endAt - 86400000 : ev.startAt;
+    document.getElementById('evDateEnd').value = toLocalDate(Math.max(evEndTs, ev.startAt));
   } else {
     document.getElementById('evStart').value = toLocalDT(ev.startAt);
     document.getElementById('evEnd').value   = toLocalDT(ev.endAt || ev.startAt + 3600000);
@@ -2182,10 +2580,16 @@ function saveEvent() {
   let startAt, endAt;
 
   if (allDay) {
-    const dateVal = document.getElementById('evDate').value;
-    if (!dateVal) { alert('Please pick a date.'); return; }
-    startAt = new Date(dateVal + 'T00:00:00').getTime();
-    endAt   = startAt + 86400000;
+    const startDateVal = document.getElementById('evDateStart').value;
+    const endDateVal   = document.getElementById('evDateEnd').value;
+    if (!startDateVal) { alert('Please pick a start date.'); return; }
+    startAt = new Date(startDateVal + 'T00:00:00').getTime();
+    // endAt is exclusive: last day + 1 day
+    if (endDateVal && endDateVal >= startDateVal) {
+      endAt = new Date(endDateVal + 'T00:00:00').getTime() + 86400000;
+    } else {
+      endAt = startAt + 86400000; // single-day fallback
+    }
   } else {
     const sv = document.getElementById('evStart').value;
     const ev = document.getElementById('evEnd').value;
@@ -2213,6 +2617,19 @@ function saveEvent() {
   closeEventModal();
 }
 
+function copyEvent() {
+  if (!editingEventKey) return;
+  const src = events.find(e => e._key === editingEventKey);
+  if (!src) return;
+  eventsRef.push({
+    title: src.title + ' (COPY)',
+    description: src.description || '',
+    allDay: src.allDay, startAt: src.startAt,
+    endAt: src.endAt, category: src.category
+  });
+  closeEventModal();
+}
+
 function deleteEditingEvent() {
   if (!editingEventKey) return;
   if (!confirm('Delete this event? This cannot be undone.')) return;
@@ -2226,6 +2643,8 @@ document.getElementById('confirmOverlay').addEventListener('click', function(e) 
 document.getElementById('eventOverlay').addEventListener('click', function(e) { if (e.target === this) closeEventModal(); });
 document.getElementById('createWsOverlay').addEventListener('click', function(e) { if (e.target === this) closeCreateWs(); });
 document.getElementById('editTaskOverlay').addEventListener('click', function(e) { if (e.target === this) closeEditTask(); });
+document.getElementById('expenseReportOverlay').addEventListener('click', function(e) { if (e.target === this) closeExpenseReport(); });
+document.getElementById('timeReportOverlay').addEventListener('click', function(e) { if (e.target === this) closeTimeReport(); });
 
 // Close workspace dropdown when clicking outside it
 document.addEventListener('click', function(e) {
