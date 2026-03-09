@@ -26,6 +26,12 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .settings-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); cursor: pointer; padding: 7px 12px; font-size: 1rem; border-radius: 4px; transition: background 0.2s; }
 .settings-btn:hover { background: var(--accent); }
 
+/* STATUS BAR */
+.status-bar { background: #0a0a0a; border-bottom: 1px solid var(--border); padding: 4px 20px; font-size: 0.65rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.status-dot.connected { background: var(--green); animation: pulse-green 2s ease-in-out infinite; }
+@keyframes pulse-green { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
 /* CONTROLS */
 .controls { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .controls input, .controls select { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none; }
@@ -79,7 +85,6 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .modal-title { font-size: 1rem; letter-spacing: 3px; color: var(--accent); }
 .modal-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.2rem; line-height: 1; }
 .modal-close:hover { color: var(--text); }
-
 .section { margin-bottom: 26px; }
 .section h3 { font-size: 0.7rem; letter-spacing: 3px; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; }
 
@@ -108,12 +113,10 @@ input[type="range"].red { background: var(--red); }
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: white; cursor: pointer; }
 .thresh-val { font-size: 0.72rem; color: var(--text); text-align: right; }
 .thresh-note { font-size: 0.68rem; color: var(--muted); margin-top: 10px; }
-
 .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding-top: 16px; border-top: 1px solid var(--border); }
 .btn-cancel { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 8px 18px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; }
 .btn-save { background: var(--accent); color: white; border: none; padding: 8px 18px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; letter-spacing: 1px; }
 
-/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 </style>
 </head>
@@ -122,14 +125,19 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
 <header class="header">
   <div>
     <div class="logo">TASKQ</div>
-    <div class="logo-sub">KITCHEN DISPLAY SYSTEM</div>
+    <div class="logo-sub">KITCHEN DISPLAY SYSTEM · LIVE SYNC</div>
   </div>
   <div class="header-right">
     <div class="legend" id="legend"></div>
     <div class="clock" id="clock">--:--:--</div>
-    <button class="settings-btn" onclick="openSettings()" title="Settings">⚙ SETTINGS</button>
+    <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
 </header>
+
+<div class="status-bar">
+  <div class="status-dot" id="statusDot"></div>
+  <span id="statusText">CONNECTING...</span>
+</div>
 
 <div class="controls">
   <input class="input-task" id="iTask" type="text" placeholder="TASK DESCRIPTION..." maxlength="80" onkeydown="if(event.key==='Enter')addTask()">
@@ -140,22 +148,22 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
   <div class="task-count" id="taskCount">0 ACTIVE · 0 DONE</div>
 </div>
 
-<div class="board" id="board"></div>
+<div class="board" id="board">
+  <div class="empty-state">CONNECTING TO LIVE DATABASE...<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">PLEASE WAIT</span></div>
+</div>
 
 <!-- SETTINGS MODAL -->
 <div class="overlay hidden" id="overlay">
-  <div class="modal" id="modal">
+  <div class="modal">
     <div class="modal-header">
       <div class="modal-title">⚙ TASKQ SETTINGS</div>
       <button class="modal-close" onclick="closeSettings()">✕</button>
     </div>
-
     <div class="section">
       <h3>Categories</h3>
       <div class="cat-list" id="catList"></div>
       <button class="btn-add-cat" onclick="addCatRow()">+ ADD CATEGORY</button>
     </div>
-
     <div class="section">
       <h3>Time Thresholds</h3>
       <div class="thresh-grid">
@@ -175,9 +183,8 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
           <span class="thresh-val" id="lRed">30 min</span>
         </div>
       </div>
-      <p class="thresh-note">GREEN spans from 0 to the YELLOW threshold. Thresholds must be in ascending order.</p>
+      <p class="thresh-note">GREEN spans 0 to the YELLOW threshold. Thresholds must be in ascending order.</p>
     </div>
-
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeSettings()">CANCEL</button>
       <button class="btn-save" onclick="saveSettings()">SAVE SETTINGS</button>
@@ -185,8 +192,27 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14p
   </div>
 </div>
 
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
 <script>
-// ── DEFAULTS ──────────────────────────────────────────────────────────────────
+// ── FIREBASE CONFIG ───────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDPRDdAtEL1LyI4rRG2zmBYu2yZZeLV4CI",
+  authDomain: "taskq-80ce7.firebaseapp.com",
+  databaseURL: "https://taskq-80ce7-default-rtdb.firebaseio.com",
+  projectId: "taskq-80ce7",
+  storageBucket: "taskq-80ce7.firebasestorage.app",
+  messagingSenderId: "614008966022",
+  appId: "1:614008966022:web:0af7e103d26ac539caba07"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const tasksRef = db.ref('tasks');
+
+// ── DEFAULT SETTINGS (stored locally per browser) ────────────────────────────
 const DEFAULTS = {
   categories: [
     { id: 'dev',     label: 'DEV',     color: '#4a9eff' },
@@ -200,27 +226,52 @@ const DEFAULTS = {
 };
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let cfg   = load('taskq_settings', DEFAULTS);
-let tasks = load('taskq_tasks', []);
-let seq   = tasks.length ? Math.max(...tasks.map(t => +t.id.split('-')[1] || 0)) : 0;
-// Temp categories edited inside modal (not committed until Save)
+let cfg   = loadLocal('taskq_settings', DEFAULTS);
+let tasks = []; // populated by Firebase listener
 let tmpCats = [];
 
-// ── STORAGE ───────────────────────────────────────────────────────────────────
-function load(key, fallback) {
+// ── LOCAL STORAGE (settings only) ────────────────────────────────────────────
+function loadLocal(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key)) || JSON.parse(JSON.stringify(fallback)); }
   catch { return JSON.parse(JSON.stringify(fallback)); }
 }
-function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+function saveLocal(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
-// ── TASKS ─────────────────────────────────────────────────────────────────────
+// ── FIREBASE: REAL-TIME LISTENER ─────────────────────────────────────────────
+tasksRef.on('value', snapshot => {
+  tasks = [];
+  snapshot.forEach(child => {
+    tasks.push({ _key: child.key, ...child.val() });
+  });
+  tasks.sort((a, b) => a.createdAt - b.createdAt);
+  render();
+}, err => {
+  console.error('Firebase error:', err);
+  setStatus(false, 'CONNECTION ERROR');
+});
+
+// Connection status
+db.ref('.info/connected').on('value', snap => {
+  setStatus(snap.val() === true, snap.val() ? 'LIVE · ALL CHANGES SYNC IN REAL TIME' : 'RECONNECTING...');
+});
+
+function setStatus(connected, text) {
+  document.getElementById('statusDot').className = 'status-dot' + (connected ? ' connected' : '');
+  document.getElementById('statusText').textContent = text;
+}
+
+// ── TASK OPERATIONS (write to Firebase) ──────────────────────────────────────
 function addTask() {
   const el = document.getElementById('iTask');
   const name = el.value.trim();
   if (!name) { el.focus(); return; }
-  seq++;
-  tasks.push({
-    id: 'T-' + String(seq).padStart(3,'0'),
+
+  // Display ID based on current count + 1
+  const displayNum = tasks.length + 1;
+  const displayId  = 'T-' + String(displayNum).padStart(3, '0');
+
+  tasksRef.push({
+    id: displayId,
     name,
     assignee: document.getElementById('iAssignee').value.trim() || '—',
     category: document.getElementById('iCategory').value,
@@ -228,27 +279,21 @@ function addTask() {
     status: 'active',
     doneAt: null
   });
-  save('taskq_tasks', tasks);
+
   el.value = '';
   el.focus();
-  render();
 }
 
-function markDone(id) {
-  const t = tasks.find(t => t.id === id);
-  if (t) { t.status = 'done'; t.doneAt = Date.now(); save('taskq_tasks', tasks); render(); }
+function markDone(key) {
+  tasksRef.child(key).update({ status: 'done', doneAt: Date.now() });
 }
 
-function removeTask(id) {
-  tasks = tasks.filter(t => t.id !== id);
-  save('taskq_tasks', tasks);
-  render();
+function removeTask(key) {
+  tasksRef.child(key).remove();
 }
 
 function clearDone() {
-  tasks = tasks.filter(t => t.status !== 'done');
-  save('taskq_tasks', tasks);
-  render();
+  tasks.filter(t => t.status === 'done').forEach(t => tasksRef.child(t._key).remove());
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -277,7 +322,6 @@ function fmt(secs) {
 }
 
 function pct(secs) { return Math.min(100, (secs / cfg.thresholds.red) * 100); }
-
 const FILL = { green:'#00c853', yellow:'#ffd600', orange:'#ff6d00', red:'#d50000', done:'#2e7d32' };
 
 function catById(id) {
@@ -290,7 +334,7 @@ function esc(s) {
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function render() {
-  // Category dropdown — preserve current selection
+  // Category dropdown
   const sel = document.getElementById('iCategory');
   const cur = sel.value;
   sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
@@ -308,7 +352,7 @@ function render() {
   // Board
   const board = document.getElementById('board');
   if (!tasks.length) {
-    board.innerHTML = `<div class="empty-state">NO TASKS IN QUEUE<br><span style="font-size:.72rem;color:#444;margin-top:8px;display:block">ENTER A TASK ABOVE TO GET STARTED</span></div>`;
+    board.innerHTML = `<div class="empty-state">NO TASKS IN QUEUE<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">ENTER A TASK ABOVE TO GET STARTED</span></div>`;
     document.getElementById('taskCount').textContent = '0 ACTIVE · 0 DONE';
     return;
   }
@@ -327,7 +371,7 @@ function render() {
     return `
 <div class="card ${cls}">
   <div class="card-header">
-    <span class="card-id">${esc(t.id)}</span>
+    <span class="card-id">${esc(t.id || '—')}</span>
     <span class="card-category" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span>
   </div>
   <div class="card-name">${esc(t.name)}</div>
@@ -336,8 +380,8 @@ function render() {
   <div class="card-status">${statusLabel(elapsed, isDone)}</div>
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[cls]}"></div></div>
   <div class="card-actions">
-    <button class="btn-done" onclick="markDone('${t.id}')">✓ MARK DONE</button>
-    <button class="btn-remove" onclick="removeTask('${t.id}')">✕ REMOVE</button>
+    <button class="btn-done" onclick="markDone('${t._key}')">✓ MARK DONE</button>
+    <button class="btn-remove" onclick="removeTask('${t._key}')">✕ REMOVE</button>
   </div>
 </div>`;
   }).join('');
@@ -347,8 +391,7 @@ function render() {
 
 // ── CLOCK ─────────────────────────────────────────────────────────────────────
 function tick() {
-  document.getElementById('clock').textContent =
-    new Date().toLocaleTimeString('en-US', { hour12: false });
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
   render();
 }
 setInterval(tick, 1000);
@@ -366,9 +409,7 @@ function openSettings() {
   document.getElementById('overlay').classList.remove('hidden');
 }
 
-function closeSettings() {
-  document.getElementById('overlay').classList.add('hidden');
-}
+function closeSettings() { document.getElementById('overlay').classList.add('hidden'); }
 
 function buildCatList() {
   document.getElementById('catList').innerHTML = tmpCats.map((c, i) => `
@@ -397,7 +438,6 @@ function updateLabel(which) {
 }
 
 function saveSettings() {
-  // Commit temp categories (filter blanks)
   const cats = tmpCats.filter(c => c.label.trim());
   if (!cats.length) { alert('Please add at least one category.'); return; }
 
@@ -412,12 +452,11 @@ function saveSettings() {
 
   cfg.categories = cats;
   cfg.thresholds = { yellow, orange, red };
-  save('taskq_settings', cfg);
+  saveLocal('taskq_settings', cfg);
   closeSettings();
   render();
 }
 
-// Close modal when clicking outside
 document.getElementById('overlay').addEventListener('click', function(e) {
   if (e.target === this) closeSettings();
 });
