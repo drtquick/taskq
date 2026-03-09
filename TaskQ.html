@@ -68,7 +68,9 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .cal-page.hidden { display: none; }
 
 /* CONTROLS */
-.controls { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
+.controls { background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.controls-row1 { padding: 10px 20px 6px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.controls-row2 { padding: 5px 20px 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; border-top: 1px solid var(--border); }
 .controls input[type="text"],
 .controls input[type="datetime-local"],
 .controls select {
@@ -460,6 +462,9 @@ input[type="date"] { color-scheme: dark; }
 .btn-bulk-toggle.bulk-on { border-color: var(--yellow); color: var(--yellow); background: rgba(255,214,0,0.1); }
 .btn-report  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
 .btn-report:hover { border-color: var(--accent); color: var(--accent); }
+.btn-urgent { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-urgent:hover { border-color: var(--red); color: var(--red); }
+.btn-urgent.urgent-on { background: rgba(213,0,0,0.12); border-color: var(--red); color: var(--red); }
 
 /* BULK ACTION BAR */
 .bulk-bar { background: rgba(255,214,0,0.07); border-bottom: 1px solid var(--yellow); padding: 7px 20px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
@@ -487,6 +492,21 @@ input[type="date"] { color-scheme: dark; }
 
 /* EXPENSE DISPLAY ON CARDS */
 .card-expense { font-size: 0.6rem; color: var(--muted); letter-spacing: 1px; margin-bottom: 3px; }
+
+/* ITEMIZED EXPENSE EDITOR IN MODAL */
+.expense-items { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
+.expense-item-row { display: grid; grid-template-columns: 1fr 76px auto auto; gap: 5px; align-items: center; }
+.expense-item-row input[type="text"]   { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 6px 8px; font-size: 0.78rem; border-radius: 4px; outline: none; }
+.expense-item-row input[type="number"] { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 6px 8px; font-size: 0.78rem; border-radius: 4px; outline: none; text-align: right; -moz-appearance: textfield; }
+.expense-item-row input[type="number"]::-webkit-outer-spin-button,
+.expense-item-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.expense-item-row input[type="text"]:focus, .expense-item-row input[type="number"]:focus { border-color: var(--accent); }
+.expense-item-tax { display: flex; align-items: center; gap: 4px; font-size: 0.68rem; color: var(--muted); white-space: nowrap; cursor: pointer; }
+.expense-item-tax input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; accent-color: var(--green); flex-shrink: 0; }
+.btn-rm-expense { background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 0.72rem; }
+.btn-rm-expense:hover { border-color: var(--red); color: var(--red); }
+.btn-add-expense { background: var(--surface2); border: 1px dashed var(--border); color: var(--muted); cursor: pointer; padding: 6px; border-radius: 4px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; width: 100%; }
+.btn-add-expense:hover { border-color: var(--green); color: var(--green); }
 
 /* REPORT MODAL */
 .report-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 350; display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -587,7 +607,8 @@ input[type="date"] { color-scheme: dark; }
   .page-tab { padding: 8px 14px; font-size: 0.68rem; letter-spacing: 1px; min-height: 40px; }
 
   /* ── TASK CONTROLS ── */
-  .controls { padding: 8px 10px; gap: 6px; }
+  .controls-row1 { padding: 8px 10px 4px; gap: 6px; }
+  .controls-row2 { padding: 4px 10px 6px; gap: 5px; }
   /* Task name goes full width first */
   .input-task { flex: 1 1 100%; min-width: 0; order: -1; }
   /* Assignee + category share a row */
@@ -723,7 +744,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v0.9</span>
+    <span class="beta-badge">β v1.0</span>
     <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
 </header>
@@ -744,27 +765,34 @@ input[type="date"] { color-scheme: dark; }
 <!-- TASKS PAGE -->
 <div class="tasks-page" id="tasksPage">
   <div class="controls">
-    <input class="input-task" id="iTask" type="text" placeholder="TASK DESCRIPTION..." maxlength="80" onkeydown="if(event.key==='Enter')addTask()">
-    <input class="input-assignee" id="iAssignee" type="text" placeholder="ASSIGNEE" maxlength="30" list="assigneeList" autocomplete="off">
-    <select class="input-category" id="iCategory"></select>
-    <button class="btn btn-time" id="btnPastStart" onclick="togglePastStart()" title="Set a past start date/time">📅 PAST START</button>
-    <input class="input-past" id="iPastStart" type="datetime-local" style="display:none">
-    <button class="btn btn-time" id="btnDueDate" onclick="toggleDueDate()" title="Set a future due date">🗓 DUE DATE</button>
-    <input class="input-due" id="iDueDate" type="datetime-local" style="display:none">
-    <button class="btn btn-add" onclick="addTask()">+ ADD TASK</button>
-    <button class="btn btn-clear" onclick="clearDone()">CLEAR DONE</button>
-    <button class="btn btn-print no-print" onclick="window.print()" title="Print current view">🖨 PRINT</button>
-    <button class="btn btn-notes-toggle" id="btnNotesToggle" onclick="toggleCardNotes()" title="Show/hide notes on cards">📝 NOTES</button>
-    <button class="btn btn-show-done" id="btnShowDone" onclick="toggleShowDone()" title="Show/hide completed tasks">👁 SHOW DONE</button>
-    <button class="btn btn-bulk-toggle" id="btnBulk" onclick="toggleBulkMode()" title="Select multiple tasks for bulk actions">☑ BULK</button>
-    <button class="btn btn-report" onclick="openExpenseReport()" title="Expense report">💰 EXPENSES</button>
-    <button class="btn btn-report" onclick="openTimeReport()" title="Time log report">⏱ TIME LOG</button>
-    <div class="view-toggle">
-      <button class="btn-view active" id="btnBoard" onclick="setView('board')">🔲 BOARD</button>
-      <button class="btn-view" id="btnTable" onclick="setView('table')">📋 TABLE</button>
-      <button class="btn-view" id="btnCategory" onclick="setView('category')">🏷 CATEGORY</button>
+    <!-- ROW 1: task creation -->
+    <div class="controls-row1">
+      <input class="input-task" id="iTask" type="text" placeholder="TASK DESCRIPTION..." maxlength="80" onkeydown="if(event.key==='Enter')addTask()">
+      <input class="input-assignee" id="iAssignee" type="text" placeholder="ASSIGNEE" maxlength="30" list="assigneeList" autocomplete="off">
+      <select class="input-category" id="iCategory"></select>
+      <button class="btn btn-time" id="btnPastStart" onclick="togglePastStart()" title="Set a past start date/time">📅 PAST START</button>
+      <input class="input-past" id="iPastStart" type="datetime-local" style="display:none">
+      <button class="btn btn-time" id="btnDueDate" onclick="toggleDueDate()" title="Set a future due date">🗓 DUE DATE</button>
+      <input class="input-due" id="iDueDate" type="datetime-local" style="display:none">
+      <button class="btn btn-urgent" id="btnUrgent" onclick="toggleUrgentMode()" title="Mark new task as urgent (24h deadline)">⚡ URGENT</button>
+      <button class="btn btn-add" onclick="addTask()">+ ADD TASK</button>
+      <button class="btn btn-clear" onclick="clearDone()">CLEAR DONE</button>
+      <div class="task-count" id="taskCount">0 ACTIVE · 0 DONE</div>
     </div>
-    <div class="task-count" id="taskCount">0 ACTIVE · 0 DONE</div>
+    <!-- ROW 2: view controls -->
+    <div class="controls-row2">
+      <button class="btn btn-print no-print" onclick="window.print()" title="Print current view">🖨 PRINT</button>
+      <button class="btn btn-notes-toggle" id="btnNotesToggle" onclick="toggleCardNotes()" title="Show/hide notes on cards">📝 NOTES</button>
+      <button class="btn btn-show-done" id="btnShowDone" onclick="toggleShowDone()" title="Show/hide completed tasks">👁 SHOW DONE</button>
+      <button class="btn btn-bulk-toggle" id="btnBulk" onclick="toggleBulkMode()" title="Select multiple tasks for bulk actions">☑ BULK</button>
+      <button class="btn btn-report" onclick="openExpenseReport()" title="Expense report">💰 EXPENSES</button>
+      <button class="btn btn-report" onclick="openTimeReport()" title="Time log report">⏱ TIME LOG</button>
+      <div class="view-toggle">
+        <button class="btn-view active" id="btnBoard" onclick="setView('board')">🔲 BOARD</button>
+        <button class="btn-view" id="btnTable" onclick="setView('table')">📋 TABLE</button>
+        <button class="btn-view" id="btnCategory" onclick="setView('category')">🏷 CATEGORY</button>
+      </div>
+    </div>
   </div>
   <!-- BULK ACTION BAR -->
   <div class="bulk-bar hidden" id="bulkBar">
@@ -855,13 +883,14 @@ input[type="date"] { color-scheme: dark; }
       <label>TIME SPENT (HOURS — OPTIONAL)</label>
       <input type="number" id="etTimeSpent" min="0" step="0.25" placeholder="e.g. 1.5">
     </div>
-    <div class="edit-task-form-row">
-      <label>EXPENSE AMOUNT ($) — OPTIONAL</label>
-      <input type="number" id="etExpense" min="0" step="0.01" placeholder="e.g. 24.99">
-    </div>
     <div class="edit-task-toggle-row">
-      <input type="checkbox" id="etTaxDeductible">
-      <label for="etTaxDeductible">EXPENSE IS TAX DEDUCTIBLE</label>
+      <input type="checkbox" id="etUrgent">
+      <label for="etUrgent">⚡ URGENT — MUST COMPLETE WITHIN 24 HOURS</label>
+    </div>
+    <div class="edit-task-form-row">
+      <label>EXPENSES — OPTIONAL (DESCRIPTION · AMOUNT · TAX DED.)</label>
+      <div class="expense-items" id="etExpenseItems"></div>
+      <button class="btn-add-expense" onclick="addExpenseItemRow()">+ ADD EXPENSE ITEM</button>
     </div>
     <div class="edit-task-footer" style="justify-content:space-between">
       <button class="btn-edit-cancel" onclick="copyTask()">⎘ COPY TASK</button>
@@ -996,6 +1025,20 @@ input[type="date"] { color-scheme: dark; }
       <textarea id="evDesc" placeholder="Notes, details..."></textarea>
     </div>
     <div class="event-form-row">
+      <label>RECURRENCE</label>
+      <select id="evRecurrence" onchange="toggleEventRecurrence()" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font);padding:8px 12px;font-size:0.82rem;border-radius:4px;outline:none;">
+        <option value="none">NONE (ONE-TIME EVENT)</option>
+        <option value="daily">DAILY</option>
+        <option value="weekly">WEEKLY</option>
+        <option value="monthly">MONTHLY (SAME DATE)</option>
+        <option value="yearly">YEARLY (SAME DATE)</option>
+      </select>
+    </div>
+    <div id="evRecurEndRow" style="display:none" class="event-form-row">
+      <label>REPEAT UNTIL (OPTIONAL)</label>
+      <input type="date" id="evRecurEnd">
+    </div>
+    <div class="event-form-row">
       <label>CATEGORY</label>
       <select id="evCategory" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font);padding:8px 12px;font-size:0.82rem;border-radius:4px;outline:none;"></select>
     </div>
@@ -1095,6 +1138,8 @@ let showDone          = false;  // show completed tasks in board/table views
 let bulkMode          = false;  // bulk-selection mode active
 let selectedTasks     = new Set(); // keys of tasks selected in bulk mode
 let draggingTaskKey   = null;   // key of card being dragged in category board
+let urgentMode        = false;  // next task added will be marked urgent
+let tmpExpenseItems   = [];     // expense items being edited in modal
 let currentPage       = 'tasks';
 let calView           = 'month';
 let calDate           = new Date();
@@ -1494,15 +1539,19 @@ function addTask() {
   const assignee = document.getElementById('iAssignee').value.trim() || '—';
   saveAssigneeIfNew(assignee === '—' ? null : assignee);
 
+  const isUrgent = urgentMode;
   const num = tasks.length + 1;
   tasksRef.push({
     id: 'T-' + String(num).padStart(3, '0'),
     name, assignee,
     category: document.getElementById('iCategory').value,
     createdAt, dueAt,
+    urgent: isUrgent || null,
     status: 'active', doneAt: null
   });
 
+  // Reset urgent mode after adding
+  if (urgentMode) { urgentMode = false; document.getElementById('btnUrgent').classList.remove('urgent-on'); }
   el.value = '';
   el.focus();
 }
@@ -1537,8 +1586,18 @@ function markPending(key) {
 function toggleShowDone() {
   showDone = !showDone;
   const btn = document.getElementById('btnShowDone');
-  if (btn) btn.classList.toggle('done-on', showDone);
+  if (btn) {
+    btn.classList.toggle('done-on', showDone);
+    btn.title = showDone ? 'Currently showing completed tasks' : 'Show/hide completed tasks';
+  }
   render();
+}
+
+// ── URGENT MODE TOGGLE ────────────────────────────────────────────────────────
+function toggleUrgentMode() {
+  urgentMode = !urgentMode;
+  const btn = document.getElementById('btnUrgent');
+  if (btn) btn.classList.toggle('urgent-on', urgentMode);
 }
 
 // ── COPY TASK ─────────────────────────────────────────────────────────────────
@@ -1556,8 +1615,8 @@ function copyTask() {
     dueAt:        src.dueAt || null,
     notes:        src.notes || null,
     timeSpent:    null,
-    expense:      src.expense != null ? src.expense : null,
-    taxDeductible: src.taxDeductible || false,
+    urgent:       src.urgent || null,
+    expenseItems: src.expenseItems ? JSON.parse(JSON.stringify(src.expenseItems)) : null,
     status:       'active',
     doneAt:       null
   });
@@ -1623,8 +1682,9 @@ function bulkCopy() {
       name: src.name + ' (COPY)', assignee: src.assignee,
       category: src.category, createdAt: Date.now(),
       dueAt: src.dueAt || null, notes: src.notes || null,
-      timeSpent: null, expense: src.expense != null ? src.expense : null,
-      taxDeductible: src.taxDeductible || false,
+      timeSpent: null,
+      urgent: src.urgent || null,
+      expenseItems: src.expenseItems ? JSON.parse(JSON.stringify(src.expenseItems)) : null,
       status: 'active', doneAt: null
     });
   });
@@ -1644,33 +1704,58 @@ function catDrop(catId, colCards) {
 
 // ── EXPENSE REPORT ────────────────────────────────────────────────────────────
 function openExpenseReport() {
-  const expTasks = tasks.filter(t => t.expense != null && Number(t.expense) > 0)
+  const expTasks = tasks.filter(t => getTaskExpense(t))
     .sort((a, b) => (catById(a.category).label).localeCompare(catById(b.category).label));
   if (!expTasks.length) { alert('No tasks with expenses found.'); return; }
-  let total = 0, taxTotal = 0;
-  const rows = expTasks.map(t => {
+  let grandTotal = 0, grandTaxTotal = 0;
+  let rows = '';
+  expTasks.forEach(t => {
     const cat = catById(t.category);
-    const amt = Number(t.expense);
-    total += amt;
-    if (t.taxDeductible) taxTotal += amt;
-    return `<tr class="tr-${t.status === 'done' ? 'done' : 'green'}">
-      <td class="td-task">${esc(t.name)}</td>
-      <td class="td-muted">${esc(t.assignee)}</td>
+    const exp = getTaskExpense(t);
+    grandTotal += exp.total;
+    grandTaxTotal += exp.taxDed;
+    // Task header row
+    rows += `<tr class="tr-${t.status === 'done' ? 'done' : 'green'}" style="background:var(--surface2)">
+      <td class="td-task" colspan="3">${esc(t.name)} <span class="td-muted" style="font-weight:normal">— ${esc(t.assignee)}</span></td>
       <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
-      <td style="text-align:right;font-weight:bold">$${amt.toFixed(2)}</td>
-      <td style="text-align:center;color:var(--green)">${t.taxDeductible ? '✓' : ''}</td>
-      <td class="td-muted">${t.status === 'done' ? 'DONE' : 'ACTIVE'}</td>
+      <td class="td-muted" style="text-align:right">${t.status === 'done' ? 'DONE' : 'ACTIVE'}</td>
     </tr>`;
-  }).join('');
+    // Line item rows
+    if (t.expenseItems && t.expenseItems.length) {
+      t.expenseItems.forEach(item => {
+        const amt = Number(item.amount || 0);
+        rows += `<tr>
+          <td style="padding-left:24px;color:var(--muted);font-size:0.75rem">↳ ${esc(item.desc || '(no description)')}</td>
+          <td colspan="2"></td>
+          <td style="text-align:right;font-weight:bold">$${amt.toFixed(2)}</td>
+          <td style="text-align:center;color:var(--green);font-size:0.75rem">${item.taxDed ? '✓ TAX DED.' : ''}</td>
+        </tr>`;
+      });
+    } else {
+      // Old format — single row
+      rows += `<tr>
+        <td style="padding-left:24px;color:var(--muted);font-size:0.75rem">↳ (single expense)</td>
+        <td colspan="2"></td>
+        <td style="text-align:right;font-weight:bold">$${exp.total.toFixed(2)}</td>
+        <td style="text-align:center;color:var(--green);font-size:0.75rem">${exp.taxDed > 0 ? '✓ TAX DED.' : ''}</td>
+      </tr>`;
+    }
+    // Task total row
+    rows += `<tr style="border-bottom:2px solid var(--border)">
+      <td colspan="3" style="text-align:right;font-size:0.7rem;color:var(--muted);letter-spacing:1px">TASK TOTAL</td>
+      <td style="text-align:right;color:var(--accent);font-weight:bold">$${exp.total.toFixed(2)}</td>
+      <td></td>
+    </tr>`;
+  });
   document.getElementById('expenseReportContent').innerHTML = `
 <table class="task-table">
-  <thead><tr><th>TASK</th><th>ASSIGNEE</th><th>CATEGORY</th><th style="text-align:right">AMOUNT</th><th>TAX DED.</th><th>STATUS</th></tr></thead>
+  <thead><tr><th colspan="3">TASK / ITEM DESCRIPTION</th><th>CATEGORY</th><th style="text-align:right">AMOUNT</th><th></th></tr></thead>
   <tbody>${rows}</tbody>
 </table>
 <div class="report-totals">
-  <div>TOTAL EXPENSES: <strong style="color:var(--accent)">$${total.toFixed(2)}</strong></div>
-  <div>TAX DEDUCTIBLE: <strong style="color:var(--green)">$${taxTotal.toFixed(2)}</strong></div>
-  <div style="color:var(--muted)">NON-DEDUCTIBLE: <strong>$${(total - taxTotal).toFixed(2)}</strong></div>
+  <div>TOTAL EXPENSES: <strong style="color:var(--accent)">$${grandTotal.toFixed(2)}</strong></div>
+  <div>TAX DEDUCTIBLE: <strong style="color:var(--green)">$${grandTaxTotal.toFixed(2)}</strong></div>
+  <div style="color:var(--muted)">NON-DEDUCTIBLE: <strong>$${(grandTotal - grandTaxTotal).toFixed(2)}</strong></div>
 </div>`;
   document.getElementById('expenseReportOverlay').classList.remove('hidden');
 }
@@ -1754,9 +1839,18 @@ function openEditTask(key) {
   // Time spent
   document.getElementById('etTimeSpent').value = task.timeSpent != null ? task.timeSpent : '';
 
-  // Expense
-  document.getElementById('etExpense').value = task.expense != null ? task.expense : '';
-  document.getElementById('etTaxDeductible').checked = !!task.taxDeductible;
+  // Urgent
+  document.getElementById('etUrgent').checked = !!task.urgent;
+
+  // Expense items (new format) — with backward compat for old single expense
+  if (task.expenseItems && task.expenseItems.length) {
+    tmpExpenseItems = JSON.parse(JSON.stringify(task.expenseItems));
+  } else if (task.expense != null && Number(task.expense) > 0) {
+    tmpExpenseItems = [{ desc: '', amount: task.expense, taxDed: !!task.taxDeductible }];
+  } else {
+    tmpExpenseItems = [];
+  }
+  buildExpenseItemList();
 
   document.getElementById('editTaskOverlay').classList.remove('hidden');
   setTimeout(() => document.getElementById('etName').focus(), 50);
@@ -1806,6 +1900,10 @@ function saveEditTask() {
   const assignee = document.getElementById('etAssignee').value.trim() || '—';
   saveAssigneeIfNew(assignee === '—' ? null : assignee);
 
+  // Build expense items from tmpExpenseItems, filtering out empty
+  const expItems = tmpExpenseItems.filter(item => Number(item.amount) > 0)
+    .map(item => ({ desc: (item.desc || '').trim(), amount: Number(item.amount), taxDed: !!item.taxDed }));
+
   tasksRef.child(editingTaskKey).update({
     name,
     assignee,
@@ -1814,15 +1912,50 @@ function saveEditTask() {
     dueAt,
     notes: document.getElementById('etNotes').value.trim() || null,
     timeSpent: parseFloat(document.getElementById('etTimeSpent').value) || null,
-    expense:      parseFloat(document.getElementById('etExpense').value) || null,
-    taxDeductible: document.getElementById('etTaxDeductible').checked
+    urgent: document.getElementById('etUrgent').checked || null,
+    expenseItems: expItems.length ? expItems : null,
+    // Clear old format fields
+    expense: null,
+    taxDeductible: null
   });
   closeEditTask();
 }
 
 function closeEditTask() {
   editingTaskKey = null;
+  tmpExpenseItems = [];
   document.getElementById('editTaskOverlay').classList.add('hidden');
+}
+
+// ── EXPENSE ITEM MANAGEMENT ───────────────────────────────────────────────────
+function buildExpenseItemList() {
+  const container = document.getElementById('etExpenseItems');
+  if (!container) return;
+  if (!tmpExpenseItems.length) { container.innerHTML = ''; return; }
+  container.innerHTML = tmpExpenseItems.map((item, i) => `
+<div class="expense-item-row">
+  <input type="text" class="expense-item-desc" placeholder="DESCRIPTION" maxlength="80" value="${esc(item.desc || '')}"
+    oninput="tmpExpenseItems[${i}].desc=this.value">
+  <input type="number" class="expense-item-amt" placeholder="0.00" min="0" step="0.01" value="${item.amount || ''}"
+    oninput="tmpExpenseItems[${i}].amount=parseFloat(this.value)||0">
+  <label class="expense-item-tax">
+    <input type="checkbox" ${item.taxDed ? 'checked' : ''} onchange="tmpExpenseItems[${i}].taxDed=this.checked"> TAX DED.
+  </label>
+  <button class="btn-rm-expense" onclick="removeExpenseItemRow(${i})">✕</button>
+</div>`).join('');
+}
+
+function addExpenseItemRow() {
+  tmpExpenseItems.push({ desc: '', amount: 0, taxDed: false });
+  buildExpenseItemList();
+  // Focus the last description input
+  const inputs = document.querySelectorAll('#etExpenseItems .expense-item-desc');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+function removeExpenseItemRow(i) {
+  tmpExpenseItems.splice(i, 1);
+  buildExpenseItemList();
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -1857,6 +1990,26 @@ function fmtHours(h) {
 }
 const FILL = { green:'#00c853', yellow:'#ffd600', orange:'#ff6d00', red:'#d50000', done:'#2e7d32' };
 
+// ── EXPENSE HELPER ────────────────────────────────────────────────────────────
+// Returns { total, taxDed } or null. Handles both old (expense/taxDeductible) and new (expenseItems) format.
+function getTaskExpense(t) {
+  if (t.expenseItems && t.expenseItems.length) {
+    let total = 0, taxDed = 0;
+    t.expenseItems.forEach(item => {
+      const amt = Number(item.amount || 0);
+      total += amt;
+      if (item.taxDed) taxDed += amt;
+    });
+    return total > 0 ? { total, taxDed } : null;
+  }
+  // Backward compatibility with old single-expense fields
+  if (t.expense != null && Number(t.expense) > 0) {
+    const total = Number(t.expense);
+    return { total, taxDed: t.taxDeductible ? total : 0 };
+  }
+  return null;
+}
+
 // ── TASK META ─────────────────────────────────────────────────────────────────
 function getTaskMeta(t, now) {
   const isDone  = t.status === 'done';
@@ -1866,6 +2019,17 @@ function getTaskMeta(t, now) {
   if (isDone) {
     const dispSecs = ((t.doneAt || now) - t.createdAt) / 1000;
     return { colorCls: 'done', statusLbl: 'DONE', timerTxt: fmtDuration(dispSecs), progPct: 100 };
+  }
+
+  // URGENT task — treat as 24h deadline from creation
+  if (t.urgent) {
+    const urgentDeadline = t.createdAt + 86400000;
+    const remaining = (urgentDeadline - now) / 1000;
+    if (remaining <= 0) {
+      return { colorCls: 'red', statusLbl: '⚡ URGENT OVERDUE', timerTxt: '−' + fmtDuration(remaining), progPct: 100, isUrgent: true };
+    }
+    const progPct = Math.min(100, ((now - t.createdAt) / 86400000) * 100);
+    return { colorCls: 'red', statusLbl: '⚡ URGENT', timerTxt: fmtDuration(remaining) + ' LEFT', progPct, isUrgent: true };
   }
 
   if (t.dueAt) {
@@ -1924,12 +2088,13 @@ function renderBoard() {
     return;
   }
 
-  // Sort by urgency (most overdue first), done tasks last
+  // Sort by urgency (urgent+overdue first), done tasks last
   const sorted = displayTasks.slice().sort((a, b) => {
     const ma = getTaskMeta(a, now);
     const mb = getTaskMeta(b, now);
-    const oa = urgencyOrder[ma.colorCls] ?? 5;
-    const ob = urgencyOrder[mb.colorCls] ?? 5;
+    // Urgent tasks sort before everything else (even regular red)
+    const oa = ma.isUrgent ? -1 : (urgencyOrder[ma.colorCls] ?? 5);
+    const ob = mb.isUrgent ? -1 : (urgencyOrder[mb.colorCls] ?? 5);
     if (oa !== ob) return oa - ob;
     // Within same urgency, oldest first
     return a.createdAt - b.createdAt;
@@ -1948,7 +2113,8 @@ function renderBoard() {
     const dueColor    = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
     const dueLine     = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : '';
     const timeLine    = t.timeSpent != null ? `<div class="card-time-spent">⏲ TIME SPENT: ${fmtHours(t.timeSpent)}</div>` : '';
-    const expLine     = t.expense != null ? `<div class="card-expense">💰 $${Number(t.expense).toFixed(2)}${t.taxDeductible ? ' · TAX DED.' : ''}</div>` : '';
+    const exp = getTaskExpense(t);
+    const expLine = exp ? `<div class="card-expense">💰 $${exp.total.toFixed(2)}${exp.taxDed > 0 ? ' · TAX DED.' : ''}</div>` : '';
     const notesLine   = (showCardNotes && t.notes) ? `<div class="card-notes">${esc(t.notes)}</div>` : '';
 
     const checkboxHtml = bulkMode
@@ -2051,7 +2217,8 @@ function renderTable() {
       ? `<button class="tbl-btn-reopen" onclick="markPending('${safeKey}')">↩ REOPEN</button>`
       : `<button class="tbl-btn-done"   onclick="markDone('${safeKey}')">✓ DONE</button>`;
     const timeCell = t.timeSpent != null ? fmtHours(t.timeSpent) : '—';
-    const expCell  = t.expense   != null ? `$${Number(t.expense).toFixed(2)}${t.taxDeductible ? ' ✓' : ''}` : '—';
+    const expTbl = getTaskExpense(t);
+    const expCell = expTbl ? `$${expTbl.total.toFixed(2)}${expTbl.taxDed > 0 ? ' ✓' : ''}` : '—';
     return `
 <tr class="tr-${colorCls}${isSelected ? ' selected-task' : ''}">
   ${cbCell}
@@ -2099,7 +2266,8 @@ function renderCategoryBoard() {
       const dueColor = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
       const dueLine = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : '';
       const timeLine = t.timeSpent != null ? `<div class="card-time-spent">⏲ TIME SPENT: ${fmtHours(t.timeSpent)}</div>` : '';
-      const expLine  = t.expense  != null ? `<div class="card-expense">💰 $${Number(t.expense).toFixed(2)}${t.taxDeductible ? ' · TAX DED.' : ''}</div>` : '';
+      const exp2 = getTaskExpense(t);
+      const expLine = exp2 ? `<div class="card-expense">💰 $${exp2.total.toFixed(2)}${exp2.taxDed > 0 ? ' · TAX DED.' : ''}</div>` : '';
       const notesLine = (showCardNotes && t.notes) ? `<div class="card-notes">${esc(t.notes)}</div>` : '';
       const safeKey = esc(t._key);
       const safeName = esc(t.name);
@@ -2127,9 +2295,9 @@ function renderCategoryBoard() {
   </div>
   <div class="cat-col-cards"
     ondragover="event.preventDefault()"
-    ondragenter="this.classList.add('drag-over')"
+    ondragenter="event.preventDefault();this.classList.add('drag-over')"
     ondragleave="this.classList.remove('drag-over')"
-    ondrop="catDrop('${esc(cat.id)}',this)">${cards || `<div class="cat-col-empty">EMPTY — DROP HERE</div>`}</div>
+    ondrop="event.preventDefault();catDrop('${esc(cat.id)}',this)">${cards || `<div class="cat-col-empty">EMPTY — DROP HERE</div>`}</div>
 </div>`;
   }).join('');
 
@@ -2264,14 +2432,50 @@ function renderCalendar() {
   else                         renderDayView();
 }
 
-// Helper: get events overlapping a day [dayStart, dayStart+86400000)
-function getEventsForDay(dayStart) {
+// ── RECURRENCE HELPERS ────────────────────────────────────────────────────────
+// Returns true if recurring event ev should generate an instance on dayStart (not the original day)
+function matchesRecurrence(ev, dayStart) {
+  if (!ev.recurrence || ev.recurrence === 'none') return false;
+  const origStart = new Date(ev.startAt);
+  const origDay   = new Date(origStart.getFullYear(), origStart.getMonth(), origStart.getDate()).getTime();
+  // Don't generate a duplicate for the original day (handled normally)
+  if (dayStart === origDay) return false;
+  // Event must have already started
+  if (dayStart < origDay) return false;
+  // Check recurEnd
+  if (ev.recurEnd && dayStart > ev.recurEnd) return false;
+  const day = new Date(dayStart);
+  if (ev.recurrence === 'daily')   return true;
+  if (ev.recurrence === 'weekly')  return origStart.getDay()   === day.getDay();
+  if (ev.recurrence === 'monthly') return origStart.getDate()  === day.getDate();
+  if (ev.recurrence === 'yearly')  return origStart.getMonth() === day.getMonth() && origStart.getDate() === day.getDate();
+  return false;
+}
+
+// Returns all event instances (including virtual recurring) for a day
+function getEventInstances(dayStart) {
   const dayEnd = dayStart + 86400000;
-  return events.filter(e => {
+  const instances = [];
+  events.forEach(e => {
     const es = e.startAt;
     const ee = e.endAt || (e.allDay ? es + 86400000 : es + 3600000);
-    return es < dayEnd && ee > dayStart;
-  }).sort((a, b) => a.startAt - b.startAt);
+    if (es < dayEnd && ee > dayStart) {
+      instances.push(e); // original occurrence
+    } else if (matchesRecurrence(e, dayStart)) {
+      // Create a virtual instance shifted to this day
+      const origDay = new Date(e.startAt); origDay.setHours(0,0,0,0);
+      const offset  = dayStart - origDay.getTime();
+      const vs = e.startAt + offset;
+      const ve = e.endAt ? e.endAt + offset : vs + (e.allDay ? 86400000 : 3600000);
+      instances.push({ ...e, startAt: vs, endAt: ve, _recur: true });
+    }
+  });
+  return instances.sort((a, b) => a.startAt - b.startAt);
+}
+
+// Helper: get events overlapping a day [dayStart, dayStart+86400000)
+function getEventsForDay(dayStart) {
+  return getEventInstances(dayStart);
 }
 
 // ── MONTH VIEW ────────────────────────────────────────────────────────────────
@@ -2302,8 +2506,9 @@ function renderMonthView() {
     const chips = shown.map(ev => {
       const color = catById(ev.category).color;
       const timeStr = ev.allDay ? 'ALL DAY' : fmtTime(ev.startAt);
+      const recurIcon = ev.recurrence && ev.recurrence !== 'none' ? ' 🔁' : '';
       return `<div class="cal-event-chip" style="background:${color}33;color:${color};border-left:2px solid ${color}"
-        onclick="openEditEvent('${esc(ev._key)}',event)" title="${esc(ev.title)}">${timeStr} ${esc(ev.title)}</div>`;
+        onclick="openEditEvent('${esc(ev._key)}',event)" title="${esc(ev.title)}">${timeStr} ${esc(ev.title)}${recurIcon}</div>`;
     }).join('');
     const moreHtml = more > 0 ? `<div class="cal-event-more">+${more} more</div>` : '';
 
@@ -2351,8 +2556,9 @@ function renderWeekView() {
     const allDayEvts = events.filter(e => e.allDay && e.startAt < dayEnd && (e.endAt || e.startAt + 86400000) > dayStart);
     const chips = allDayEvts.map(ev => {
       const color = catById(ev.category).color;
+      const recurIcon = ev.recurrence && ev.recurrence !== 'none' ? ' 🔁' : '';
       return `<div class="cal-allday-chip" style="background:${color}44;color:${color}"
-        onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}</div>`;
+        onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}${recurIcon}</div>`;
     }).join('');
     return `<div class="cal-allday-col">${chips}</div>`;
   }).join('');
@@ -2500,6 +2706,11 @@ function toggleEventAllDay() {
   document.getElementById('evAllDayDateRow').style.display = allDay ? '' : 'none';
 }
 
+function toggleEventRecurrence() {
+  const val = document.getElementById('evRecurrence').value;
+  document.getElementById('evRecurEndRow').style.display = (val && val !== 'none') ? '' : 'none';
+}
+
 function openAddEvent(prefillDateISO, prefillHour) {
   editingEventKey = null;
   document.getElementById('eventModalTitle').textContent = '+ ADD EVENT';
@@ -2509,6 +2720,9 @@ function openAddEvent(prefillDateISO, prefillHour) {
   document.getElementById('evDesc').value  = '';
   document.getElementById('evAllDay').checked = false;
   toggleEventAllDay();
+  document.getElementById('evRecurrence').value = 'none';
+  document.getElementById('evRecurEnd').value   = '';
+  toggleEventRecurrence();
 
   const now = new Date();
   const today = toLocalDate(Date.now());
@@ -2563,6 +2777,11 @@ function openEditEvent(key, e) {
     document.getElementById('evEnd').value   = toLocalDT(ev.endAt || ev.startAt + 3600000);
   }
 
+  // Recurrence
+  document.getElementById('evRecurrence').value = ev.recurrence || 'none';
+  document.getElementById('evRecurEnd').value   = ev.recurEnd ? toLocalDate(ev.recurEnd) : '';
+  toggleEventRecurrence();
+
   buildEventCategorySelect(ev.category);
   document.getElementById('eventOverlay').classList.remove('hidden');
 }
@@ -2599,13 +2818,20 @@ function saveEvent() {
     if (endAt <= startAt) { alert('End time must be after start time.'); return; }
   }
 
+  const recurVal = document.getElementById('evRecurrence').value;
+  const recurEndVal = document.getElementById('evRecurEnd').value;
+  const recurEnd = (recurVal && recurVal !== 'none' && recurEndVal)
+    ? new Date(recurEndVal + 'T23:59:59').getTime() : null;
+
   const data = {
     title,
     description: document.getElementById('evDesc').value.trim(),
     allDay,
     startAt,
     endAt,
-    category: document.getElementById('evCategory').value
+    category: document.getElementById('evCategory').value,
+    recurrence: (recurVal && recurVal !== 'none') ? recurVal : null,
+    recurEnd: recurEnd
   };
 
   if (editingEventKey) {
