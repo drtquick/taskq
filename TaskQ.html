@@ -401,6 +401,42 @@ input[type="date"] { color-scheme: dark; }
 
 ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+/* WORKSPACE SWITCHER */
+.ws-switcher { position: relative; display: flex; align-items: center; }
+.ws-btn { display: flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 0.72rem; letter-spacing: 2px; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: border-color 0.2s; white-space: nowrap; }
+.ws-btn:hover { border-color: var(--accent); color: var(--accent); }
+.ws-arrow { font-size: 0.55rem; color: var(--muted); margin-left: 2px; }
+.ws-dropdown { position: absolute; top: calc(100% + 6px); left: 0; min-width: 200px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 8px 28px rgba(0,0,0,0.6); z-index: 250; overflow: hidden; }
+.ws-dropdown.hidden { display: none; }
+.ws-dropdown-list { padding: 4px 0; max-height: 240px; overflow-y: auto; }
+.ws-item { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: none; color: var(--text); font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; padding: 9px 14px; cursor: pointer; transition: background 0.15s; }
+.ws-item:hover { background: var(--surface2); }
+.ws-active { color: var(--accent) !important; }
+.ws-item-dot { font-size: 0.55rem; flex-shrink: 0; }
+.ws-dropdown-sep { height: 1px; background: var(--border); }
+.ws-new-btn { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; background: none; border: none; color: var(--accent); font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; padding: 10px 14px; cursor: pointer; transition: background 0.15s; }
+.ws-new-btn:hover { background: var(--surface2); }
+
+/* CREATE WORKSPACE MODAL */
+.create-ws-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 400; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.create-ws-overlay.hidden { display: none; }
+.create-ws-modal { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 8px; width: 100%; max-width: 380px; padding: 24px; }
+.create-ws-title { font-size: 0.9rem; letter-spacing: 3px; color: var(--accent); margin-bottom: 18px; }
+.create-ws-modal input[type="text"] { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 10px 14px; font-size: 0.88rem; border-radius: 4px; outline: none; margin-bottom: 16px; letter-spacing: 2px; }
+.create-ws-modal input[type="text"]:focus { border-color: var(--accent); }
+.create-ws-footer { display: flex; justify-content: flex-end; gap: 8px; }
+.btn-create-ws  { background: var(--accent); color: white; border: none; padding: 8px 18px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; letter-spacing: 1px; }
+.btn-cancel-ws  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 8px 14px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; }
+
+/* WORKSPACE IN SETTINGS */
+.ws-rename-row { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+.ws-rename-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none; letter-spacing: 1px; }
+.ws-rename-row input:focus { border-color: var(--accent); }
+.btn-rename-ws  { background: var(--surface2); color: var(--text); border: 1px solid var(--border); padding: 8px 14px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+.btn-rename-ws:hover { border-color: var(--accent); color: var(--accent); }
+.btn-delete-ws  { background: none; border: 1px solid var(--red); color: var(--red); font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-top: 12px; }
+.btn-delete-ws:hover { background: var(--red); color: white; }
+
 /* PRINT BUTTON */
 .btn-print { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
 .btn-print:hover { border-color: var(--text); color: var(--text); }
@@ -481,6 +517,18 @@ input[type="date"] { color-scheme: dark; }
   <div>
     <div class="logo">TASKQ</div>
     <div class="logo-sub">CODDINGTON FAMILY TASKS</div>
+  </div>
+  <!-- WORKSPACE SWITCHER -->
+  <div class="ws-switcher" id="wsSwitcher">
+    <button class="ws-btn" onclick="toggleWsDropdown()">
+      <span id="wsCurrentName">—</span>
+      <span class="ws-arrow">▾</span>
+    </button>
+    <div class="ws-dropdown hidden" id="wsDropdown">
+      <div class="ws-dropdown-list" id="wsDropdownList"></div>
+      <div class="ws-dropdown-sep"></div>
+      <button class="ws-new-btn" onclick="openCreateWs()">＋ NEW WORKSPACE</button>
+    </div>
   </div>
   <div class="header-right">
     <div class="legend">
@@ -628,6 +676,20 @@ input[type="date"] { color-scheme: dark; }
     </div>
 
     <div class="section">
+      <h3>Workspace</h3>
+      <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px;">RENAME THIS WORKSPACE</label>
+      <div class="ws-rename-row">
+        <input type="text" id="wsRenameInput" maxlength="40"
+               onkeydown="if(event.key==='Enter')renameCurrentWorkspace(this.value)">
+        <button class="btn-rename-ws" onclick="renameCurrentWorkspace(document.getElementById('wsRenameInput').value)">RENAME</button>
+      </div>
+      <button class="btn-delete-ws" onclick="deleteCurrentWorkspace()">✕ DELETE THIS WORKSPACE</button>
+      <p style="font-size:0.65rem;color:var(--muted);margin-top:10px;">
+        Each workspace has its own tasks, events, assignees, and categories. Use the switcher in the header to create additional workspaces or move between them.
+      </p>
+    </div>
+
+    <div class="section">
       <h3>Assignees</h3>
       <div class="assignee-list" id="assigneeListSettings"></div>
       <button class="btn-add-item" onclick="addAssigneeRow()">+ ADD ASSIGNEE</button>
@@ -655,6 +717,19 @@ input[type="date"] { color-scheme: dark; }
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeSettings()">CANCEL</button>
       <button class="btn-save" onclick="saveSettings()">SAVE SETTINGS</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE WORKSPACE MODAL -->
+<div class="create-ws-overlay hidden" id="createWsOverlay">
+  <div class="create-ws-modal">
+    <div class="create-ws-title">＋ NEW WORKSPACE</div>
+    <input type="text" id="wsNameInput" maxlength="40" placeholder="WORKSPACE NAME..."
+           onkeydown="if(event.key==='Enter')confirmCreateWs()">
+    <div class="create-ws-footer">
+      <button class="btn-cancel-ws" onclick="closeCreateWs()">CANCEL</button>
+      <button class="btn-create-ws" onclick="confirmCreateWs()">CREATE</button>
     </div>
   </div>
 </div>
@@ -724,12 +799,14 @@ const firebaseConfig = {
   appId: "1:614008966022:web:0af7e103d26ac539caba07"
 };
 firebase.initializeApp(firebaseConfig);
-const db          = firebase.database();
-const tasksRef    = db.ref('tasks');
-const settingsRef = db.ref('settings');
-const eventsRef   = db.ref('events');
-const auth        = firebase.auth();
+const db             = firebase.database();
+const auth           = firebase.auth();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
+// Dynamic refs — set by switchWorkspace()
+let tasksRef    = null;
+let settingsRef = null;
+let eventsRef   = null;
+let wsListRef   = null;
 
 // ── DEFAULTS ──────────────────────────────────────────────────────────────────
 const DEFAULTS = {
@@ -747,7 +824,7 @@ const DEFAULTS = {
 const EVENT_COLORS = ['#4a9eff','#00c853','#ffd600','#ff6b00','#d50000','#ab47bc','#00bcd4','#f06292','#78909c'];
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let cfg               = loadLocal('taskq_settings_v3', DEFAULTS);
+let cfg               = JSON.parse(JSON.stringify(DEFAULTS));
 let tasks             = [];
 let events            = [];
 let tmpCats           = [];
@@ -766,6 +843,10 @@ let pendingRemoveKey  = null;
 let pendingRemoveName = '';
 let settingsSynced    = false;
 let listenersActive   = false;
+// Workspace state
+let currentUser  = null;
+let currentWsId  = null;
+let userWsList   = {};   // { wsId: { name, createdAt } }
 
 // ── LOCAL STORAGE ─────────────────────────────────────────────────────────────
 function loadLocal(key, fallback) {
@@ -799,23 +880,26 @@ function signOut() { auth.signOut(); }
 
 auth.onAuthStateChanged(user => {
   if (user) {
+    currentUser = user;
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('userInfo').style.display = 'flex';
     document.getElementById('userName').textContent = user.displayName || user.email;
-    if (!listenersActive) { listenersActive = true; setupListeners(); }
+    setupConnectionListener();
+    initWorkspaces(user);
   } else {
+    currentUser = null;
     document.getElementById('authScreen').classList.remove('hidden');
     document.getElementById('userInfo').style.display = 'none';
-    if (listenersActive) {
-      tasksRef.off(); settingsRef.off(); eventsRef.off();
-      listenersActive = false; settingsSynced = false;
-      tasks = []; events = [];
-    }
+    detachDataListeners();
+    if (wsListRef) { wsListRef.off(); wsListRef = null; }
+    listenersActive = false; settingsSynced = false;
+    tasks = []; events = []; currentWsId = null; userWsList = {};
+    updateWsUI();
   }
 });
 
 // ── FIREBASE LISTENERS ────────────────────────────────────────────────────────
-function setupListeners() {
+function setupConnectionListener() {
   db.ref('.info/connected').on('value', snap => {
     const on = snap.val() === true;
     document.getElementById('statusDot').className = 'status-dot' + (on ? ' connected' : '');
@@ -824,12 +908,16 @@ function setupListeners() {
       : 'RECONNECTING...';
     updateSettingsSyncUI();
   });
+}
+
+function attachDataListeners() {
+  if (!tasksRef || !eventsRef || !settingsRef) return;
 
   settingsRef.on('value', snapshot => {
     const cloudCfg = snapshot.val();
     if (cloudCfg && cloudCfg.categories && cloudCfg.categories.length) {
       cfg = { ...DEFAULTS, ...cloudCfg };
-      saveLocal('taskq_settings_v3', cfg);
+      saveLocal(`taskq_cfg_${currentWsId}`, cfg);
       refreshDatalist();
       render();
     } else if (!settingsSynced) {
@@ -853,12 +941,167 @@ function setupListeners() {
     if (currentPage === 'calendar') renderCalendar();
     updateCalEventCount();
   });
+
+  listenersActive = true;
+}
+
+function detachDataListeners() {
+  if (tasksRef)    tasksRef.off();
+  if (settingsRef) settingsRef.off();
+  if (eventsRef)   eventsRef.off();
+  listenersActive = false;
+  settingsSynced  = false;
+}
+
+// ── WORKSPACES ────────────────────────────────────────────────────────────────
+function initWorkspaces(user) {
+  wsListRef = db.ref(`users/${user.uid}/workspaces`);
+  wsListRef.on('value', snap => {
+    userWsList = snap.val() || {};
+    updateWsUI();
+    if (!currentWsId) {
+      const ids   = Object.keys(userWsList);
+      const saved = localStorage.getItem('taskq_last_ws');
+      if (saved && userWsList[saved]) {
+        switchWorkspace(saved);
+      } else if (ids.length > 0) {
+        switchWorkspace(ids[0]);
+      } else {
+        checkMigrationAndInit(user.uid);
+      }
+    }
+  });
+}
+
+function switchWorkspace(wsId) {
+  detachDataListeners();
+  currentWsId    = wsId;
+  settingsSynced = false;
+  localStorage.setItem('taskq_last_ws', wsId);
+
+  tasksRef    = db.ref(`workspaces/${wsId}/tasks`);
+  eventsRef   = db.ref(`workspaces/${wsId}/events`);
+  settingsRef = db.ref(`workspaces/${wsId}/settings`);
+
+  // Reset data and show loading
+  tasks  = [];
+  events = [];
+  cfg    = loadLocal(`taskq_cfg_${wsId}`, DEFAULTS);
+  const container = document.getElementById('mainContainer');
+  if (container) container.innerHTML = `<div class="empty-state">LOADING WORKSPACE...<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">PLEASE WAIT</span></div>`;
+
+  attachDataListeners();
+  updateWsUI();
+  closeWsDropdown();
+}
+
+async function checkMigrationAndInit(uid) {
+  // Check if old flat-path data exists (pre-workspace version)
+  const [tSnap, sSnap, eSnap] = await Promise.all([
+    db.ref('tasks').once('value'),
+    db.ref('settings').once('value'),
+    db.ref('events').once('value')
+  ]);
+  if (tSnap.exists() || sSnap.exists() || eSnap.exists()) {
+    // Migrate existing data to a "FAMILY" workspace
+    const wsRef = db.ref('workspaces').push();
+    const wsId  = wsRef.key;
+    const writes = [
+      wsListRef.child(wsId).set({ name: 'FAMILY', createdAt: Date.now() })
+    ];
+    if (tSnap.exists()) writes.push(db.ref(`workspaces/${wsId}/tasks`).set(tSnap.val()));
+    if (eSnap.exists()) writes.push(db.ref(`workspaces/${wsId}/events`).set(eSnap.val()));
+    writes.push(db.ref(`workspaces/${wsId}/settings`).set(
+      sSnap.exists() ? sSnap.val() : JSON.parse(JSON.stringify(DEFAULTS))
+    ));
+    await Promise.all(writes);
+    // Remove old flat-path data
+    await Promise.all([
+      db.ref('tasks').remove(),
+      db.ref('events').remove(),
+      db.ref('settings').remove()
+    ]);
+    // wsListRef listener fires automatically and calls switchWorkspace
+  } else {
+    // Brand new user — create a starter workspace
+    await doCreateWorkspace('MY TASKS');
+  }
+}
+
+async function doCreateWorkspace(name) {
+  if (!name || !name.trim() || !wsListRef) return;
+  const wsRef = db.ref('workspaces').push();
+  const wsId  = wsRef.key;
+  await Promise.all([
+    db.ref(`workspaces/${wsId}/settings`).set(JSON.parse(JSON.stringify(DEFAULTS))),
+    wsListRef.child(wsId).set({ name: name.trim().toUpperCase(), createdAt: Date.now() })
+  ]);
+  switchWorkspace(wsId);
+}
+
+function renameCurrentWorkspace(name) {
+  if (!name || !name.trim() || !currentWsId || !wsListRef) return;
+  wsListRef.child(currentWsId).update({ name: name.trim().toUpperCase() });
+}
+
+function deleteCurrentWorkspace() {
+  const ids = Object.keys(userWsList);
+  if (ids.length <= 1) { alert('You cannot delete your only workspace.'); return; }
+  const wsName = userWsList[currentWsId]?.name || 'this workspace';
+  if (!confirm(`Delete "${wsName}"? All tasks and events will be permanently removed. This cannot be undone.`)) return;
+  const deletingId = currentWsId;
+  const otherId    = ids.find(id => id !== deletingId);
+  switchWorkspace(otherId);
+  db.ref(`workspaces/${deletingId}`).remove();
+  wsListRef.child(deletingId).remove();
+}
+
+// ── WORKSPACE UI ──────────────────────────────────────────────────────────────
+function updateWsUI() {
+  const nameEl = document.getElementById('wsCurrentName');
+  if (nameEl) {
+    nameEl.textContent = (currentWsId && userWsList[currentWsId])
+      ? userWsList[currentWsId].name
+      : '—';
+  }
+  const listEl = document.getElementById('wsDropdownList');
+  if (!listEl) return;
+  const entries = Object.entries(userWsList).sort(([,a],[,b]) => a.createdAt - b.createdAt);
+  listEl.innerHTML = entries.map(([id, ws]) =>
+    `<button class="ws-item${id === currentWsId ? ' ws-active' : ''}" onclick="switchWorkspace('${id}')">
+      <span class="ws-item-dot">${id === currentWsId ? '●' : '○'}</span>${esc(ws.name)}
+    </button>`
+  ).join('');
+}
+
+function toggleWsDropdown() {
+  document.getElementById('wsDropdown').classList.toggle('hidden');
+}
+function closeWsDropdown() {
+  const d = document.getElementById('wsDropdown');
+  if (d) d.classList.add('hidden');
+}
+function openCreateWs() {
+  closeWsDropdown();
+  document.getElementById('wsNameInput').value = '';
+  document.getElementById('createWsOverlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('wsNameInput').focus(), 50);
+}
+function closeCreateWs() {
+  document.getElementById('createWsOverlay').classList.add('hidden');
+}
+function confirmCreateWs() {
+  const name = document.getElementById('wsNameInput').value.trim();
+  if (!name) { document.getElementById('wsNameInput').focus(); return; }
+  closeCreateWs();
+  doCreateWorkspace(name);
 }
 
 // ── SETTINGS SYNC ─────────────────────────────────────────────────────────────
 function pushSettingsToCloud() {
+  if (!settingsRef) return;
   settingsRef.set({ assignees: cfg.assignees || [], categories: cfg.categories || [] });
-  saveLocal('taskq_settings_v3', cfg);
+  if (currentWsId) saveLocal(`taskq_cfg_${currentWsId}`, cfg);
 }
 
 function updateSettingsSyncUI() {
@@ -1364,6 +1607,11 @@ function openSettings() {
   tmpAssignees = JSON.parse(JSON.stringify(cfg.assignees || []));
   buildAssigneeList();
   buildCatList();
+  // Pre-fill workspace rename field
+  const wsInput = document.getElementById('wsRenameInput');
+  if (wsInput && currentWsId && userWsList[currentWsId]) {
+    wsInput.value = userWsList[currentWsId].name;
+  }
   document.getElementById('overlay').classList.remove('hidden');
 }
 function closeSettings() { document.getElementById('overlay').classList.add('hidden'); }
@@ -1812,9 +2060,16 @@ function deleteEditingEvent() {
 document.getElementById('overlay').addEventListener('click', function(e) { if (e.target === this) closeSettings(); });
 document.getElementById('confirmOverlay').addEventListener('click', function(e) { if (e.target === this) closeConfirm(); });
 document.getElementById('eventOverlay').addEventListener('click', function(e) { if (e.target === this) closeEventModal(); });
+document.getElementById('createWsOverlay').addEventListener('click', function(e) { if (e.target === this) closeCreateWs(); });
+document.getElementById('editTaskOverlay').addEventListener('click', function(e) { if (e.target === this) closeEditTask(); });
+
+// Close workspace dropdown when clicking outside it
+document.addEventListener('click', function(e) {
+  const switcher = document.getElementById('wsSwitcher');
+  if (switcher && !switcher.contains(e.target)) closeWsDropdown();
+});
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
-refreshDatalist();
 render();
 </script>
 </body>
