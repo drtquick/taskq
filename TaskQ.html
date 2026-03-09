@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskQ — Kitchen Display System</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d0d0d; --surface: #1a1a1a; --surface2: #242424; --border: #333;
+  --text: #e8e8e8; --muted: #888; --accent: #ff6b00;
+  --green: #00c853; --yellow: #ffd600; --orange: #ff6d00; --red: #d50000;
+  --font: 'Courier New', Courier, monospace;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display: flex; flex-direction: column; }
+
+/* HEADER */
+.header { background: #111; border-bottom: 2px solid var(--accent); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.logo { font-size: 1.9rem; font-weight: 900; letter-spacing: 5px; color: var(--accent); line-height: 1; }
+.logo-sub { font-size: 0.6rem; color: var(--muted); letter-spacing: 3px; margin-top: 2px; }
+.header-right { display: flex; align-items: center; gap: 14px; }
+.clock { font-size: 1.35rem; color: var(--text); letter-spacing: 2px; }
+.legend { display: flex; gap: 10px; align-items: center; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.68rem; color: var(--muted); }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.settings-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); cursor: pointer; padding: 7px 12px; font-size: 1rem; border-radius: 4px; transition: background 0.2s; }
+.settings-btn:hover { background: var(--accent); }
+
+/* CONTROLS */
+.controls { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.controls input, .controls select { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none; }
+.controls input:focus, .controls select:focus { border-color: var(--accent); }
+.input-task { flex: 1; min-width: 200px; }
+.input-assignee { width: 130px; }
+.input-category { width: 140px; }
+.btn { padding: 8px 16px; font-family: var(--font); font-size: 0.78rem; letter-spacing: 1px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; }
+.btn:hover { opacity: 0.82; }
+.btn-add { background: var(--accent); color: white; }
+.btn-clear { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.task-count { margin-left: auto; font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+
+/* BOARD */
+.board { flex: 1; padding: 16px 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; align-content: start; }
+.empty-state { grid-column: 1/-1; text-align: center; padding: 70px 20px; color: var(--muted); font-size: 0.85rem; letter-spacing: 2px; }
+
+/* CARDS */
+.card { background: var(--surface); border-radius: 6px; padding: 14px; border-left: 4px solid var(--green); position: relative; overflow: hidden; transition: border-color 0.5s; }
+.card.yellow { border-left-color: var(--yellow); }
+.card.orange { border-left-color: var(--orange); }
+.card.red { border-left-color: var(--red); animation: pulse-red 1.5s ease-in-out infinite; }
+.card.done { border-left-color: #2e7d32; opacity: 0.55; }
+@keyframes pulse-red { 0%,100% { box-shadow: 0 0 0 0 rgba(213,0,0,0); } 50% { box-shadow: 0 0 14px 4px rgba(213,0,0,0.35); } }
+
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.card-id { font-size: 0.63rem; color: var(--muted); }
+.card-category { font-size: 0.63rem; padding: 2px 8px; border-radius: 3px; letter-spacing: 1px; font-weight: bold; }
+.card-name { font-size: 0.92rem; font-weight: bold; margin-bottom: 4px; line-height: 1.3; word-break: break-word; }
+.card-assignee { font-size: 0.72rem; color: var(--muted); margin-bottom: 10px; }
+.card-timer { font-size: 1.55rem; font-weight: bold; letter-spacing: 2px; margin-bottom: 3px; }
+.card-timer.green { color: var(--green); }
+.card-timer.yellow { color: var(--yellow); }
+.card-timer.orange { color: var(--orange); }
+.card-timer.red { color: var(--red); }
+.card-timer.done { color: #4caf50; }
+.card-status { font-size: 0.63rem; letter-spacing: 2px; margin-bottom: 10px; color: var(--muted); }
+.progress-bar { height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 10px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 2px; transition: width 1s linear, background-color 0.5s; }
+.card-actions { display: flex; gap: 8px; }
+.btn-done, .btn-remove { flex: 1; padding: 5px; font-family: var(--font); font-size: 0.68rem; letter-spacing: 1px; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; background: var(--surface2); color: var(--muted); transition: all 0.2s; }
+.btn-done:hover { border-color: var(--green); color: var(--green); }
+.btn-remove:hover { border-color: var(--red); color: var(--red); }
+.card.done .btn-done { display: none; }
+
+/* SETTINGS MODAL */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.overlay.hidden { display: none; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; width: 100%; max-width: 540px; max-height: 82vh; overflow-y: auto; padding: 24px; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; border-bottom: 1px solid var(--border); padding-bottom: 14px; }
+.modal-title { font-size: 1rem; letter-spacing: 3px; color: var(--accent); }
+.modal-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.2rem; line-height: 1; }
+.modal-close:hover { color: var(--text); }
+
+.section { margin-bottom: 26px; }
+.section h3 { font-size: 0.7rem; letter-spacing: 3px; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; }
+
+/* Category rows */
+.cat-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 10px; }
+.cat-row { display: flex; gap: 8px; align-items: center; }
+.cat-row input[type="text"] { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 7px 10px; font-size: 0.78rem; border-radius: 4px; outline: none; text-transform: uppercase; }
+.cat-row input[type="text"]:focus { border-color: var(--accent); }
+.cat-row input[type="color"] { width: 36px; height: 32px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; padding: 2px; background: var(--bg); }
+.btn-rm-cat { background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer; padding: 5px 10px; border-radius: 4px; font-size: 0.78rem; }
+.btn-rm-cat:hover { border-color: var(--red); color: var(--red); }
+.btn-add-cat { background: var(--surface2); border: 1px dashed var(--border); color: var(--muted); cursor: pointer; padding: 7px; border-radius: 4px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; width: 100%; }
+.btn-add-cat:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Threshold sliders */
+.thresh-grid { display: grid; gap: 14px; }
+.thresh-row { display: grid; grid-template-columns: 76px 1fr 64px; gap: 10px; align-items: center; }
+.thresh-label { font-size: 0.72rem; letter-spacing: 1px; }
+.thresh-label.yellow { color: var(--yellow); }
+.thresh-label.orange { color: var(--orange); }
+.thresh-label.red { color: var(--red); }
+input[type="range"] { -webkit-appearance: none; width: 100%; height: 4px; border-radius: 2px; outline: none; cursor: pointer; }
+input[type="range"].yellow { background: var(--yellow); }
+input[type="range"].orange { background: var(--orange); }
+input[type="range"].red { background: var(--red); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: white; cursor: pointer; }
+.thresh-val { font-size: 0.72rem; color: var(--text); text-align: right; }
+.thresh-note { font-size: 0.68rem; color: var(--muted); margin-top: 10px; }
+
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding-top: 16px; border-top: 1px solid var(--border); }
+.btn-cancel { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 8px 18px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; }
+.btn-save { background: var(--accent); color: white; border: none; padding: 8px 18px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; letter-spacing: 1px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div>
+    <div class="logo">TASKQ</div>
+    <div class="logo-sub">KITCHEN DISPLAY SYSTEM</div>
+  </div>
+  <div class="header-right">
+    <div class="legend" id="legend"></div>
+    <div class="clock" id="clock">--:--:--</div>
+    <button class="settings-btn" onclick="openSettings()" title="Settings">⚙ SETTINGS</button>
+  </div>
+</header>
+
+<div class="controls">
+  <input class="input-task" id="iTask" type="text" placeholder="TASK DESCRIPTION..." maxlength="80" onkeydown="if(event.key==='Enter')addTask()">
+  <input class="input-assignee" id="iAssignee" type="text" placeholder="ASSIGNEE" maxlength="30">
+  <select class="input-category" id="iCategory"></select>
+  <button class="btn btn-add" onclick="addTask()">+ ADD TASK</button>
+  <button class="btn btn-clear" onclick="clearDone()">CLEAR DONE</button>
+  <div class="task-count" id="taskCount">0 ACTIVE · 0 DONE</div>
+</div>
+
+<div class="board" id="board"></div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay hidden" id="overlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-title">⚙ TASKQ SETTINGS</div>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="section">
+      <h3>Categories</h3>
+      <div class="cat-list" id="catList"></div>
+      <button class="btn-add-cat" onclick="addCatRow()">+ ADD CATEGORY</button>
+    </div>
+
+    <div class="section">
+      <h3>Time Thresholds</h3>
+      <div class="thresh-grid">
+        <div class="thresh-row">
+          <span class="thresh-label yellow">YELLOW</span>
+          <input type="range" class="yellow" id="sYellow" min="1" max="60" step="1" oninput="updateLabel('Yellow')">
+          <span class="thresh-val" id="lYellow">5 min</span>
+        </div>
+        <div class="thresh-row">
+          <span class="thresh-label orange">ORANGE</span>
+          <input type="range" class="orange" id="sOrange" min="2" max="120" step="1" oninput="updateLabel('Orange')">
+          <span class="thresh-val" id="lOrange">15 min</span>
+        </div>
+        <div class="thresh-row">
+          <span class="thresh-label red">RED</span>
+          <input type="range" class="red" id="sRed" min="3" max="240" step="1" oninput="updateLabel('Red')">
+          <span class="thresh-val" id="lRed">30 min</span>
+        </div>
+      </div>
+      <p class="thresh-note">GREEN spans from 0 to the YELLOW threshold. Thresholds must be in ascending order.</p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeSettings()">CANCEL</button>
+      <button class="btn-save" onclick="saveSettings()">SAVE SETTINGS</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DEFAULTS ──────────────────────────────────────────────────────────────────
+const DEFAULTS = {
+  categories: [
+    { id: 'dev',     label: 'DEV',     color: '#4a9eff' },
+    { id: 'review',  label: 'REVIEW',  color: '#f0a500' },
+    { id: 'support', label: 'SUPPORT', color: '#ab47bc' },
+    { id: 'ops',     label: 'OPS',     color: '#26a69a' },
+    { id: 'legal',   label: 'LEGAL',   color: '#ef5350' },
+    { id: 'other',   label: 'OTHER',   color: '#78909c' }
+  ],
+  thresholds: { yellow: 300, orange: 900, red: 1800 }
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let cfg   = load('taskq_settings', DEFAULTS);
+let tasks = load('taskq_tasks', []);
+let seq   = tasks.length ? Math.max(...tasks.map(t => +t.id.split('-')[1] || 0)) : 0;
+// Temp categories edited inside modal (not committed until Save)
+let tmpCats = [];
+
+// ── STORAGE ───────────────────────────────────────────────────────────────────
+function load(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key)) || JSON.parse(JSON.stringify(fallback)); }
+  catch { return JSON.parse(JSON.stringify(fallback)); }
+}
+function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+// ── TASKS ─────────────────────────────────────────────────────────────────────
+function addTask() {
+  const el = document.getElementById('iTask');
+  const name = el.value.trim();
+  if (!name) { el.focus(); return; }
+  seq++;
+  tasks.push({
+    id: 'T-' + String(seq).padStart(3,'0'),
+    name,
+    assignee: document.getElementById('iAssignee').value.trim() || '—',
+    category: document.getElementById('iCategory').value,
+    createdAt: Date.now(),
+    status: 'active',
+    doneAt: null
+  });
+  save('taskq_tasks', tasks);
+  el.value = '';
+  el.focus();
+  render();
+}
+
+function markDone(id) {
+  const t = tasks.find(t => t.id === id);
+  if (t) { t.status = 'done'; t.doneAt = Date.now(); save('taskq_tasks', tasks); render(); }
+}
+
+function removeTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  save('taskq_tasks', tasks);
+  render();
+}
+
+function clearDone() {
+  tasks = tasks.filter(t => t.status !== 'done');
+  save('taskq_tasks', tasks);
+  render();
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function colorClass(secs, done) {
+  if (done) return 'done';
+  const T = cfg.thresholds;
+  if (secs >= T.red)    return 'red';
+  if (secs >= T.orange) return 'orange';
+  if (secs >= T.yellow) return 'yellow';
+  return 'green';
+}
+
+function statusLabel(secs, done) {
+  if (done) return 'DONE';
+  const T = cfg.thresholds;
+  if (secs >= T.red)    return 'OVERDUE';
+  if (secs >= T.orange) return 'URGENT';
+  if (secs >= T.yellow) return 'PENDING';
+  return 'ACTIVE';
+}
+
+function fmt(secs) {
+  const h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60), s = secs%60;
+  const p = n => String(n).padStart(2,'0');
+  return h > 0 ? `${p(h)}:${p(m)}:${p(s)}` : `${p(m)}:${p(s)}`;
+}
+
+function pct(secs) { return Math.min(100, (secs / cfg.thresholds.red) * 100); }
+
+const FILL = { green:'#00c853', yellow:'#ffd600', orange:'#ff6d00', red:'#d50000', done:'#2e7d32' };
+
+function catById(id) {
+  return cfg.categories.find(c => c.id === id) || { label: id.toUpperCase(), color: '#78909c' };
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render() {
+  // Category dropdown — preserve current selection
+  const sel = document.getElementById('iCategory');
+  const cur = sel.value;
+  sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+  if (cfg.categories.find(c => c.id === cur)) sel.value = cur;
+
+  // Legend
+  const T = cfg.thresholds;
+  document.getElementById('legend').innerHTML = [
+    ['#00c853', `0–${T.yellow/60}m`],
+    ['#ffd600', `${T.yellow/60}–${T.orange/60}m`],
+    ['#ff6d00', `${T.orange/60}–${T.red/60}m`],
+    ['#d50000', `${T.red/60}m+`]
+  ].map(([c,l]) => `<div class="legend-item"><div class="legend-dot" style="background:${c}"></div>${l}</div>`).join('');
+
+  // Board
+  const board = document.getElementById('board');
+  if (!tasks.length) {
+    board.innerHTML = `<div class="empty-state">NO TASKS IN QUEUE<br><span style="font-size:.72rem;color:#444;margin-top:8px;display:block">ENTER A TASK ABOVE TO GET STARTED</span></div>`;
+    document.getElementById('taskCount').textContent = '0 ACTIVE · 0 DONE';
+    return;
+  }
+
+  const now = Date.now();
+  let active = 0, done = 0;
+
+  board.innerHTML = tasks.map(t => {
+    const elapsed = Math.floor((now - t.createdAt) / 1000);
+    const isDone  = t.status === 'done';
+    const cls     = colorClass(elapsed, isDone);
+    const cat     = catById(t.category);
+    const progPct = pct(isDone ? cfg.thresholds.red : elapsed);
+    if (isDone) done++; else active++;
+
+    return `
+<div class="card ${cls}">
+  <div class="card-header">
+    <span class="card-id">${esc(t.id)}</span>
+    <span class="card-category" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span>
+  </div>
+  <div class="card-name">${esc(t.name)}</div>
+  <div class="card-assignee">${esc(t.assignee)}</div>
+  <div class="card-timer ${cls}">${isDone ? fmt(Math.floor((t.doneAt - t.createdAt)/1000)) : fmt(elapsed)}</div>
+  <div class="card-status">${statusLabel(elapsed, isDone)}</div>
+  <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[cls]}"></div></div>
+  <div class="card-actions">
+    <button class="btn-done" onclick="markDone('${t.id}')">✓ MARK DONE</button>
+    <button class="btn-remove" onclick="removeTask('${t.id}')">✕ REMOVE</button>
+  </div>
+</div>`;
+  }).join('');
+
+  document.getElementById('taskCount').textContent = `${active} ACTIVE · ${done} DONE`;
+}
+
+// ── CLOCK ─────────────────────────────────────────────────────────────────────
+function tick() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('en-US', { hour12: false });
+  render();
+}
+setInterval(tick, 1000);
+tick();
+
+// ── SETTINGS MODAL ────────────────────────────────────────────────────────────
+function openSettings() {
+  tmpCats = JSON.parse(JSON.stringify(cfg.categories));
+  buildCatList();
+  const T = cfg.thresholds;
+  document.getElementById('sYellow').value = T.yellow / 60;
+  document.getElementById('sOrange').value = T.orange / 60;
+  document.getElementById('sRed').value    = T.red    / 60;
+  updateLabel('Yellow'); updateLabel('Orange'); updateLabel('Red');
+  document.getElementById('overlay').classList.remove('hidden');
+}
+
+function closeSettings() {
+  document.getElementById('overlay').classList.add('hidden');
+}
+
+function buildCatList() {
+  document.getElementById('catList').innerHTML = tmpCats.map((c, i) => `
+<div class="cat-row" data-i="${i}">
+  <input type="text" value="${esc(c.label)}" placeholder="CATEGORY" maxlength="14"
+    oninput="tmpCats[${i}].label=this.value.toUpperCase();this.value=this.value.toUpperCase()">
+  <input type="color" value="${c.color}" oninput="tmpCats[${i}].color=this.value">
+  <button class="btn-rm-cat" onclick="removeCat(${i})">✕</button>
+</div>`).join('');
+}
+
+function addCatRow() {
+  tmpCats.push({ id: 'cat-' + Date.now(), label: '', color: '#888888' });
+  buildCatList();
+}
+
+function removeCat(i) {
+  if (tmpCats.length <= 1) return;
+  tmpCats.splice(i, 1);
+  buildCatList();
+}
+
+function updateLabel(which) {
+  const val = parseInt(document.getElementById('s' + which).value);
+  document.getElementById('l' + which).textContent = val + ' min';
+}
+
+function saveSettings() {
+  // Commit temp categories (filter blanks)
+  const cats = tmpCats.filter(c => c.label.trim());
+  if (!cats.length) { alert('Please add at least one category.'); return; }
+
+  const yellow = parseInt(document.getElementById('sYellow').value) * 60;
+  const orange = parseInt(document.getElementById('sOrange').value) * 60;
+  const red    = parseInt(document.getElementById('sRed').value)    * 60;
+
+  if (yellow >= orange || orange >= red) {
+    alert('Thresholds must be in ascending order:\nYELLOW < ORANGE < RED');
+    return;
+  }
+
+  cfg.categories = cats;
+  cfg.thresholds = { yellow, orange, red };
+  save('taskq_settings', cfg);
+  closeSettings();
+  render();
+}
+
+// Close modal when clicking outside
+document.getElementById('overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeSettings();
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
