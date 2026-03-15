@@ -749,6 +749,29 @@ input[type="date"] { color-scheme: dark; }
   font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none;
 }
 .event-form-row select:focus { border-color: var(--accent); }
+
+/* EMAIL SETTINGS MODAL */
+.email-settings-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 360; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.email-settings-overlay.hidden { display: none; }
+.email-settings-modal { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 8px; width: 100%; max-width: 440px; padding: 24px; max-height: 90vh; overflow-y: auto; }
+.email-settings-modal .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.email-form-group { margin-bottom: 14px; }
+.email-form-group label { display: block; font-size: 0.63rem; color: var(--muted); letter-spacing: 2px; margin-bottom: 5px; text-transform: uppercase; }
+.email-form-group input[type="text"], .email-form-group input[type="email"], .email-form-group select { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none; box-sizing: border-box; }
+.email-form-group input:focus, .email-form-group select:focus { border-color: var(--accent); }
+.email-form-group .field-hint { font-size: 0.62rem; color: var(--muted); margin-top: 5px; line-height: 1.4; }
+.email-toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; margin-bottom: 14px; border-bottom: 1px solid var(--border); }
+.email-toggle-row span { font-size: 0.75rem; letter-spacing: 2px; color: var(--text); }
+.email-toggle-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
+.email-recipient-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.email-recipient-row input[type="email"] { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 7px 10px; font-size: 0.8rem; border-radius: 4px; outline: none; }
+.email-recipient-row input:focus { border-color: var(--accent); }
+.email-recipient-row .btn-remove-item { background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer; padding: 5px 9px; border-radius: 3px; font-size: 0.7rem; flex-shrink: 0; }
+.email-recipient-row .btn-remove-item:hover { border-color: var(--red); color: var(--red); }
+.email-modal-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); gap: 8px; }
+.btn-send-now { background: none; border: 1px solid var(--green); color: var(--green); padding: 8px 14px; font-family: var(--font); font-size: 0.75rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; }
+.btn-send-now:hover { background: var(--green); color: #000; }
+.btn-send-now:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -802,7 +825,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v1.1</span>
+    <span class="beta-badge">β v1.2</span>
     <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
 </header>
@@ -854,6 +877,7 @@ input[type="date"] { color-scheme: dark; }
       <button class="btn btn-report" onclick="openExpenseReport()" title="Expense report">💰 EXPENSES</button>
       <button class="btn btn-report" onclick="openTimeReport()" title="Time log report">⏱ TIME LOG</button>
       <button class="btn btn-report" onclick="openUserReport()" title="Person / assignee report">👤 PERSON</button>
+      <button class="btn btn-report" onclick="openEmailSettings()" title="Daily email report settings">📧 EMAIL</button>
       <div class="view-toggle">
         <button class="btn-view active" id="btnBoard" onclick="setView('board')">🔲 BOARD</button>
         <button class="btn-view" id="btnTable" onclick="setView('table')">📋 TABLE</button>
@@ -1213,6 +1237,58 @@ input[type="date"] { color-scheme: dark; }
   </div>
 </div>
 
+<!-- EMAIL SETTINGS MODAL -->
+<div class="email-settings-overlay hidden" id="emailSettingsOverlay">
+  <div class="email-settings-modal">
+    <div class="modal-header">
+      <div class="modal-title">📧 EMAIL REPORT</div>
+      <button class="btn-close" onclick="closeEmailSettings()">✕</button>
+    </div>
+
+    <div class="email-toggle-row">
+      <span>DAILY REPORT ENABLED</span>
+      <input type="checkbox" id="emailEnabled">
+    </div>
+
+    <div class="email-form-group">
+      <label>Daily Send Time</label>
+      <select id="emailSendHour"></select>
+      <div class="field-hint">Time is set in your Firebase Cloud Function. Update the cron schedule there to change it.</div>
+    </div>
+
+    <div class="email-form-group">
+      <label>From Name</label>
+      <input type="text" id="emailFromName" placeholder="TaskQ Daily" maxlength="50">
+    </div>
+
+    <div class="email-form-group">
+      <label>From Email</label>
+      <input type="email" id="emailFromEmail" placeholder="noreply@yourdomain.com">
+      <div class="field-hint">Must be a verified sender in your SendGrid account.</div>
+    </div>
+
+    <div class="email-form-group">
+      <label>Cloud Function URL (Send Now)</label>
+      <input type="text" id="emailFunctionUrl" placeholder="https://us-central1-yourproject.cloudfunctions.net/sendEmailNow">
+      <div class="field-hint">Paste the URL of your deployed <em>sendEmailNow</em> Firebase Function here to enable the "Send Now" button.</div>
+    </div>
+
+    <div class="email-form-group">
+      <label>Recipients</label>
+      <div id="emailRecipientList"></div>
+      <button class="btn-add-item" style="margin-top:6px" onclick="addEmailRecipientRow()">+ ADD RECIPIENT</button>
+    </div>
+
+    <div class="email-modal-footer">
+      <button class="btn-send-now" id="btnSendNow" onclick="sendReportNow()">📤 SEND NOW</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-edit-cancel" onclick="closeEmailSettings()">CANCEL</button>
+        <button class="btn-edit-save" onclick="saveEmailSettings()">SAVE</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -1233,10 +1309,12 @@ const db             = firebase.database();
 const auth           = firebase.auth();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 // Dynamic refs — set by switchWorkspace()
-let tasksRef    = null;
-let settingsRef = null;
-let eventsRef   = null;
-let wsListRef   = null;
+let tasksRef         = null;
+let settingsRef      = null;
+let eventsRef        = null;
+let wsListRef        = null;
+// Global ref — not workspace-specific
+const emailSettingsRef = db.ref('emailSettings');
 
 // ── DEFAULTS ──────────────────────────────────────────────────────────────────
 const DEFAULTS = {
@@ -1274,6 +1352,8 @@ let draggingTaskKey   = null;   // key of card being dragged in category board
 let urgentMode        = false;  // next task added will be marked urgent
 let tmpExpenseItems   = [];     // expense items being edited in modal
 let tmpExpenseCats    = [];     // expense categories being edited in settings
+let emailSettings     = {};    // loaded from Firebase /emailSettings
+let tmpEmailRecipients = [];   // recipients being edited in email modal
 let draggingColId     = null;   // category ID being dragged for column reorder
 let catColOrder       = [];     // ordered array of category IDs for category board
 let copyingEventKey   = null;   // event key pending copy with new date
@@ -2149,6 +2229,107 @@ function renderUserReport(assignee) {
   </div>`;
 
   el.innerHTML = summaryBar + taskSection + evSection;
+}
+
+// ── EMAIL SETTINGS ────────────────────────────────────────────────────────────
+// Load email settings once on startup
+emailSettingsRef.on('value', snap => {
+  emailSettings = snap.val() || {};
+});
+
+function buildSendHourSelect() {
+  const sel = document.getElementById('emailSendHour');
+  if (!sel) return;
+  const opts = [];
+  for (let h = 0; h < 24; h++) {
+    const label = h === 0 ? '12:00 AM' : h < 12 ? h + ':00 AM' : h === 12 ? '12:00 PM' : (h - 12) + ':00 PM';
+    opts.push(`<option value="${h}">${label}</option>`);
+  }
+  sel.innerHTML = opts.join('');
+}
+
+function renderEmailRecipients() {
+  const list = document.getElementById('emailRecipientList');
+  if (!list) return;
+  list.innerHTML = tmpEmailRecipients.map((r, i) =>
+    `<div class="email-recipient-row">
+      <input type="email" value="${esc(r)}" placeholder="email@example.com"
+        oninput="tmpEmailRecipients[${i}]=this.value">
+      <button class="btn-remove-item" onclick="removeEmailRecipient(${i})">✕</button>
+    </div>`
+  ).join('');
+}
+
+function addEmailRecipientRow() {
+  tmpEmailRecipients.push('');
+  renderEmailRecipients();
+  // Focus the new input
+  const rows = document.querySelectorAll('.email-recipient-row input');
+  if (rows.length) rows[rows.length - 1].focus();
+}
+
+function removeEmailRecipient(i) {
+  tmpEmailRecipients.splice(i, 1);
+  renderEmailRecipients();
+}
+
+function openEmailSettings() {
+  const s = emailSettings;
+  document.getElementById('emailEnabled').checked    = !!s.enabled;
+  document.getElementById('emailFromName').value     = s.fromName    || '';
+  document.getElementById('emailFromEmail').value    = s.fromEmail   || '';
+  document.getElementById('emailFunctionUrl').value  = s.functionUrl || '';
+  buildSendHourSelect();
+  document.getElementById('emailSendHour').value = s.sendHour != null ? s.sendHour : 7;
+  tmpEmailRecipients = Array.isArray(s.recipients) ? [...s.recipients] : [];
+  renderEmailRecipients();
+  document.getElementById('emailSettingsOverlay').classList.remove('hidden');
+}
+
+function closeEmailSettings() {
+  document.getElementById('emailSettingsOverlay').classList.add('hidden');
+}
+
+function saveEmailSettings() {
+  // Collect recipients, strip blanks
+  const recipientInputs = document.querySelectorAll('.email-recipient-row input[type="email"]');
+  const recipients = Array.from(recipientInputs)
+    .map(el => el.value.trim())
+    .filter(v => v && v.includes('@'));
+
+  const data = {
+    enabled:     document.getElementById('emailEnabled').checked,
+    sendHour:    parseInt(document.getElementById('emailSendHour').value, 10),
+    fromName:    document.getElementById('emailFromName').value.trim()  || 'TaskQ Daily',
+    fromEmail:   document.getElementById('emailFromEmail').value.trim() || null,
+    functionUrl: document.getElementById('emailFunctionUrl').value.trim() || null,
+    recipients
+  };
+
+  emailSettingsRef.set(data);
+  closeEmailSettings();
+}
+
+async function sendReportNow() {
+  const url = document.getElementById('emailFunctionUrl').value.trim() || emailSettings.functionUrl;
+  if (!url) { alert('Please enter your Cloud Function URL in the Email settings first.'); return; }
+  const btn = document.getElementById('btnSendNow');
+  btn.disabled = true;
+  btn.textContent = '⏳ SENDING…';
+  try {
+    const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ manual: true }) });
+    const json = await resp.json().catch(() => ({}));
+    if (resp.ok) {
+      btn.textContent = '✓ SENT';
+      setTimeout(() => { btn.disabled = false; btn.textContent = '📤 SEND NOW'; }, 3000);
+    } else {
+      alert('Send failed: ' + (json.error || resp.status));
+      btn.disabled = false; btn.textContent = '📤 SEND NOW';
+    }
+  } catch (err) {
+    alert('Network error: ' + err.message);
+    btn.disabled = false; btn.textContent = '📤 SEND NOW';
+  }
 }
 
 // ── EDIT TASK ─────────────────────────────────────────────────────────────────
@@ -3357,6 +3538,7 @@ document.getElementById('expenseReportOverlay').addEventListener('click', functi
 document.getElementById('timeReportOverlay').addEventListener('click', function(e) { if (e.target === this) closeTimeReport(); });
 document.getElementById('userReportOverlay').addEventListener('click', function(e) { if (e.target === this) closeUserReport(); });
 document.getElementById('copyEventOverlay').addEventListener('click', function(e) { if (e.target === this) closeCopyEventModal(); });
+document.getElementById('emailSettingsOverlay').addEventListener('click', function(e) { if (e.target === this) closeEmailSettings(); });
 
 // Close workspace dropdown when clicking outside it
 document.addEventListener('click', function(e) {
