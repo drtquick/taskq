@@ -47,6 +47,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .btn-signout:hover { border-color: var(--accent); color: var(--accent); }
 .settings-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); cursor: pointer; padding: 7px 12px; font-size: 1rem; border-radius: 4px; transition: background 0.2s; }
 .settings-btn:hover { background: var(--accent); }
+.beta-badge { font-size: 0.6rem; color: var(--accent); border: 1px solid var(--accent); padding: 2px 7px; border-radius: 10px; letter-spacing: 1px; opacity: 0.7; }
 
 /* STATUS BAR */
 .status-bar { background: #0a0a0a; border-bottom: 1px solid var(--border); padding: 4px 20px; font-size: 0.65rem; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
@@ -67,7 +68,9 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .cal-page.hidden { display: none; }
 
 /* CONTROLS */
-.controls { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
+.controls { background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.controls-row1 { padding: 10px 20px 6px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.controls-row2 { padding: 5px 20px 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; border-top: 1px solid var(--border); }
 .controls input[type="text"],
 .controls input[type="datetime-local"],
 .controls select {
@@ -131,21 +134,26 @@ input[type="date"] { color-scheme: dark; }
 .card-status  { font-size: 0.63rem; letter-spacing: 2px; margin-bottom: 10px; color: var(--muted); }
 .progress-bar  { height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 10px; overflow: hidden; }
 .progress-fill { height: 100%; border-radius: 2px; transition: width 60s linear, background-color 0.5s; }
+.card-notes { font-size: 0.72rem; color: var(--muted); line-height: 1.45; margin-bottom: 8px; white-space: pre-wrap; word-break: break-word; border-left: 2px solid var(--border); padding-left: 8px; }
+.card-time-spent { font-size: 0.6rem; color: var(--muted); letter-spacing: 1px; margin-bottom: 3px; }
 .card-actions { display: flex; gap: 8px; }
-.btn-done, .btn-remove {
+.btn-done, .btn-edit, .btn-remove {
   flex: 1; padding: 5px; font-family: var(--font); font-size: 0.68rem; letter-spacing: 1px;
   border: 1px solid var(--border); border-radius: 3px; cursor: pointer;
   background: var(--surface2); color: var(--muted); transition: all 0.2s;
 }
-.btn-done:hover   { border-color: var(--green); color: var(--green); }
-.btn-remove:hover { border-color: var(--red);   color: var(--red); }
-.card.done .btn-done { display: none; }
+.btn-done:hover   { border-color: var(--green);  color: var(--green); }
+.btn-edit:hover   { border-color: var(--accent); color: var(--accent); }
+.btn-remove:hover { border-color: var(--red);    color: var(--red); }
 
 /* TABLE VIEW */
 .table-container { flex: 1; padding: 16px 20px; overflow-x: auto; overflow-y: auto; }
 .task-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 .task-table thead tr { border-bottom: 2px solid var(--accent); }
 .task-table th { text-align: left; padding: 10px 12px; font-size: 0.63rem; letter-spacing: 2px; color: var(--muted); font-weight: normal; white-space: nowrap; }
+.tbl-sort-th { cursor: pointer; user-select: none; }
+.tbl-sort-th:hover { color: var(--text); }
+.tbl-sort-active { color: var(--accent) !important; }
 .task-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
 .task-table tbody tr:hover { background: var(--surface2); }
 .task-table td { padding: 10px 12px; vertical-align: middle; }
@@ -170,13 +178,14 @@ input[type="date"] { color-scheme: dark; }
 .td-status.done   { color: #4caf50;       font-size: 0.72rem; letter-spacing: 1px; }
 .cat-badge { font-size: 0.63rem; padding: 2px 8px; border-radius: 3px; letter-spacing: 1px; font-weight: bold; white-space: nowrap; }
 .tbl-actions { display: flex; gap: 6px; white-space: nowrap; }
-.tbl-btn-done, .tbl-btn-remove {
+.tbl-btn-done, .tbl-btn-edit, .tbl-btn-remove {
   padding: 4px 8px; font-family: var(--font); font-size: 0.63rem; letter-spacing: 1px;
   border: 1px solid var(--border); border-radius: 3px; cursor: pointer;
   background: var(--surface2); color: var(--muted); transition: all 0.2s;
 }
-.tbl-btn-done:hover   { border-color: var(--green); color: var(--green); }
-.tbl-btn-remove:hover { border-color: var(--red);   color: var(--red); }
+.tbl-btn-done:hover   { border-color: var(--green);  color: var(--green); }
+.tbl-btn-edit:hover   { border-color: var(--accent); color: var(--accent); }
+.tbl-btn-remove:hover { border-color: var(--red);    color: var(--red); }
 .tbl-empty { text-align: center; padding: 70px 20px; color: var(--muted); font-size: 0.85rem; letter-spacing: 2px; }
 
 /* CONFIRM DIALOG */
@@ -369,7 +378,408 @@ input[type="date"] { color-scheme: dark; }
 .btn-event-cancel { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 7px 15px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; }
 .btn-event-save { background: var(--accent); color: white; border: none; padding: 7px 15px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; letter-spacing: 1px; }
 
+/* EDIT TASK MODAL */
+.edit-task-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 350; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.edit-task-overlay.hidden { display: none; }
+.edit-task-modal { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 8px; width: 100%; max-width: 500px; padding: 24px; max-height: 90vh; overflow-y: auto; }
+.edit-task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.edit-task-title { font-size: 0.9rem; letter-spacing: 3px; color: var(--accent); }
+.edit-task-form-row { margin-bottom: 14px; }
+.edit-task-form-row label { display: block; font-size: 0.63rem; color: var(--muted); letter-spacing: 2px; margin-bottom: 5px; }
+.edit-task-form-row input[type="text"],
+.edit-task-form-row input[type="datetime-local"],
+.edit-task-form-row input[type="number"],
+.edit-task-form-row select,
+.edit-task-form-row textarea {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none;
+}
+.edit-task-form-row textarea { min-height: 80px; resize: vertical; }
+.edit-task-form-row input[type="number"] { -moz-appearance: textfield; }
+.edit-task-form-row input[type="number"]::-webkit-outer-spin-button,
+.edit-task-form-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.edit-task-form-row input:focus, .edit-task-form-row select:focus, .edit-task-form-row textarea:focus { border-color: var(--accent); }
+.edit-task-toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.edit-task-toggle-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+.edit-task-toggle-row label { font-size: 0.78rem; color: var(--text); cursor: pointer; }
+.edit-task-footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 8px; }
+.btn-edit-cancel { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 7px 15px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; }
+.btn-edit-save { background: var(--accent); color: white; border: none; padding: 7px 15px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; letter-spacing: 1px; }
+
 ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* WORKSPACE SWITCHER */
+.ws-switcher { position: relative; display: flex; align-items: center; }
+.ws-btn { display: flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 0.72rem; letter-spacing: 2px; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: border-color 0.2s; white-space: nowrap; }
+.ws-btn:hover { border-color: var(--accent); color: var(--accent); }
+.ws-arrow { font-size: 0.55rem; color: var(--muted); margin-left: 2px; }
+.ws-dropdown { position: absolute; top: calc(100% + 6px); left: 0; min-width: 200px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 8px 28px rgba(0,0,0,0.6); z-index: 250; overflow: hidden; }
+.ws-dropdown.hidden { display: none; }
+.ws-dropdown-list { padding: 4px 0; max-height: 240px; overflow-y: auto; }
+.ws-item { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: none; color: var(--text); font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; padding: 9px 14px; cursor: pointer; transition: background 0.15s; }
+.ws-item:hover { background: var(--surface2); }
+.ws-active { color: var(--accent) !important; }
+.ws-item-dot { font-size: 0.55rem; flex-shrink: 0; }
+.ws-dropdown-sep { height: 1px; background: var(--border); }
+.ws-new-btn { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; background: none; border: none; color: var(--accent); font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; padding: 10px 14px; cursor: pointer; transition: background 0.15s; }
+.ws-new-btn:hover { background: var(--surface2); }
+
+/* CREATE WORKSPACE MODAL */
+.create-ws-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 400; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.create-ws-overlay.hidden { display: none; }
+.create-ws-modal { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 8px; width: 100%; max-width: 380px; padding: 24px; }
+.create-ws-title { font-size: 0.9rem; letter-spacing: 3px; color: var(--accent); margin-bottom: 18px; }
+.create-ws-modal input[type="text"] { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 10px 14px; font-size: 0.88rem; border-radius: 4px; outline: none; margin-bottom: 16px; letter-spacing: 2px; }
+.create-ws-modal input[type="text"]:focus { border-color: var(--accent); }
+.create-ws-footer { display: flex; justify-content: flex-end; gap: 8px; }
+.btn-create-ws  { background: var(--accent); color: white; border: none; padding: 8px 18px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; letter-spacing: 1px; }
+.btn-cancel-ws  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 8px 14px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; }
+
+/* WORKSPACE IN SETTINGS */
+.ws-rename-row { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+.ws-rename-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none; letter-spacing: 1px; }
+.ws-rename-row input:focus { border-color: var(--accent); }
+.btn-rename-ws  { background: var(--surface2); color: var(--text); border: 1px solid var(--border); padding: 8px 14px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+.btn-rename-ws:hover { border-color: var(--accent); color: var(--accent); }
+.btn-delete-ws  { background: none; border: 1px solid var(--red); color: var(--red); font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-top: 12px; }
+.btn-delete-ws:hover { background: var(--red); color: white; }
+
+/* PRINT BUTTON */
+.btn-print { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-print:hover { border-color: var(--text); color: var(--text); }
+
+/* NOTES TOGGLE BUTTON */
+.btn-notes-toggle { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-notes-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.btn-notes-toggle.notes-on { border-color: var(--accent); color: var(--accent); background: rgba(255,107,0,0.1); }
+
+/* SHOW DONE / BULK / REPORT BUTTONS */
+.btn-show-done  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-show-done:hover  { border-color: var(--green); color: var(--green); }
+.btn-show-done.done-on { border-color: var(--green); color: var(--green); background: rgba(0,200,83,0.1); }
+.btn-bulk-toggle { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-bulk-toggle:hover { border-color: var(--yellow); color: var(--yellow); }
+.btn-bulk-toggle.bulk-on { border-color: var(--yellow); color: var(--yellow); background: rgba(255,214,0,0.1); }
+.btn-report  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-report:hover { border-color: var(--accent); color: var(--accent); }
+.btn-urgent { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-urgent:hover { border-color: var(--red); color: var(--red); }
+.btn-urgent.urgent-on { background: rgba(213,0,0,0.12); border-color: var(--red); color: var(--red); }
+
+/* BULK ACTION BAR */
+.bulk-bar { background: rgba(255,214,0,0.07); border-bottom: 1px solid var(--yellow); padding: 7px 20px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
+.bulk-bar.hidden { display: none; }
+.bulk-count { font-size: 0.72rem; color: var(--yellow); letter-spacing: 1px; margin-right: 4px; }
+.btn-bulk-remove { background: none; border: 1px solid var(--red); color: var(--red); padding: 5px 12px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+.btn-bulk-remove:hover { background: var(--red); color: white; }
+.btn-bulk-copy   { background: none; border: 1px solid var(--accent); color: var(--accent); padding: 5px 12px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+.btn-bulk-copy:hover { background: var(--accent); color: white; }
+.btn-bulk-done   { background: none; border: 1px solid var(--green); color: var(--green); padding: 5px 12px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+.btn-bulk-done:hover { background: var(--green); color: white; }
+.btn-bulk-cancel { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 5px 12px; font-family: var(--font); font-size: 0.72rem; border-radius: 4px; cursor: pointer; }
+
+/* CARD BULK SELECTION */
+.card-select-wrap { display: flex; align-items: center; gap: 8px; }
+.card-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: var(--yellow); flex-shrink: 0; }
+.card.selected-task { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.tbl-checkbox { width: 15px; height: 15px; cursor: pointer; accent-color: var(--yellow); }
+
+/* REOPEN BUTTON */
+.btn-reopen { flex: 1; padding: 5px; font-family: var(--font); font-size: 0.68rem; letter-spacing: 1px; border: 1px solid var(--green); border-radius: 3px; cursor: pointer; background: var(--surface2); color: var(--green); transition: all 0.2s; }
+.btn-reopen:hover { background: var(--green); color: #000; }
+.tbl-btn-reopen { padding: 4px 8px; font-family: var(--font); font-size: 0.63rem; letter-spacing: 1px; border: 1px solid var(--green); border-radius: 3px; cursor: pointer; background: var(--surface2); color: var(--green); transition: all 0.2s; }
+.tbl-btn-reopen:hover { background: var(--green); color: #000; }
+
+/* EXPENSE DISPLAY ON CARDS */
+.card-expense { font-size: 0.6rem; color: var(--muted); letter-spacing: 1px; margin-bottom: 3px; }
+
+/* ITEMIZED EXPENSE EDITOR IN MODAL */
+.expense-items { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
+.expense-item-row { display: grid; grid-template-columns: 1fr 76px auto auto; gap: 5px; align-items: center; }
+.expense-item-row input[type="text"]   { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 6px 8px; font-size: 0.78rem; border-radius: 4px; outline: none; }
+.expense-item-row input[type="number"] { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 6px 8px; font-size: 0.78rem; border-radius: 4px; outline: none; text-align: right; -moz-appearance: textfield; }
+.expense-item-row input[type="number"]::-webkit-outer-spin-button,
+.expense-item-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.expense-item-row input[type="text"]:focus, .expense-item-row input[type="number"]:focus { border-color: var(--accent); }
+.expense-item-tax { display: flex; align-items: center; gap: 4px; font-size: 0.68rem; color: var(--muted); white-space: nowrap; cursor: pointer; }
+.expense-item-tax input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; accent-color: var(--green); flex-shrink: 0; }
+.btn-rm-expense { background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 0.72rem; }
+.btn-rm-expense:hover { border-color: var(--red); color: var(--red); }
+.btn-add-expense { background: var(--surface2); border: 1px dashed var(--border); color: var(--muted); cursor: pointer; padding: 6px; border-radius: 4px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; width: 100%; }
+.btn-add-expense:hover { border-color: var(--green); color: var(--green); }
+
+/* REPORT MODAL */
+.report-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 350; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.report-overlay.hidden { display: none; }
+.report-modal { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 8px; width: 100%; max-width: 780px; padding: 24px; max-height: 90vh; overflow-y: auto; }
+.report-modal .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.report-totals { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; gap: 30px; justify-content: flex-end; font-size: 0.82rem; flex-wrap: wrap; }
+.report-btn-print { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 5px 12px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; }
+.report-btn-print:hover { border-color: var(--text); color: var(--text); }
+
+/* DRAG-AND-DROP CATEGORY */
+.cat-col-cards.drag-over { background: rgba(255,107,0,0.08); border: 1px dashed var(--accent); border-radius: 4px; }
+
+/* CATEGORY BOARD */
+.cat-board { flex: 1; padding: 16px 20px; display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; align-items: flex-start; }
+.cat-col { min-width: 260px; width: 260px; flex: 0 0 auto; display: flex; flex-direction: column; max-height: 100%; }
+.cat-col-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; margin-bottom: 8px; border-radius: 4px; border-top: 3px solid var(--accent); background: var(--surface); font-size: 0.78rem; letter-spacing: 2px; font-weight: bold; }
+.cat-col-count { font-size: 0.65rem; background: var(--surface2); padding: 2px 8px; border-radius: 10px; color: var(--muted); }
+.cat-col-cards { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; padding-bottom: 8px; }
+.cat-col-empty { font-size: 0.65rem; color: var(--muted); letter-spacing: 2px; padding: 16px; text-align: center; border: 1px dashed var(--border); border-radius: 4px; }
+
+/* PRINT STYLES */
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: white !important; color: black !important; }
+  /* Hide chrome */
+  .no-print, .auth-screen, .header, .status-bar, .page-nav, .controls, .cal-toolbar,
+  .confirm-overlay, .edit-task-overlay, .overlay, .event-overlay,
+  .card-actions, .tbl-actions, .cal-view-toggle { display: none !important; }
+  /* Show correct page as block */
+  .tasks-page, .cal-page { display: block !important; overflow: visible !important; }
+  /* Board */
+  .board { display: flex !important; flex-wrap: wrap; gap: 12px; overflow: visible !important; background: white !important; padding: 12px !important; }
+  .col { min-width: 180px; flex: 1; break-inside: avoid; }
+  .col-header { background: white !important; color: black !important; border-bottom: 2px solid #333 !important; }
+  .col-header .col-count { color: #555 !important; }
+  .card { background: white !important; border: 1px solid #ccc !important; break-inside: avoid; margin-bottom: 6px; }
+  .card-name { color: black !important; }
+  .card-meta { color: #555 !important; }
+  .card-due { color: black !important; }
+  .card-dot { -webkit-print-color-adjust: exact !important; }
+  /* Table */
+  .table-wrap { overflow: visible !important; background: white !important; }
+  table { width: 100% !important; border-collapse: collapse; }
+  th { background: #eee !important; color: black !important; border: 1px solid #ccc !important; padding: 6px 8px; font-size: 0.72rem; }
+  td { background: white !important; color: black !important; border: 1px solid #eee !important; padding: 5px 8px; font-size: 0.78rem; }
+  tr:nth-child(even) td { background: #f9f9f9 !important; }
+  /* Calendar */
+  .cal-main, #calMain { overflow: visible !important; background: white !important; }
+  .cal-month-view, .cal-month-grid { overflow: visible !important; }
+  .cal-day-cell { background: white !important; color: black !important; border: 1px solid #ccc !important; break-inside: avoid; }
+  .cal-day-num { color: black !important; }
+  .cal-dayname { color: black !important; background: #eee !important; border: 1px solid #ccc !important; }
+  .cal-event-chip { break-inside: avoid; font-size: 0.65rem !important; }
+  .cal-week-grid, .cal-day-grid { overflow: visible !important; }
+  .cal-week-col-name, .cal-allday-col { background: #eee !important; color: black !important; }
+  .cal-time-label { color: #555 !important; }
+  .cal-event-block { break-inside: avoid; }
+  /* Page title as print header */
+  .page-nav.no-print + * { margin-top: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE — TABLET  (≤ 1024px)
+═══════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .legend { gap: 6px; }
+  .legend-item { font-size: 0.62rem; gap: 4px; }
+  .datetime { font-size: 0.88rem; }
+  .header-right { gap: 10px; }
+  .cal-title { min-width: 180px; font-size: 0.9rem; }
+  /* Compress category grid slightly */
+  .cat-table-header,
+  .cat-row { grid-template-columns: 1fr 36px 62px 62px 62px 32px; gap: 5px; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE — MOBILE  (≤ 600px)
+═══════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+
+  /* ── HEADER ── */
+  .header { padding: 8px 12px; gap: 6px; }
+  .logo { font-size: 1.5rem; letter-spacing: 3px; }
+  .logo-sub { display: none; }
+  .header-right { gap: 8px; }
+  .legend  { display: none; }
+  .datetime { display: none; }
+  .user-name { display: none; }
+  .beta-badge { display: none; }
+  .btn-signout { padding: 5px 8px; font-size: 0.6rem; letter-spacing: 0; }
+  .settings-btn { padding: 6px 10px; font-size: 0.9rem; }
+
+  /* ── STATUS BAR ── */
+  .status-bar { padding: 3px 12px; font-size: 0.58rem; }
+
+  /* ── PAGE TABS ── */
+  .page-tab { padding: 8px 14px; font-size: 0.68rem; letter-spacing: 1px; min-height: 40px; }
+
+  /* ── TASK CONTROLS ── */
+  .controls-row1 { padding: 8px 10px 4px; gap: 6px; }
+  .controls-row2 { padding: 4px 10px 6px; gap: 5px; }
+  /* Task name goes full width first */
+  .input-task { flex: 1 1 100%; min-width: 0; order: -1; }
+  /* Assignee + category share a row */
+  .input-assignee { flex: 1 1 calc(50% - 6px); width: auto; min-width: 0; }
+  .input-category  { flex: 1 1 calc(50% - 6px); width: auto; min-width: 0; }
+  /* Date inputs expand when visible */
+  .input-past { flex: 1 1 calc(50% - 3px); width: auto; min-width: 0; }
+  .input-due  { flex: 1 1 calc(50% - 3px); width: auto; min-width: 0; }
+  /* Time toggle buttons */
+  .btn-time { flex: 1 1 calc(50% - 6px); text-align: center; font-size: 0.68rem; padding: 7px 6px; }
+  /* ADD and CLEAR share a row */
+  .btn-add   { flex: 1 1 calc(50% - 6px); text-align: center; }
+  .btn-clear { flex: 1 1 calc(50% - 6px); text-align: center; }
+  /* View toggle fills row */
+  .view-toggle { flex: 1 1 100%; }
+  .btn-view { flex: 1; text-align: center; font-size: 0.68rem; padding: 7px 6px; }
+  /* Task count and print */
+  .task-count { margin-left: 0; flex: 1 1 100%; text-align: right; order: 99; font-size: 0.65rem; }
+  .btn-print { display: none; }
+
+  /* ── BOARD ── */
+  .board { padding: 10px; grid-template-columns: 1fr; }
+
+  /* ── TABLE — horizontal scroll handles overflow, just tighten padding ── */
+  .table-container { padding: 8px 10px; }
+  .task-table th, .task-table td { padding: 8px 8px; }
+  .td-task { max-width: 140px; font-size: 0.78rem; }
+
+  /* ── CATEGORY BOARD ── */
+  .cat-board { padding: 10px; }
+  .cat-col { min-width: 230px; width: 230px; }
+
+  /* ── CALENDAR TOOLBAR ── */
+  .cal-toolbar { padding: 8px 10px; gap: 6px; }
+  .cal-title { font-size: 0.78rem; min-width: 110px; letter-spacing: 0; }
+  .btn-cal-today { padding: 6px 10px; font-size: 0.65rem; }
+  .btn-cal-nav { padding: 6px 10px; }
+  .btn-cal-view { padding: 6px 10px; font-size: 0.65rem; letter-spacing: 0; }
+  .btn-add-event { margin-left: 0; padding: 6px 10px; font-size: 0.68rem; letter-spacing: 0; }
+  .cal-event-count { display: none; }
+
+  /* ── MODALS — bottom sheet ── */
+  .overlay,
+  .event-overlay,
+  .edit-task-overlay,
+  .create-ws-overlay { padding: 0; align-items: flex-end; }
+
+  .modal {
+    max-width: 100%; width: 100%; max-height: 93vh;
+    border-radius: 14px 14px 0 0; border-bottom: none; padding: 20px 14px;
+  }
+  .event-modal,
+  .edit-task-modal {
+    max-width: 100%; width: 100%; max-height: 93vh;
+    border-radius: 14px 14px 0 0; padding: 20px 14px;
+  }
+  .create-ws-modal {
+    max-width: 100%; width: 100%;
+    border-radius: 14px 14px 0 0; padding: 20px 14px;
+  }
+  .confirm-box { margin: 0 10px; padding: 20px 16px; }
+
+  /* ── SETTINGS CATEGORY TABLE — allow horizontal scroll ── */
+  .cat-table-header,
+  .cat-row { grid-template-columns: 1fr 34px 52px 52px 52px 30px; gap: 4px; }
+  .cat-row input[type="number"] { padding: 5px 2px; font-size: 0.72rem; }
+  .cat-row input[type="text"]   { padding: 5px 6px; font-size: 0.74rem; }
+
+  /* ── WORKSPACE SWITCHER ── */
+  .ws-btn { font-size: 0.68rem; padding: 5px 9px; letter-spacing: 1px; }
+  .ws-dropdown { min-width: 170px; }
+
+  /* ── CARD ADJUSTMENTS ── */
+  .card-timer { font-size: 1.25rem; }
+  .card { padding: 12px; }
+
+  /* ── MIN TOUCH TARGETS ── */
+  .btn-done, .btn-edit, .btn-remove { min-height: 36px; padding: 6px 5px; }
+  .tbl-btn-done, .tbl-btn-edit, .tbl-btn-remove { min-height: 36px; padding: 5px 9px; }
+  .btn-cal-nav, .btn-cal-today, .btn-cal-view, .btn-add-event { min-height: 36px; }
+  .ws-item { padding: 10px 14px; min-height: 40px; }
+}
+
+/* ── V1.1 ADDITIONS ──────────────────────────────────────────────────────── */
+
+/* EOD / EOB QUICK TIME BUTTONS */
+.quick-time-wrap { display: flex; gap: 4px; align-items: center; flex-wrap: nowrap; }
+.btn-quick-time { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 4px 7px; font-family: var(--font); font-size: 0.65rem; letter-spacing: 1px; border-radius: 3px; cursor: pointer; white-space: nowrap; transition: all 0.2s; flex-shrink: 0; }
+.btn-quick-time:hover { border-color: var(--yellow); color: var(--yellow); }
+
+/* MARK-AS-DONE BUTTON IN EDIT TASK MODAL */
+.btn-mark-done-modal { background: none; border: 1px solid var(--green); color: var(--green); padding: 7px 15px; font-family: var(--font); font-size: 0.78rem; border-radius: 4px; cursor: pointer; letter-spacing: 1px; transition: all 0.2s; }
+.btn-mark-done-modal:hover { background: var(--green); color: #000; }
+.btn-mark-done-modal.hidden { display: none; }
+
+/* CATEGORY BOARD — ADD TASK FOOTER */
+.cat-col-add { font-size: 0.65rem; color: var(--muted); letter-spacing: 2px; padding: 8px; text-align: center; border: 1px dashed var(--border); border-radius: 4px; cursor: pointer; margin-top: 4px; flex-shrink: 0; transition: all 0.15s; }
+.cat-col-add:hover { border-color: var(--accent); color: var(--accent); }
+
+/* CATEGORY COLUMN DRAG REORDER */
+.cat-col-header { cursor: grab; user-select: none; }
+.cat-col-header:active { cursor: grabbing; }
+.cat-col.col-drag-over > .cat-col-header { outline: 2px dashed var(--accent); outline-offset: 2px; }
+
+/* USER REPORT */
+.user-report-filter { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.user-report-select { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none; min-width: 200px; }
+.user-report-select:focus { border-color: var(--accent); }
+.report-section-title { font-size: 0.72rem; letter-spacing: 2px; color: var(--accent); margin: 16px 0 8px; text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+
+/* COPY EVENT DATE PICKER MODAL */
+.copy-event-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 360; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.copy-event-overlay.hidden { display: none; }
+.copy-event-modal { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 8px; width: 100%; max-width: 320px; padding: 24px; }
+.copy-event-title { font-size: 0.9rem; letter-spacing: 3px; color: var(--accent); margin-bottom: 16px; }
+.copy-event-modal label { display: block; font-size: 0.63rem; color: var(--muted); letter-spacing: 2px; margin-bottom: 5px; }
+.copy-event-modal input[type="date"] { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none; margin-bottom: 16px; }
+.copy-event-modal input[type="date"]:focus { border-color: var(--accent); }
+.copy-event-footer { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* EXPENSE CATEGORY IN SETTINGS */
+.expense-cat-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.expense-cat-row { display: flex; gap: 8px; align-items: center; }
+.expense-cat-row input[type="text"] { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 7px 10px; font-size: 0.8rem; border-radius: 4px; outline: none; text-transform: uppercase; }
+.expense-cat-row input[type="text"]:focus { border-color: var(--accent); }
+
+/* EVENT FORM — NUMBER INPUTS */
+.event-form-row input[type="number"] {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none;
+  -moz-appearance: textfield;
+}
+.event-form-row input[type="number"]:focus { border-color: var(--accent); }
+.event-form-row input[type="number"]::-webkit-outer-spin-button,
+.event-form-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.event-form-row select {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none;
+}
+.event-form-row select:focus { border-color: var(--accent); }
+
+/* EMAIL SETTINGS MODAL */
+.email-settings-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 360; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.email-settings-overlay.hidden { display: none; }
+.email-settings-modal { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 8px; width: 100%; max-width: 440px; padding: 24px; max-height: 90vh; overflow-y: auto; }
+.email-settings-modal .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.email-form-group { margin-bottom: 14px; }
+.email-form-group label { display: block; font-size: 0.63rem; color: var(--muted); letter-spacing: 2px; margin-bottom: 5px; text-transform: uppercase; }
+.email-form-group input[type="text"], .email-form-group input[type="email"], .email-form-group select { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 8px 12px; font-size: 0.82rem; border-radius: 4px; outline: none; box-sizing: border-box; }
+.email-form-group input:focus, .email-form-group select:focus { border-color: var(--accent); }
+.email-form-group .field-hint { font-size: 0.62rem; color: var(--muted); margin-top: 5px; line-height: 1.4; }
+.email-toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; margin-bottom: 14px; border-bottom: 1px solid var(--border); }
+.email-toggle-row span { font-size: 0.75rem; letter-spacing: 2px; color: var(--text); }
+.email-toggle-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
+.email-recipient-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.email-recipient-row input[type="email"] { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 7px 10px; font-size: 0.8rem; border-radius: 4px; outline: none; }
+.email-recipient-row input:focus { border-color: var(--accent); }
+.email-recipient-row .btn-remove-item { background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer; padding: 5px 9px; border-radius: 3px; font-size: 0.7rem; flex-shrink: 0; }
+.email-recipient-row .btn-remove-item:hover { border-color: var(--red); color: var(--red); }
+.email-modal-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); gap: 8px; }
+.btn-send-now { background: none; border: 1px solid var(--green); color: var(--green); padding: 8px 14px; font-family: var(--font); font-size: 0.75rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; }
+.btn-send-now:hover { background: var(--green); color: #000; }
+.btn-send-now:disabled { opacity: 0.4; cursor: not-allowed; }
+.extend-dates-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; flex-wrap: wrap; }
+.extend-dates-row label { font-size: 0.63rem; color: var(--muted); letter-spacing: 2px; white-space: nowrap; }
+.extend-dates-row input[type="number"] { width: 64px; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 6px 8px; font-size: 0.82rem; border-radius: 4px; outline: none; -moz-appearance: textfield; text-align: center; }
+.extend-dates-row input[type="number"]::-webkit-outer-spin-button,
+.extend-dates-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.extend-dates-row input:focus { border-color: var(--accent); }
+.btn-extend { background: none; border: 1px solid var(--accent); color: var(--accent); padding: 6px 12px; font-family: var(--font); font-size: 0.7rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+.btn-extend:hover { background: var(--accent); color: #000; }
 </style>
 </head>
 <body>
@@ -394,10 +804,22 @@ input[type="date"] { color-scheme: dark; }
   </div>
 </div>
 
-<header class="header">
+<header class="header no-print">
   <div>
     <div class="logo">TASKQ</div>
-    <div class="logo-sub">CODDINGTON FAMILY TASKS</div>
+    <div class="logo-sub" id="logoSub">CODDINGTON FAMILY TASKS</div>
+  </div>
+  <!-- WORKSPACE SWITCHER -->
+  <div class="ws-switcher" id="wsSwitcher">
+    <button class="ws-btn" onclick="toggleWsDropdown()">
+      <span id="wsCurrentName">—</span>
+      <span class="ws-arrow">▾</span>
+    </button>
+    <div class="ws-dropdown hidden" id="wsDropdown">
+      <div class="ws-dropdown-list" id="wsDropdownList"></div>
+      <div class="ws-dropdown-sep"></div>
+      <button class="ws-new-btn" onclick="openCreateWs()">＋ NEW WORKSPACE</button>
+    </div>
   </div>
   <div class="header-right">
     <div class="legend">
@@ -411,17 +833,18 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
+    <span class="beta-badge">β v1.3</span>
     <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
 </header>
 
-<div class="status-bar">
+<div class="status-bar no-print">
   <div class="status-dot" id="statusDot"></div>
   <span id="statusText">CONNECTING...</span>
 </div>
 
 <!-- PAGE NAV TABS -->
-<nav class="page-nav">
+<nav class="page-nav no-print">
   <button class="page-tab active" id="tabTasks" onclick="setPage('tasks')">🔲 TASKS</button>
   <button class="page-tab" id="tabCalendar" onclick="setPage('calendar')">📅 CALENDAR</button>
 </nav>
@@ -431,20 +854,52 @@ input[type="date"] { color-scheme: dark; }
 <!-- TASKS PAGE -->
 <div class="tasks-page" id="tasksPage">
   <div class="controls">
-    <input class="input-task" id="iTask" type="text" placeholder="TASK DESCRIPTION..." maxlength="80" onkeydown="if(event.key==='Enter')addTask()">
-    <input class="input-assignee" id="iAssignee" type="text" placeholder="ASSIGNEE" maxlength="30" list="assigneeList" autocomplete="off">
-    <select class="input-category" id="iCategory"></select>
-    <button class="btn btn-time" id="btnPastStart" onclick="togglePastStart()" title="Set a past start date/time">📅 PAST START</button>
-    <input class="input-past" id="iPastStart" type="datetime-local" style="display:none">
-    <button class="btn btn-time" id="btnDueDate" onclick="toggleDueDate()" title="Set a future due date">🗓 DUE DATE</button>
-    <input class="input-due" id="iDueDate" type="datetime-local" style="display:none">
-    <button class="btn btn-add" onclick="addTask()">+ ADD TASK</button>
-    <button class="btn btn-clear" onclick="clearDone()">CLEAR DONE</button>
-    <div class="view-toggle">
-      <button class="btn-view active" id="btnBoard" onclick="setView('board')">🔲 BOARD</button>
-      <button class="btn-view" id="btnTable" onclick="setView('table')">📋 TABLE</button>
+    <!-- ROW 1: task creation -->
+    <div class="controls-row1">
+      <input class="input-task" id="iTask" type="text" placeholder="TASK DESCRIPTION..." maxlength="80" onkeydown="if(event.key==='Enter')addTask()">
+      <input class="input-assignee" id="iAssignee" type="text" placeholder="ASSIGNEE" maxlength="30" list="assigneeList" autocomplete="off">
+      <select class="input-category" id="iCategory"></select>
+      <button class="btn btn-time" id="btnPastStart" onclick="togglePastStart()" title="Set a past start date/time">📅 PAST START</button>
+      <div class="quick-time-wrap" id="pastStartWrap" style="display:none">
+        <input class="input-past" id="iPastStart" type="datetime-local">
+        <button class="btn-quick-time" onclick="setQuickTime('iPastStart','eob')" title="End of Business — 5:00 PM">5PM</button>
+        <button class="btn-quick-time" onclick="setQuickTime('iPastStart','eod')" title="End of Day — 11:59 PM">11PM</button>
+      </div>
+      <button class="btn btn-time" id="btnDueDate" onclick="toggleDueDate()" title="Set a future due date">🗓 DUE DATE</button>
+      <div class="quick-time-wrap" id="dueDateWrap" style="display:none">
+        <input class="input-due" id="iDueDate" type="datetime-local">
+        <button class="btn-quick-time" onclick="setQuickTime('iDueDate','eob')" title="End of Business — 5:00 PM">5PM</button>
+        <button class="btn-quick-time" onclick="setQuickTime('iDueDate','eod')" title="End of Day — 11:59 PM">11PM</button>
+      </div>
+      <button class="btn btn-urgent" id="btnUrgent" onclick="toggleUrgentMode()" title="Mark new task as urgent (24h deadline)">⚡ URGENT</button>
+      <button class="btn btn-add" onclick="addTask()">+ ADD TASK</button>
+      <button class="btn btn-clear" onclick="clearForm()" title="Clear the task creation form">CLEAR</button>
+      <div class="task-count" id="taskCount">0 ACTIVE · 0 DONE</div>
     </div>
-    <div class="task-count" id="taskCount">0 ACTIVE · 0 DONE</div>
+    <!-- ROW 2: view controls -->
+    <div class="controls-row2">
+      <button class="btn btn-print no-print" onclick="window.print()" title="Print current view">🖨 PRINT</button>
+      <button class="btn btn-notes-toggle" id="btnNotesToggle" onclick="toggleCardNotes()" title="Show/hide notes on cards">📝 NOTES</button>
+      <button class="btn btn-show-done" id="btnShowDone" onclick="toggleShowDone()" title="Show/hide completed tasks">👁 SHOW DONE</button>
+      <button class="btn btn-bulk-toggle" id="btnBulk" onclick="toggleBulkMode()" title="Select multiple tasks for bulk actions">☑ BULK</button>
+      <button class="btn btn-report" onclick="openExpenseReport()" title="Expense report">💰 EXPENSES</button>
+      <button class="btn btn-report" onclick="openTimeReport()" title="Time log report">⏱ TIME LOG</button>
+      <button class="btn btn-report" onclick="openUserReport()" title="Person / assignee report">👤 PERSON</button>
+      <button class="btn btn-report" onclick="openEmailSettings()" title="Daily email report settings">📧 EMAIL</button>
+      <div class="view-toggle">
+        <button class="btn-view active" id="btnBoard" onclick="setView('board')">🔲 BOARD</button>
+        <button class="btn-view" id="btnTable" onclick="setView('table')">📋 TABLE</button>
+        <button class="btn-view" id="btnCategory" onclick="setView('category')">🏷 CATEGORY</button>
+      </div>
+    </div>
+  </div>
+  <!-- BULK ACTION BAR -->
+  <div class="bulk-bar hidden" id="bulkBar">
+    <span class="bulk-count" id="bulkCount">0 SELECTED</span>
+    <button class="btn-bulk-done"   onclick="bulkMarkDone()">✓ MARK DONE</button>
+    <button class="btn-bulk-copy"   onclick="bulkCopy()">⎘ COPY</button>
+    <button class="btn-bulk-remove" onclick="bulkRemove()">✕ REMOVE</button>
+    <button class="btn-bulk-cancel" onclick="toggleBulkMode()">✕ CANCEL</button>
   </div>
   <div id="mainContainer" class="board">
     <div class="empty-state">SIGNING IN...<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">PLEASE WAIT</span></div>
@@ -466,7 +921,8 @@ input[type="date"] { color-scheme: dark; }
       <button class="btn-cal-view" id="btnCalDay" onclick="setCalView('day')">DAY</button>
     </div>
     <span class="cal-event-count" id="calEventCount"></span>
-    <button class="btn-add-event" onclick="openAddEvent()">+ ADD EVENT</button>
+    <button class="btn-add-event no-print" onclick="openAddEvent()">+ ADD EVENT</button>
+    <button class="btn-add-event no-print" onclick="window.print()" title="Print calendar">🖨 PRINT</button>
   </div>
   <div class="cal-main" id="calMain"></div>
 </div>
@@ -483,6 +939,83 @@ input[type="date"] { color-scheme: dark; }
   </div>
 </div>
 
+<!-- EDIT TASK MODAL -->
+<div class="edit-task-overlay hidden" id="editTaskOverlay">
+  <div class="edit-task-modal">
+    <div class="edit-task-header">
+      <div class="edit-task-title">✎ EDIT TASK</div>
+      <button class="modal-close" onclick="closeEditTask()">✕</button>
+    </div>
+    <div class="edit-task-form-row">
+      <label>TASK NAME</label>
+      <input type="text" id="etName" maxlength="80" onkeydown="if(event.key==='Enter')saveEditTask()">
+    </div>
+    <div class="edit-task-form-row">
+      <label>ASSIGNEE</label>
+      <input type="text" id="etAssignee" maxlength="30" list="assigneeList" autocomplete="off">
+    </div>
+    <div class="edit-task-form-row">
+      <label>CATEGORY</label>
+      <select id="etCategory"></select>
+    </div>
+    <div class="edit-task-toggle-row">
+      <input type="checkbox" id="etPastStartOn" onchange="toggleEtPastStart()">
+      <label for="etPastStartOn">CUSTOM START DATE</label>
+    </div>
+    <div class="edit-task-form-row" id="etPastStartRow" style="display:none">
+      <label>STARTED AT</label>
+      <input type="datetime-local" id="etPastStart">
+    </div>
+    <div class="edit-task-toggle-row">
+      <input type="checkbox" id="etDueDateOn" onchange="toggleEtDueDate()">
+      <label for="etDueDateOn">DUE DATE</label>
+    </div>
+    <div class="edit-task-form-row" id="etDueDateRow" style="display:none">
+      <label>DUE DATE</label>
+      <input type="datetime-local" id="etDueDate">
+    </div>
+    <div class="edit-task-form-row">
+      <label>NOTES (OPTIONAL)</label>
+      <textarea id="etNotes" maxlength="1000" placeholder="Optional notes..."></textarea>
+    </div>
+    <div class="edit-task-form-row">
+      <label>TIME SPENT (HOURS — OPTIONAL)</label>
+      <input type="number" id="etTimeSpent" min="0" step="0.25" placeholder="e.g. 1.5">
+    </div>
+    <div class="edit-task-toggle-row">
+      <input type="checkbox" id="etUrgent">
+      <label for="etUrgent">⚡ URGENT — MUST COMPLETE WITHIN 24 HOURS</label>
+    </div>
+    <div class="edit-task-form-row">
+      <label>EXPENSES — OPTIONAL (DESCRIPTION · AMOUNT · TAX DED.)</label>
+      <div class="expense-items" id="etExpenseItems"></div>
+      <button class="btn-add-expense" onclick="addExpenseItemRow()">+ ADD EXPENSE ITEM</button>
+    </div>
+    <div class="edit-task-form-row">
+      <label>EXPENSE CATEGORY (OPTIONAL)</label>
+      <select id="etExpCat"></select>
+    </div>
+    <div class="edit-task-form-row">
+      <label>ESTIMATED BUDGET (OPTIONAL)</label>
+      <input type="number" id="etBudget" min="0" step="0.01" placeholder="e.g. 500.00">
+    </div>
+    <div class="extend-dates-row" id="extendDatesRow">
+      <label>EXTEND DATES BY</label>
+      <input type="number" id="extendDays" min="1" max="365" placeholder="7" value="7">
+      <label>DAYS</label>
+      <button class="btn-extend" onclick="extendDates()">+ APPLY</button>
+    </div>
+    <div class="edit-task-footer" style="justify-content:space-between">
+      <button class="btn-edit-cancel" onclick="copyTask()">⎘ COPY TASK</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-mark-done-modal" id="btnMarkDoneModal" onclick="markDoneFromEdit()" title="Mark this task as done and close">✓ MARK DONE</button>
+        <button class="btn-edit-cancel" onclick="closeEditTask()">CANCEL</button>
+        <button class="btn-edit-save" onclick="saveEditTask()">SAVE CHANGES</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- SETTINGS MODAL -->
 <div class="overlay hidden" id="overlay">
   <div class="modal">
@@ -495,10 +1028,42 @@ input[type="date"] { color-scheme: dark; }
     </div>
 
     <div class="section">
+      <h3>App</h3>
+      <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px;">APP SUBTITLE</label>
+      <div style="margin-top:6px;">
+        <input type="text" id="subtitleInput" maxlength="50" placeholder="e.g. CODDINGTON FAMILY TASKS"
+               style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font);padding:8px 12px;font-size:0.82rem;border-radius:4px;outline:none;letter-spacing:1px;"
+               onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <p style="font-size:0.65rem;color:var(--muted);margin-top:6px;">Shown under the TASKQ logo in the header and on the sign-in screen.</p>
+    </div>
+
+    <div class="section">
+      <h3>Workspace</h3>
+      <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px;">RENAME THIS WORKSPACE</label>
+      <div class="ws-rename-row">
+        <input type="text" id="wsRenameInput" maxlength="40"
+               onkeydown="if(event.key==='Enter')renameCurrentWorkspace(this.value)">
+        <button class="btn-rename-ws" onclick="renameCurrentWorkspace(document.getElementById('wsRenameInput').value)">RENAME</button>
+      </div>
+      <button class="btn-delete-ws" onclick="deleteCurrentWorkspace()">✕ DELETE THIS WORKSPACE</button>
+      <p style="font-size:0.65rem;color:var(--muted);margin-top:10px;">
+        Each workspace has its own tasks, events, assignees, and categories. Use the switcher in the header to create additional workspaces or move between them.
+      </p>
+    </div>
+
+    <div class="section">
       <h3>Assignees</h3>
       <div class="assignee-list" id="assigneeListSettings"></div>
       <button class="btn-add-item" onclick="addAssigneeRow()">+ ADD ASSIGNEE</button>
       <p style="font-size:0.65rem;color:var(--muted);margin-top:8px;">Saved names appear as autocomplete suggestions in the Assignee field.</p>
+    </div>
+
+    <div class="section">
+      <h3>Expense Categories</h3>
+      <div class="expense-cat-list" id="expenseCatList"></div>
+      <button class="btn-add-item" onclick="addExpenseCatRow()">+ ADD EXPENSE CATEGORY</button>
+      <p style="font-size:0.65rem;color:var(--muted);margin-top:8px;">Used to categorize expenses on tasks and events. Appears as a dropdown in the task and event edit forms.</p>
     </div>
 
     <div class="section">
@@ -526,6 +1091,19 @@ input[type="date"] { color-scheme: dark; }
   </div>
 </div>
 
+<!-- CREATE WORKSPACE MODAL -->
+<div class="create-ws-overlay hidden" id="createWsOverlay">
+  <div class="create-ws-modal">
+    <div class="create-ws-title">＋ NEW WORKSPACE</div>
+    <input type="text" id="wsNameInput" maxlength="40" placeholder="WORKSPACE NAME..."
+           onkeydown="if(event.key==='Enter')confirmCreateWs()">
+    <div class="create-ws-footer">
+      <button class="btn-cancel-ws" onclick="closeCreateWs()">CANCEL</button>
+      <button class="btn-create-ws" onclick="confirmCreateWs()">CREATE</button>
+    </div>
+  </div>
+</div>
+
 <!-- EVENT MODAL -->
 <div class="event-overlay hidden" id="eventOverlay">
   <div class="event-modal">
@@ -544,7 +1122,7 @@ input[type="date"] { color-scheme: dark; }
     <div class="event-time-row" id="evDatetimeRows">
       <div class="event-form-row">
         <label>START</label>
-        <input type="datetime-local" id="evStart">
+        <input type="datetime-local" id="evStart" oninput="evStartChanged()">
       </div>
       <div class="event-form-row">
         <label>END</label>
@@ -552,24 +1130,174 @@ input[type="date"] { color-scheme: dark; }
       </div>
     </div>
     <div id="evAllDayDateRow" style="display:none">
-      <div class="event-form-row">
-        <label>DATE</label>
-        <input type="date" id="evDate">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="event-form-row" style="margin-bottom:0">
+          <label>START DATE</label>
+          <input type="date" id="evDateStart">
+        </div>
+        <div class="event-form-row" style="margin-bottom:0">
+          <label>END DATE (OPTIONAL)</label>
+          <input type="date" id="evDateEnd">
+        </div>
       </div>
     </div>
     <div class="event-form-row">
-      <label>DESCRIPTION (OPTIONAL)</label>
+      <label>NOTES (OPTIONAL)</label>
       <textarea id="evDesc" placeholder="Notes, details..."></textarea>
     </div>
     <div class="event-form-row">
-      <label>COLOR</label>
-      <div class="event-color-palette" id="evColorPalette"></div>
+      <label>LOCATION (OPTIONAL)</label>
+      <input type="text" id="evLocation" placeholder="Address or place..." maxlength="150">
+    </div>
+    <div class="event-form-row">
+      <label>ASSIGNEE (OPTIONAL)</label>
+      <input type="text" id="evAssignee" placeholder="Person responsible..." maxlength="30" list="assigneeList" autocomplete="off">
+    </div>
+    <div class="event-form-row">
+      <label>EXPENSE CATEGORY (OPTIONAL)</label>
+      <select id="evExpCat"></select>
+    </div>
+    <div class="event-form-row">
+      <label>ESTIMATED BUDGET (OPTIONAL)</label>
+      <input type="number" id="evBudget" min="0" step="0.01" placeholder="e.g. 500.00">
+    </div>
+    <div class="event-form-row">
+      <label>RECURRENCE</label>
+      <select id="evRecurrence" onchange="toggleEventRecurrence()" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font);padding:8px 12px;font-size:0.82rem;border-radius:4px;outline:none;">
+        <option value="none">NONE (ONE-TIME EVENT)</option>
+        <option value="daily">DAILY</option>
+        <option value="weekly">WEEKLY</option>
+        <option value="monthly">MONTHLY (SAME DATE)</option>
+        <option value="yearly">YEARLY (SAME DATE)</option>
+      </select>
+    </div>
+    <div id="evRecurEndRow" style="display:none" class="event-form-row">
+      <label>REPEAT UNTIL (OPTIONAL)</label>
+      <input type="date" id="evRecurEnd">
+    </div>
+    <div class="event-form-row">
+      <label>CATEGORY</label>
+      <select id="evCategory" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font);padding:8px 12px;font-size:0.82rem;border-radius:4px;outline:none;"></select>
     </div>
     <div class="event-modal-footer">
       <button class="btn-event-delete hidden" id="btnEventDelete" onclick="deleteEditingEvent()">✕ DELETE</button>
       <div class="event-modal-footer-right">
+        <button class="btn-event-cancel hidden" id="btnEventCopy" onclick="copyEvent()" style="border:1px solid var(--accent);color:var(--accent)">⎘ COPY</button>
         <button class="btn-event-cancel" onclick="closeEventModal()">CANCEL</button>
         <button class="btn-event-save" onclick="saveEvent()">SAVE EVENT</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPENSE REPORT MODAL -->
+<div class="report-overlay hidden" id="expenseReportOverlay">
+  <div class="report-modal">
+    <div class="modal-header">
+      <div class="modal-title">💰 EXPENSE REPORT</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="report-btn-print" onclick="window.print()">🖨 PRINT</button>
+        <button class="modal-close" onclick="closeExpenseReport()">✕</button>
+      </div>
+    </div>
+    <div id="expenseReportContent"></div>
+  </div>
+</div>
+
+<!-- TIME REPORT MODAL -->
+<div class="report-overlay hidden" id="timeReportOverlay">
+  <div class="report-modal">
+    <div class="modal-header">
+      <div class="modal-title">⏱ TIME LOG REPORT</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="report-btn-print" onclick="window.print()">🖨 PRINT</button>
+        <button class="modal-close" onclick="closeTimeReport()">✕</button>
+      </div>
+    </div>
+    <div id="timeReportContent"></div>
+  </div>
+</div>
+
+<!-- USER / PERSON REPORT MODAL -->
+<div class="report-overlay hidden" id="userReportOverlay">
+  <div class="report-modal">
+    <div class="modal-header">
+      <div class="modal-title">👤 PERSON REPORT</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="report-btn-print" onclick="window.print()">🖨 PRINT</button>
+        <button class="modal-close" onclick="closeUserReport()">✕</button>
+      </div>
+    </div>
+    <div class="user-report-filter">
+      <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px;white-space:nowrap">SELECT PERSON</label>
+      <select class="user-report-select" id="userReportSelect" onchange="renderUserReport(this.value)">
+        <option value="">— SELECT —</option>
+      </select>
+    </div>
+    <div id="userReportContent"></div>
+  </div>
+</div>
+
+<!-- COPY EVENT DATE PICKER MODAL -->
+<div class="copy-event-overlay hidden" id="copyEventOverlay">
+  <div class="copy-event-modal">
+    <div class="copy-event-title">⎘ COPY EVENT</div>
+    <label>NEW DATE FOR COPY</label>
+    <input type="date" id="copyEventDate">
+    <div class="copy-event-footer">
+      <button class="btn-cancel-ws" onclick="closeCopyEventModal()">CANCEL</button>
+      <button class="btn-create-ws" onclick="confirmCopyEvent()">COPY</button>
+    </div>
+  </div>
+</div>
+
+<!-- EMAIL SETTINGS MODAL -->
+<div class="email-settings-overlay hidden" id="emailSettingsOverlay">
+  <div class="email-settings-modal">
+    <div class="modal-header">
+      <div class="modal-title">📧 EMAIL REPORT</div>
+      <button class="btn-close" onclick="closeEmailSettings()">✕</button>
+    </div>
+
+    <div class="email-toggle-row">
+      <span>DAILY REPORT ENABLED</span>
+      <input type="checkbox" id="emailEnabled">
+    </div>
+
+    <div class="email-form-group">
+      <label>Daily Send Time</label>
+      <select id="emailSendHour"></select>
+      <div class="field-hint">Time is set in your Firebase Cloud Function. Update the cron schedule there to change it.</div>
+    </div>
+
+    <div class="email-form-group">
+      <label>From Name</label>
+      <input type="text" id="emailFromName" placeholder="TaskQ Daily" maxlength="50">
+    </div>
+
+    <div class="email-form-group">
+      <label>From Email</label>
+      <input type="email" id="emailFromEmail" placeholder="noreply@yourdomain.com">
+      <div class="field-hint">Must be a verified sender in your SendGrid account.</div>
+    </div>
+
+    <div class="email-form-group">
+      <label>Cloud Function URL (Send Now)</label>
+      <input type="text" id="emailFunctionUrl" placeholder="https://us-central1-yourproject.cloudfunctions.net/sendEmailNow">
+      <div class="field-hint">Paste the URL of your deployed <em>sendEmailNow</em> Firebase Function here to enable the "Send Now" button.</div>
+    </div>
+
+    <div class="email-form-group">
+      <label>Recipients</label>
+      <div id="emailRecipientList"></div>
+      <button class="btn-add-item" style="margin-top:6px" onclick="addEmailRecipientRow()">+ ADD RECIPIENT</button>
+    </div>
+
+    <div class="email-modal-footer">
+      <button class="btn-send-now" id="btnSendNow" onclick="sendReportNow()">📤 SEND NOW</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-edit-cancel" onclick="closeEmailSettings()">CANCEL</button>
+        <button class="btn-edit-save" onclick="saveEmailSettings()">SAVE</button>
       </div>
     </div>
   </div>
@@ -591,16 +1319,22 @@ const firebaseConfig = {
   appId: "1:614008966022:web:0af7e103d26ac539caba07"
 };
 firebase.initializeApp(firebaseConfig);
-const db          = firebase.database();
-const tasksRef    = db.ref('tasks');
-const settingsRef = db.ref('settings');
-const eventsRef   = db.ref('events');
-const auth        = firebase.auth();
+const db             = firebase.database();
+const auth           = firebase.auth();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
+// Dynamic refs — set by switchWorkspace()
+let tasksRef         = null;
+let settingsRef      = null;
+let eventsRef        = null;
+let wsListRef        = null;
+// Global ref — not workspace-specific
+const emailSettingsRef = db.ref('emailSettings');
 
 // ── DEFAULTS ──────────────────────────────────────────────────────────────────
 const DEFAULTS = {
+  subtitle: 'CODDINGTON FAMILY TASKS',
   assignees: ['Trevor', 'Wife'],
+  expenseCategories: [],
   categories: [
     { id: 'chores',  label: 'CHORES',  color: '#4a9eff', yellow: 1,  orange: 3,  red: 7  },
     { id: 'errands', label: 'ERRANDS', color: '#f0a500', yellow: 2,  orange: 5,  red: 10 },
@@ -614,7 +1348,7 @@ const DEFAULTS = {
 const EVENT_COLORS = ['#4a9eff','#00c853','#ffd600','#ff6b00','#d50000','#ab47bc','#00bcd4','#f06292','#78909c'];
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let cfg               = loadLocal('taskq_settings_v3', DEFAULTS);
+let cfg               = JSON.parse(JSON.stringify(DEFAULTS));
 let tasks             = [];
 let events            = [];
 let tmpCats           = [];
@@ -622,6 +1356,21 @@ let tmpAssignees      = [];
 let pastStartOn       = false;
 let dueDateOn         = false;
 let viewMode          = 'board';
+let tableSortCol      = null;   // 'name'|'assignee'|'category'|'status'|'timer'|'due'
+let tableSortDir      = 1;      // 1 = asc, -1 = desc
+let showCardNotes     = false;  // show notes on board/category cards
+let showDone          = false;  // show completed tasks in board/table views
+let bulkMode          = false;  // bulk-selection mode active
+let selectedTasks     = new Set(); // keys of tasks selected in bulk mode
+let draggingTaskKey   = null;   // key of card being dragged in category board
+let urgentMode        = false;  // next task added will be marked urgent
+let tmpExpenseItems   = [];     // expense items being edited in modal
+let tmpExpenseCats    = [];     // expense categories being edited in settings
+let emailSettings     = {};    // loaded from Firebase /emailSettings
+let tmpEmailRecipients = [];   // recipients being edited in email modal
+let draggingColId     = null;   // category ID being dragged for column reorder
+let catColOrder       = [];     // ordered array of category IDs for category board
+let copyingEventKey   = null;   // event key pending copy with new date
 let currentPage       = 'tasks';
 let calView           = 'month';
 let calDate           = new Date();
@@ -631,6 +1380,10 @@ let pendingRemoveKey  = null;
 let pendingRemoveName = '';
 let settingsSynced    = false;
 let listenersActive   = false;
+// Workspace state
+let currentUser  = null;
+let currentWsId  = null;
+let userWsList   = {};   // { wsId: { name, createdAt } }
 
 // ── LOCAL STORAGE ─────────────────────────────────────────────────────────────
 function loadLocal(key, fallback) {
@@ -664,23 +1417,26 @@ function signOut() { auth.signOut(); }
 
 auth.onAuthStateChanged(user => {
   if (user) {
+    currentUser = user;
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('userInfo').style.display = 'flex';
     document.getElementById('userName').textContent = user.displayName || user.email;
-    if (!listenersActive) { listenersActive = true; setupListeners(); }
+    setupConnectionListener();
+    initWorkspaces(user);
   } else {
+    currentUser = null;
     document.getElementById('authScreen').classList.remove('hidden');
     document.getElementById('userInfo').style.display = 'none';
-    if (listenersActive) {
-      tasksRef.off(); settingsRef.off(); eventsRef.off();
-      listenersActive = false; settingsSynced = false;
-      tasks = []; events = [];
-    }
+    detachDataListeners();
+    if (wsListRef) { wsListRef.off(); wsListRef = null; }
+    listenersActive = false; settingsSynced = false;
+    tasks = []; events = []; currentWsId = null; userWsList = {};
+    updateWsUI();
   }
 });
 
 // ── FIREBASE LISTENERS ────────────────────────────────────────────────────────
-function setupListeners() {
+function setupConnectionListener() {
   db.ref('.info/connected').on('value', snap => {
     const on = snap.val() === true;
     document.getElementById('statusDot').className = 'status-dot' + (on ? ' connected' : '');
@@ -689,12 +1445,17 @@ function setupListeners() {
       : 'RECONNECTING...';
     updateSettingsSyncUI();
   });
+}
+
+function attachDataListeners() {
+  if (!tasksRef || !eventsRef || !settingsRef) return;
 
   settingsRef.on('value', snapshot => {
     const cloudCfg = snapshot.val();
     if (cloudCfg && cloudCfg.categories && cloudCfg.categories.length) {
       cfg = { ...DEFAULTS, ...cloudCfg };
-      saveLocal('taskq_settings_v3', cfg);
+      saveLocal(`taskq_cfg_${currentWsId}`, cfg);
+      applySubtitle();
       refreshDatalist();
       render();
     } else if (!settingsSynced) {
@@ -706,24 +1467,186 @@ function setupListeners() {
 
   tasksRef.on('value', snapshot => {
     tasks = [];
-    snapshot.forEach(child => tasks.push({ _key: child.key, ...child.val() }));
+    snapshot.forEach(child => { tasks.push({ _key: child.key, ...child.val() }); });
     tasks.sort((a, b) => a.createdAt - b.createdAt);
     render();
   });
 
   eventsRef.on('value', snapshot => {
     events = [];
-    snapshot.forEach(child => events.push({ _key: child.key, ...child.val() }));
+    snapshot.forEach(child => { events.push({ _key: child.key, ...child.val() }); });
     events.sort((a, b) => a.startAt - b.startAt);
     if (currentPage === 'calendar') renderCalendar();
     updateCalEventCount();
   });
+
+  listenersActive = true;
+}
+
+function detachDataListeners() {
+  if (tasksRef)    tasksRef.off();
+  if (settingsRef) settingsRef.off();
+  if (eventsRef)   eventsRef.off();
+  listenersActive = false;
+  settingsSynced  = false;
+}
+
+// ── WORKSPACES ────────────────────────────────────────────────────────────────
+function initWorkspaces(user) {
+  wsListRef = db.ref(`users/${user.uid}/workspaces`);
+  wsListRef.on('value', snap => {
+    userWsList = snap.val() || {};
+    updateWsUI();
+    if (!currentWsId) {
+      const ids   = Object.keys(userWsList);
+      const saved = localStorage.getItem('taskq_last_ws');
+      if (saved && userWsList[saved]) {
+        switchWorkspace(saved);
+      } else if (ids.length > 0) {
+        switchWorkspace(ids[0]);
+      } else {
+        checkMigrationAndInit(user.uid);
+      }
+    }
+  });
+}
+
+function switchWorkspace(wsId) {
+  detachDataListeners();
+  currentWsId    = wsId;
+  settingsSynced = false;
+  localStorage.setItem('taskq_last_ws', wsId);
+
+  tasksRef    = db.ref(`workspaces/${wsId}/tasks`);
+  eventsRef   = db.ref(`workspaces/${wsId}/events`);
+  settingsRef = db.ref(`workspaces/${wsId}/settings`);
+
+  // Reset data and show loading
+  tasks  = [];
+  events = [];
+  cfg    = loadLocal(`taskq_cfg_${wsId}`, DEFAULTS);
+  const container = document.getElementById('mainContainer');
+  if (container) container.innerHTML = `<div class="empty-state">LOADING WORKSPACE...<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">PLEASE WAIT</span></div>`;
+
+  attachDataListeners();
+  updateWsUI();
+  closeWsDropdown();
+}
+
+async function checkMigrationAndInit(uid) {
+  // Check if old flat-path data exists (pre-workspace version)
+  const [tSnap, sSnap, eSnap] = await Promise.all([
+    db.ref('tasks').once('value'),
+    db.ref('settings').once('value'),
+    db.ref('events').once('value')
+  ]);
+  if (tSnap.exists() || sSnap.exists() || eSnap.exists()) {
+    // Migrate existing data to a "FAMILY" workspace
+    const wsRef = db.ref('workspaces').push();
+    const wsId  = wsRef.key;
+    const writes = [
+      wsListRef.child(wsId).set({ name: 'FAMILY', createdAt: Date.now() })
+    ];
+    if (tSnap.exists()) writes.push(db.ref(`workspaces/${wsId}/tasks`).set(tSnap.val()));
+    if (eSnap.exists()) writes.push(db.ref(`workspaces/${wsId}/events`).set(eSnap.val()));
+    writes.push(db.ref(`workspaces/${wsId}/settings`).set(
+      sSnap.exists() ? sSnap.val() : JSON.parse(JSON.stringify(DEFAULTS))
+    ));
+    await Promise.all(writes);
+    // Remove old flat-path data
+    await Promise.all([
+      db.ref('tasks').remove(),
+      db.ref('events').remove(),
+      db.ref('settings').remove()
+    ]);
+    // wsListRef listener fires automatically and calls switchWorkspace
+  } else {
+    // Brand new user — create a starter workspace
+    await doCreateWorkspace('MY TASKS');
+  }
+}
+
+async function doCreateWorkspace(name) {
+  if (!name || !name.trim() || !wsListRef) return;
+  const wsRef = db.ref('workspaces').push();
+  const wsId  = wsRef.key;
+  await Promise.all([
+    db.ref(`workspaces/${wsId}/settings`).set(JSON.parse(JSON.stringify(DEFAULTS))),
+    wsListRef.child(wsId).set({ name: name.trim().toUpperCase(), createdAt: Date.now() })
+  ]);
+  switchWorkspace(wsId);
+}
+
+function renameCurrentWorkspace(name) {
+  if (!name || !name.trim() || !currentWsId || !wsListRef) return;
+  wsListRef.child(currentWsId).update({ name: name.trim().toUpperCase() });
+}
+
+function deleteCurrentWorkspace() {
+  const ids = Object.keys(userWsList);
+  if (ids.length <= 1) { alert('You cannot delete your only workspace.'); return; }
+  const wsName = userWsList[currentWsId]?.name || 'this workspace';
+  if (!confirm(`Delete "${wsName}"? All tasks and events will be permanently removed. This cannot be undone.`)) return;
+  const deletingId = currentWsId;
+  const otherId    = ids.find(id => id !== deletingId);
+  switchWorkspace(otherId);
+  db.ref(`workspaces/${deletingId}`).remove();
+  wsListRef.child(deletingId).remove();
+}
+
+// ── WORKSPACE UI ──────────────────────────────────────────────────────────────
+function updateWsUI() {
+  const nameEl = document.getElementById('wsCurrentName');
+  if (nameEl) {
+    nameEl.textContent = (currentWsId && userWsList[currentWsId])
+      ? userWsList[currentWsId].name
+      : '—';
+  }
+  const listEl = document.getElementById('wsDropdownList');
+  if (!listEl) return;
+  const entries = Object.entries(userWsList).sort(([,a],[,b]) => a.createdAt - b.createdAt);
+  listEl.innerHTML = entries.map(([id, ws]) =>
+    `<button class="ws-item${id === currentWsId ? ' ws-active' : ''}" onclick="switchWorkspace('${id}')">
+      <span class="ws-item-dot">${id === currentWsId ? '●' : '○'}</span>${esc(ws.name)}
+    </button>`
+  ).join('');
+}
+
+function toggleWsDropdown() {
+  document.getElementById('wsDropdown').classList.toggle('hidden');
+}
+function closeWsDropdown() {
+  const d = document.getElementById('wsDropdown');
+  if (d) d.classList.add('hidden');
+}
+function openCreateWs() {
+  closeWsDropdown();
+  document.getElementById('wsNameInput').value = '';
+  document.getElementById('createWsOverlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('wsNameInput').focus(), 50);
+}
+function closeCreateWs() {
+  document.getElementById('createWsOverlay').classList.add('hidden');
+}
+function confirmCreateWs() {
+  const name = document.getElementById('wsNameInput').value.trim();
+  if (!name) { document.getElementById('wsNameInput').focus(); return; }
+  closeCreateWs();
+  doCreateWorkspace(name);
 }
 
 // ── SETTINGS SYNC ─────────────────────────────────────────────────────────────
 function pushSettingsToCloud() {
-  settingsRef.set({ assignees: cfg.assignees || [], categories: cfg.categories || [] });
-  saveLocal('taskq_settings_v3', cfg);
+  if (!settingsRef) return;
+  settingsRef.set({ assignees: cfg.assignees || [], categories: cfg.categories || [], subtitle: cfg.subtitle || DEFAULTS.subtitle, expenseCategories: cfg.expenseCategories || [] });
+  if (currentWsId) saveLocal(`taskq_cfg_${currentWsId}`, cfg);
+}
+
+function applySubtitle() {
+  const sub = cfg.subtitle || DEFAULTS.subtitle;
+  const el = document.getElementById('logoSub');
+  if (el) el.textContent = sub;
+  document.title = `TaskQ \u2014 ${sub}`;
 }
 
 function updateSettingsSyncUI() {
@@ -769,15 +1692,15 @@ function setPage(page) {
 // ── TIME TOGGLES ──────────────────────────────────────────────────────────────
 function togglePastStart() {
   pastStartOn = !pastStartOn;
-  const btn = document.getElementById('btnPastStart');
-  const inp = document.getElementById('iPastStart');
+  const btn  = document.getElementById('btnPastStart');
+  const wrap = document.getElementById('pastStartWrap');
   if (pastStartOn) {
-    inp.value = toLocalDT(Date.now());
-    inp.style.display = '';
+    document.getElementById('iPastStart').value = toLocalDT(Date.now());
+    wrap.style.display = '';
     btn.classList.add('active-past');
     btn.textContent = '📅 PAST START ✓';
   } else {
-    inp.style.display = 'none';
+    wrap.style.display = 'none';
     btn.classList.remove('active-past');
     btn.textContent = '📅 PAST START';
   }
@@ -785,20 +1708,42 @@ function togglePastStart() {
 
 function toggleDueDate() {
   dueDateOn = !dueDateOn;
-  const btn = document.getElementById('btnDueDate');
-  const inp = document.getElementById('iDueDate');
+  const btn  = document.getElementById('btnDueDate');
+  const wrap = document.getElementById('dueDateWrap');
   if (dueDateOn) {
     const d = new Date();
     d.setDate(d.getDate() + 7);
-    inp.value = toLocalDT(d);
-    inp.style.display = '';
+    document.getElementById('iDueDate').value = toLocalDT(d);
+    wrap.style.display = '';
     btn.classList.add('active-due');
     btn.textContent = '🗓 DUE DATE ✓';
   } else {
-    inp.style.display = 'none';
+    wrap.style.display = 'none';
     btn.classList.remove('active-due');
     btn.textContent = '🗓 DUE DATE';
   }
+}
+
+// ── CLEAR FORM / QUICK TIME ───────────────────────────────────────────────────
+function clearForm() {
+  document.getElementById('iTask').value     = '';
+  document.getElementById('iAssignee').value = '';
+  const sel = document.getElementById('iCategory');
+  if (sel && sel.options.length) sel.selectedIndex = 0;
+  if (pastStartOn) togglePastStart();
+  if (dueDateOn)   toggleDueDate();
+  if (urgentMode)  toggleUrgentMode();
+  document.getElementById('iTask').focus();
+}
+
+function setQuickTime(inputId, type) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  const d = el.value ? new Date(el.value) : new Date();
+  if (isNaN(d.getTime())) return;
+  if (type === 'eob') { d.setHours(17, 0, 0, 0); }  // 5:00 PM
+  else                { d.setHours(23, 59, 0, 0); }  // 11:59 PM
+  el.value = toLocalDT(d);
 }
 
 // ── VIEW TOGGLE ───────────────────────────────────────────────────────────────
@@ -806,6 +1751,7 @@ function setView(mode) {
   viewMode = mode;
   document.getElementById('btnBoard').classList.toggle('active', mode === 'board');
   document.getElementById('btnTable').classList.toggle('active', mode === 'table');
+  document.getElementById('btnCategory').classList.toggle('active', mode === 'category');
   render();
 }
 
@@ -846,15 +1792,19 @@ function addTask() {
   const assignee = document.getElementById('iAssignee').value.trim() || '—';
   saveAssigneeIfNew(assignee === '—' ? null : assignee);
 
+  const isUrgent = urgentMode;
   const num = tasks.length + 1;
   tasksRef.push({
     id: 'T-' + String(num).padStart(3, '0'),
     name, assignee,
     category: document.getElementById('iCategory').value,
     createdAt, dueAt,
+    urgent: isUrgent || null,
     status: 'active', doneAt: null
   });
 
+  // Reset urgent mode after adding
+  if (urgentMode) { urgentMode = false; document.getElementById('btnUrgent').classList.remove('urgent-on'); }
   el.value = '';
   el.focus();
 }
@@ -881,6 +1831,734 @@ function clearDone() {
   tasks.filter(t => t.status === 'done').forEach(t => tasksRef.child(t._key).remove());
 }
 
+function markPending(key) {
+  tasksRef.child(key).update({ status: 'active', doneAt: null });
+}
+
+// ── SHOW DONE TOGGLE ──────────────────────────────────────────────────────────
+function toggleShowDone() {
+  showDone = !showDone;
+  const btn = document.getElementById('btnShowDone');
+  if (btn) {
+    btn.classList.toggle('done-on', showDone);
+    btn.title = showDone ? 'Currently showing completed tasks' : 'Show/hide completed tasks';
+  }
+  render();
+}
+
+// ── URGENT MODE TOGGLE ────────────────────────────────────────────────────────
+function toggleUrgentMode() {
+  urgentMode = !urgentMode;
+  const btn = document.getElementById('btnUrgent');
+  if (btn) btn.classList.toggle('urgent-on', urgentMode);
+}
+
+// ── COPY TASK ─────────────────────────────────────────────────────────────────
+function copyTask() {
+  if (!editingTaskKey) return;
+  const src = tasks.find(t => t._key === editingTaskKey);
+  if (!src) return;
+  const num = tasks.length + 1;
+  tasksRef.push({
+    id: 'T-' + String(num).padStart(3, '0'),
+    name:             src.name + ' (COPY)',
+    assignee:         src.assignee,
+    category:         src.category,
+    createdAt:        Date.now(),
+    dueAt:            src.dueAt || null,
+    notes:            src.notes || null,
+    timeSpent:        null,
+    urgent:           src.urgent || null,
+    expenseItems:     src.expenseItems ? JSON.parse(JSON.stringify(src.expenseItems)) : null,
+    expenseCategory:  src.expenseCategory || null,
+    estimatedBudget:  src.estimatedBudget || null,
+    status:           'active',
+    doneAt:           null
+  });
+  closeEditTask();
+}
+
+// ── BULK MODE ─────────────────────────────────────────────────────────────────
+function toggleBulkMode() {
+  bulkMode = !bulkMode;
+  selectedTasks.clear();
+  const btn     = document.getElementById('btnBulk');
+  const bulkBar = document.getElementById('bulkBar');
+  if (btn)     btn.classList.toggle('bulk-on', bulkMode);
+  if (bulkBar) bulkBar.classList.toggle('hidden', !bulkMode);
+  updateBulkCount();
+  render();
+}
+
+function toggleTaskSelect(key, checked) {
+  if (checked) { selectedTasks.add(key); }
+  else         { selectedTasks.delete(key); }
+  updateBulkCount();
+  // Re-highlight cards without full re-render
+  document.querySelectorAll('.card').forEach(c => {
+    const cb = c.querySelector('.card-checkbox');
+    if (cb) c.classList.toggle('selected-task', cb.checked);
+  });
+}
+
+function updateBulkCount() {
+  const el = document.getElementById('bulkCount');
+  if (el) el.textContent = `${selectedTasks.size} SELECTED`;
+}
+
+function bulkMarkDone() {
+  if (!selectedTasks.size) return;
+  const now = Date.now();
+  selectedTasks.forEach(key => tasksRef.child(key).update({ status: 'done', doneAt: now }));
+  selectedTasks.clear();
+  updateBulkCount();
+  render();
+}
+
+function bulkRemove() {
+  if (!selectedTasks.size) return;
+  const count = selectedTasks.size;
+  if (!confirm(`Remove ${count} selected task${count > 1 ? 's' : ''}? This cannot be undone.`)) return;
+  selectedTasks.forEach(key => tasksRef.child(key).remove());
+  selectedTasks.clear();
+  updateBulkCount();
+  render();
+}
+
+function bulkCopy() {
+  if (!selectedTasks.size) return;
+  let num = tasks.length;
+  selectedTasks.forEach(key => {
+    const src = tasks.find(t => t._key === key);
+    if (!src) return;
+    num++;
+    tasksRef.push({
+      id: 'T-' + String(num).padStart(3, '0'),
+      name: src.name + ' (COPY)', assignee: src.assignee,
+      category: src.category, createdAt: Date.now(),
+      dueAt: src.dueAt || null, notes: src.notes || null,
+      timeSpent: null,
+      urgent: src.urgent || null,
+      expenseItems: src.expenseItems ? JSON.parse(JSON.stringify(src.expenseItems)) : null,
+      expenseCategory: src.expenseCategory || null,
+      estimatedBudget: src.estimatedBudget || null,
+      status: 'active', doneAt: null
+    });
+  });
+  selectedTasks.clear();
+  updateBulkCount();
+  render();
+}
+
+// ── CATEGORY COLUMN ORDER ─────────────────────────────────────────────────────
+function loadCatColOrder() {
+  if (!currentWsId) { catColOrder = []; return; }
+  try {
+    const saved = JSON.parse(localStorage.getItem(`taskq_col_order_${currentWsId}`));
+    catColOrder = Array.isArray(saved) ? saved : cfg.categories.map(c => c.id);
+  } catch { catColOrder = cfg.categories.map(c => c.id); }
+}
+
+function saveCatColOrder() {
+  if (currentWsId) localStorage.setItem(`taskq_col_order_${currentWsId}`, JSON.stringify(catColOrder));
+}
+
+function getOrderedCategories() {
+  if (!catColOrder.length) loadCatColOrder();
+  const catMap = {};
+  cfg.categories.forEach(c => { catMap[c.id] = c; });
+  const ordered = catColOrder.filter(id => catMap[id]).map(id => catMap[id]);
+  cfg.categories.forEach(c => { if (!catColOrder.includes(c.id)) ordered.push(c); });
+  return ordered;
+}
+
+// ── CATEGORY DRAG-AND-DROP ────────────────────────────────────────────────────
+function catDragStart(key, e) {
+  draggingTaskKey = key;
+  draggingColId   = null;
+  if (e) e.stopPropagation();
+}
+
+function catDrop(catId, colEl) {
+  if (draggingColId) { catColDrop(catId, colEl); return; }
+  const colCards = colEl.classList.contains('cat-col-cards')
+    ? colEl
+    : colEl.querySelector('.cat-col-cards');
+  if (colCards) colCards.classList.remove('drag-over');
+  if (!draggingTaskKey) return;
+  tasksRef.child(draggingTaskKey).update({ category: catId });
+  draggingTaskKey = null;
+}
+
+// Called when a card is dropped directly onto another card (not the column gutter)
+function catCardDrop(catId, e) {
+  if (!draggingTaskKey) return;
+  e.stopPropagation();
+  const colCards = e.currentTarget.closest('.cat-col-cards');
+  if (colCards) colCards.classList.remove('drag-over');
+  tasksRef.child(draggingTaskKey).update({ category: catId });
+  draggingTaskKey = null;
+}
+
+// Column header drag — reorder columns
+function catColDragStart(catId, e) {
+  draggingColId   = catId;
+  draggingTaskKey = null;
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function catColDragEnd() {
+  draggingColId = null;
+}
+
+function catColDrop(catId, colEl) {
+  if (!draggingColId || draggingColId === catId) { draggingColId = null; return; }
+  const ordered = getOrderedCategories().map(c => c.id);
+  const fromIdx = ordered.indexOf(draggingColId);
+  const toIdx   = ordered.indexOf(catId);
+  if (fromIdx !== -1 && toIdx !== -1) {
+    ordered.splice(fromIdx, 1);
+    ordered.splice(toIdx, 0, draggingColId);
+  }
+  catColOrder = ordered;
+  saveCatColOrder();
+  draggingColId = null;
+  renderCategoryBoard();
+}
+
+// Switch to board view with category pre-selected — from category board "Add Task"
+function addTaskFromCatBoard(catId) {
+  setView('board');
+  const sel = document.getElementById('iCategory');
+  if (sel) sel.value = catId;
+  setTimeout(() => document.getElementById('iTask').focus(), 80);
+}
+
+// ── EXPENSE REPORT ────────────────────────────────────────────────────────────
+function openExpenseReport() {
+  const expTasks = tasks.filter(t => getTaskExpense(t))
+    .sort((a, b) => (catById(a.category).label).localeCompare(catById(b.category).label));
+  if (!expTasks.length) { alert('No tasks with expenses found.'); return; }
+  let grandTotal = 0, grandTaxTotal = 0;
+  let rows = '';
+  expTasks.forEach(t => {
+    const cat = catById(t.category);
+    const exp = getTaskExpense(t);
+    grandTotal += exp.total;
+    grandTaxTotal += exp.taxDed;
+    // Task header row
+    rows += `<tr class="tr-${t.status === 'done' ? 'done' : 'green'}" style="background:var(--surface2)">
+      <td class="td-task" colspan="3">${esc(t.name)} <span class="td-muted" style="font-weight:normal">— ${esc(t.assignee)}</span></td>
+      <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
+      <td class="td-muted" style="text-align:right">${t.status === 'done' ? 'DONE' : 'ACTIVE'}</td>
+    </tr>`;
+    // Line item rows
+    if (t.expenseItems && t.expenseItems.length) {
+      t.expenseItems.forEach(item => {
+        const amt = Number(item.amount || 0);
+        rows += `<tr>
+          <td style="padding-left:24px;color:var(--muted);font-size:0.75rem">↳ ${esc(item.desc || '(no description)')}</td>
+          <td colspan="2"></td>
+          <td style="text-align:right;font-weight:bold">$${amt.toFixed(2)}</td>
+          <td style="text-align:center;color:var(--green);font-size:0.75rem">${item.taxDed ? '✓ TAX DED.' : ''}</td>
+        </tr>`;
+      });
+    } else {
+      // Old format — single row
+      rows += `<tr>
+        <td style="padding-left:24px;color:var(--muted);font-size:0.75rem">↳ (single expense)</td>
+        <td colspan="2"></td>
+        <td style="text-align:right;font-weight:bold">$${exp.total.toFixed(2)}</td>
+        <td style="text-align:center;color:var(--green);font-size:0.75rem">${exp.taxDed > 0 ? '✓ TAX DED.' : ''}</td>
+      </tr>`;
+    }
+    // Task total row
+    rows += `<tr style="border-bottom:2px solid var(--border)">
+      <td colspan="3" style="text-align:right;font-size:0.7rem;color:var(--muted);letter-spacing:1px">TASK TOTAL</td>
+      <td style="text-align:right;color:var(--accent);font-weight:bold">$${exp.total.toFixed(2)}</td>
+      <td></td>
+    </tr>`;
+  });
+  document.getElementById('expenseReportContent').innerHTML = `
+<table class="task-table">
+  <thead><tr><th colspan="3">TASK / ITEM DESCRIPTION</th><th>CATEGORY</th><th style="text-align:right">AMOUNT</th><th></th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+<div class="report-totals">
+  <div>TOTAL EXPENSES: <strong style="color:var(--accent)">$${grandTotal.toFixed(2)}</strong></div>
+  <div>TAX DEDUCTIBLE: <strong style="color:var(--green)">$${grandTaxTotal.toFixed(2)}</strong></div>
+  <div style="color:var(--muted)">NON-DEDUCTIBLE: <strong>$${(grandTotal - grandTaxTotal).toFixed(2)}</strong></div>
+</div>`;
+  document.getElementById('expenseReportOverlay').classList.remove('hidden');
+}
+function closeExpenseReport() { document.getElementById('expenseReportOverlay').classList.add('hidden'); }
+
+// ── TIME REPORT ───────────────────────────────────────────────────────────────
+function openTimeReport() {
+  const timeTasks = tasks.filter(t => t.timeSpent != null && Number(t.timeSpent) > 0);
+  if (!timeTasks.length) { alert('No tasks with time logged found.'); return; }
+  let grandTotal = 0;
+  const byAssignee = {};
+  timeTasks.forEach(t => {
+    const key = t.assignee || '—';
+    if (!byAssignee[key]) byAssignee[key] = { tasks: [], total: 0 };
+    byAssignee[key].tasks.push(t);
+    byAssignee[key].total += Number(t.timeSpent);
+    grandTotal += Number(t.timeSpent);
+  });
+  let rows = '';
+  Object.entries(byAssignee).sort(([a],[b]) => a.localeCompare(b)).forEach(([assignee, data]) => {
+    data.tasks.sort((a,b) => (catById(a.category).label).localeCompare(catById(b.category).label))
+      .forEach(t => {
+        const cat = catById(t.category);
+        rows += `<tr class="tr-${t.status === 'done' ? 'done' : 'green'}">
+          <td class="td-task">${esc(t.name)}</td>
+          <td class="td-muted">${esc(assignee)}</td>
+          <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
+          <td style="text-align:right;font-weight:bold">${fmtHours(t.timeSpent)}</td>
+          <td class="td-muted">${t.status === 'done' ? 'DONE' : 'ACTIVE'}</td>
+        </tr>`;
+      });
+    rows += `<tr style="border-top:2px solid var(--border)">
+      <td colspan="3" style="text-align:right;color:var(--muted);font-size:0.72rem;letter-spacing:1px">SUBTOTAL — ${esc(assignee)}</td>
+      <td style="text-align:right;color:var(--accent);font-weight:bold">${fmtHours(data.total)}</td>
+      <td></td>
+    </tr>`;
+  });
+  document.getElementById('timeReportContent').innerHTML = `
+<table class="task-table">
+  <thead><tr><th>TASK</th><th>ASSIGNEE</th><th>CATEGORY</th><th style="text-align:right">TIME SPENT</th><th>STATUS</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+<div class="report-totals">
+  <div>TOTAL TIME LOGGED: <strong style="color:var(--accent)">${fmtHours(grandTotal)}</strong></div>
+</div>`;
+  document.getElementById('timeReportOverlay').classList.remove('hidden');
+}
+function closeTimeReport() { document.getElementById('timeReportOverlay').classList.add('hidden'); }
+
+// ── USER / PERSON REPORT ──────────────────────────────────────────────────────
+function openUserReport() {
+  // Build assignee list from cfg.assignees + any assignees found in tasks/events
+  const assigneeSet = new Set(cfg.assignees || []);
+  tasks.forEach(t => { if (t.assignee) assigneeSet.add(t.assignee); });
+  events.forEach(e => { if (e.assignee) assigneeSet.add(e.assignee); });
+  const sorted = Array.from(assigneeSet).sort((a, b) => a.localeCompare(b));
+
+  const sel = document.getElementById('userReportSelect');
+  sel.innerHTML = '<option value="">— SELECT PERSON —</option>' +
+    sorted.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('');
+
+  document.getElementById('userReportContent').innerHTML = '';
+  document.getElementById('userReportOverlay').classList.remove('hidden');
+}
+
+function closeUserReport() {
+  document.getElementById('userReportOverlay').classList.add('hidden');
+}
+
+function renderUserReport(assignee) {
+  const el = document.getElementById('userReportContent');
+  if (!assignee) { el.innerHTML = ''; return; }
+
+  const now = Date.now();
+  const myTasks  = tasks.filter(t => t.assignee === assignee);
+  const myEvents = events.filter(e => e.assignee === assignee);
+
+  // Tasks section
+  const activeTasks  = myTasks.filter(t => t.status !== 'done').sort((a, b) => {
+    const aOver = a.dueAt && a.dueAt < now;
+    const bOver = b.dueAt && b.dueAt < now;
+    if (aOver && !bOver) return -1;
+    if (!aOver && bOver) return 1;
+    if (a.dueAt && b.dueAt) return a.dueAt - b.dueAt;
+    if (a.dueAt) return -1;
+    if (b.dueAt) return 1;
+    return 0;
+  });
+  const doneTasks    = myTasks.filter(t => t.status === 'done');
+
+  let taskRows = '';
+  activeTasks.forEach(t => {
+    const cat    = catById(t.category);
+    const overdue = t.dueAt && t.dueAt < now;
+    const meta   = getTaskMeta(t);
+    taskRows += `<tr class="tr-${meta.cls}" onclick="openEditTask('${esc(t._key)}')" style="cursor:pointer">
+      <td class="td-task">${esc(t.name)}${t.urgent ? ' <span style="color:var(--orange)">⚡</span>' : ''}</td>
+      <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
+      <td class="td-muted" style="${overdue?'color:var(--red)':''}">${t.dueAt ? fmtDate(t.dueAt) : '—'}</td>
+      <td class="td-muted">${overdue ? '<span style="color:var(--red)">OVERDUE</span>' : 'ACTIVE'}</td>
+    </tr>`;
+  });
+
+  const taskSection = `<div class="report-section-title">TASKS — ACTIVE (${activeTasks.length})</div>` +
+    (activeTasks.length
+      ? `<table class="task-table">
+          <thead><tr><th>TASK</th><th>CATEGORY</th><th>DUE</th><th>STATUS</th></tr></thead>
+          <tbody>${taskRows}</tbody>
+        </table>`
+      : `<div style="font-size:0.75rem;color:var(--muted);padding:8px 0">No active tasks.</div>`) +
+    `<div class="report-section-title">TASKS — DONE (${doneTasks.length})</div>` +
+    (doneTasks.length
+      ? `<div style="font-size:0.75rem;color:var(--muted);padding:4px 0">${doneTasks.length} completed task${doneTasks.length !== 1 ? 's' : ''}.</div>`
+      : `<div style="font-size:0.75rem;color:var(--muted);padding:4px 0">None.</div>`);
+
+  // Events section — upcoming events (startAt >= today midnight)
+  const todayMidnight = new Date(); todayMidnight.setHours(0,0,0,0);
+  const upcomingEvents = myEvents
+    .filter(e => e.startAt >= todayMidnight.getTime())
+    .sort((a, b) => a.startAt - b.startAt);
+  const pastEvents = myEvents.filter(e => e.startAt < todayMidnight.getTime());
+
+  let evRows = '';
+  upcomingEvents.forEach(ev => {
+    const cat = catById(ev.category);
+    const dateStr = ev.allDay ? fmtDate(ev.startAt) : fmtDate(ev.startAt) + ' ' + fmtTime(ev.startAt);
+    evRows += `<tr onclick="openEditEvent('${esc(ev._key)}',event)" style="cursor:pointer">
+      <td class="td-task">${esc(ev.title)}</td>
+      <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
+      <td class="td-muted">${dateStr}</td>
+      <td class="td-muted">${ev.location ? esc(ev.location) : '—'}</td>
+    </tr>`;
+  });
+
+  const evSection = `<div class="report-section-title">EVENTS — UPCOMING (${upcomingEvents.length})</div>` +
+    (upcomingEvents.length
+      ? `<table class="task-table">
+          <thead><tr><th>EVENT</th><th>CATEGORY</th><th>DATE / TIME</th><th>LOCATION</th></tr></thead>
+          <tbody>${evRows}</tbody>
+        </table>`
+      : `<div style="font-size:0.75rem;color:var(--muted);padding:8px 0">No upcoming events.</div>`) +
+    `<div class="report-section-title">EVENTS — PAST (${pastEvents.length})</div>` +
+    (pastEvents.length
+      ? `<div style="font-size:0.75rem;color:var(--muted);padding:4px 0">${pastEvents.length} past event${pastEvents.length !== 1 ? 's' : ''}.</div>`
+      : `<div style="font-size:0.75rem;color:var(--muted);padding:4px 0">None.</div>`);
+
+  // Summary bar
+  const overdueCt = activeTasks.filter(t => t.dueAt && t.dueAt < now).length;
+  const summaryBar = `<div class="report-totals" style="margin-bottom:12px;display:flex;gap:24px;flex-wrap:wrap">
+    <div>ACTIVE TASKS: <strong style="color:var(--accent)">${activeTasks.length}</strong></div>
+    ${overdueCt ? `<div>OVERDUE: <strong style="color:var(--red)">${overdueCt}</strong></div>` : ''}
+    <div>UPCOMING EVENTS: <strong style="color:var(--accent)">${upcomingEvents.length}</strong></div>
+  </div>`;
+
+  el.innerHTML = summaryBar + taskSection + evSection;
+}
+
+// ── EMAIL SETTINGS ────────────────────────────────────────────────────────────
+// Load email settings once on startup
+emailSettingsRef.on('value', snap => {
+  emailSettings = snap.val() || {};
+});
+
+function buildSendHourSelect() {
+  const sel = document.getElementById('emailSendHour');
+  if (!sel) return;
+  const opts = [];
+  for (let h = 0; h < 24; h++) {
+    const label = h === 0 ? '12:00 AM' : h < 12 ? h + ':00 AM' : h === 12 ? '12:00 PM' : (h - 12) + ':00 PM';
+    opts.push(`<option value="${h}">${label}</option>`);
+  }
+  sel.innerHTML = opts.join('');
+}
+
+function renderEmailRecipients() {
+  const list = document.getElementById('emailRecipientList');
+  if (!list) return;
+  list.innerHTML = tmpEmailRecipients.map((r, i) =>
+    `<div class="email-recipient-row">
+      <input type="email" value="${esc(r)}" placeholder="email@example.com"
+        oninput="tmpEmailRecipients[${i}]=this.value">
+      <button class="btn-remove-item" onclick="removeEmailRecipient(${i})">✕</button>
+    </div>`
+  ).join('');
+}
+
+function addEmailRecipientRow() {
+  tmpEmailRecipients.push('');
+  renderEmailRecipients();
+  // Focus the new input
+  const rows = document.querySelectorAll('.email-recipient-row input');
+  if (rows.length) rows[rows.length - 1].focus();
+}
+
+function removeEmailRecipient(i) {
+  tmpEmailRecipients.splice(i, 1);
+  renderEmailRecipients();
+}
+
+function openEmailSettings() {
+  const s = emailSettings;
+  document.getElementById('emailEnabled').checked    = !!s.enabled;
+  document.getElementById('emailFromName').value     = s.fromName    || '';
+  document.getElementById('emailFromEmail').value    = s.fromEmail   || '';
+  document.getElementById('emailFunctionUrl').value  = s.functionUrl || '';
+  buildSendHourSelect();
+  document.getElementById('emailSendHour').value = s.sendHour != null ? s.sendHour : 7;
+  tmpEmailRecipients = Array.isArray(s.recipients) ? [...s.recipients] : [];
+  renderEmailRecipients();
+  document.getElementById('emailSettingsOverlay').classList.remove('hidden');
+}
+
+function closeEmailSettings() {
+  document.getElementById('emailSettingsOverlay').classList.add('hidden');
+}
+
+function saveEmailSettings() {
+  // Collect recipients, strip blanks
+  const recipientInputs = document.querySelectorAll('.email-recipient-row input[type="email"]');
+  const recipients = Array.from(recipientInputs)
+    .map(el => el.value.trim())
+    .filter(v => v && v.includes('@'));
+
+  const data = {
+    enabled:     document.getElementById('emailEnabled').checked,
+    sendHour:    parseInt(document.getElementById('emailSendHour').value, 10),
+    fromName:    document.getElementById('emailFromName').value.trim()  || 'TaskQ Daily',
+    fromEmail:   document.getElementById('emailFromEmail').value.trim() || null,
+    functionUrl: document.getElementById('emailFunctionUrl').value.trim() || null,
+    recipients
+  };
+
+  emailSettingsRef.set(data);
+  closeEmailSettings();
+}
+
+async function sendReportNow() {
+  const url = document.getElementById('emailFunctionUrl').value.trim() || emailSettings.functionUrl;
+  if (!url) { alert('Please enter your Cloud Function URL in the Email settings first.'); return; }
+  const btn = document.getElementById('btnSendNow');
+  btn.disabled = true;
+  btn.textContent = '⏳ SENDING…';
+  try {
+    const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ manual: true }) });
+    const json = await resp.json().catch(() => ({}));
+    if (resp.ok) {
+      btn.textContent = '✓ SENT';
+      setTimeout(() => { btn.disabled = false; btn.textContent = '📤 SEND NOW'; }, 3000);
+    } else {
+      alert('Send failed: ' + (json.error || resp.status));
+      btn.disabled = false; btn.textContent = '📤 SEND NOW';
+    }
+  } catch (err) {
+    alert('Network error: ' + err.message);
+    btn.disabled = false; btn.textContent = '📤 SEND NOW';
+  }
+}
+
+// ── EDIT TASK ─────────────────────────────────────────────────────────────────
+let editingTaskKey = null;
+
+function openEditTask(key) {
+  const task = tasks.find(t => t._key === key);
+  if (!task) return;
+  editingTaskKey = key;
+
+  document.getElementById('etName').value      = task.name || '';
+  document.getElementById('etAssignee').value  = (task.assignee === '—' ? '' : task.assignee) || '';
+
+  // Populate category select
+  const sel = document.getElementById('etCategory');
+  sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+  sel.value = task.category || cfg.categories[0]?.id || '';
+
+  // Past start
+  const hasPastStart = !!task.createdAt;
+  document.getElementById('etPastStartOn').checked = true;
+  document.getElementById('etPastStartRow').style.display = '';
+  document.getElementById('etPastStart').value = toLocalDT(task.createdAt || Date.now());
+
+  // Due date
+  const hasDue = !!task.dueAt;
+  document.getElementById('etDueDateOn').checked = hasDue;
+  document.getElementById('etDueDateRow').style.display = hasDue ? '' : 'none';
+  document.getElementById('etDueDate').value = hasDue ? toLocalDT(task.dueAt) : '';
+
+  // Notes
+  document.getElementById('etNotes').value = task.notes || '';
+
+  // Time spent
+  document.getElementById('etTimeSpent').value = task.timeSpent != null ? task.timeSpent : '';
+
+  // Urgent
+  document.getElementById('etUrgent').checked = !!task.urgent;
+
+  // Mark-done button visibility
+  document.getElementById('btnMarkDoneModal').classList.toggle('hidden', task.status === 'done');
+
+  // Expense category + estimated budget
+  buildExpenseCatSelect('etExpCat', task.expenseCategory || '');
+  document.getElementById('etBudget').value = task.estimatedBudget != null ? task.estimatedBudget : '';
+
+  // Expense items (new format) — with backward compat for old single expense
+  if (task.expenseItems && task.expenseItems.length) {
+    tmpExpenseItems = JSON.parse(JSON.stringify(task.expenseItems));
+  } else if (task.expense != null && Number(task.expense) > 0) {
+    tmpExpenseItems = [{ desc: '', amount: task.expense, taxDed: !!task.taxDeductible }];
+  } else {
+    tmpExpenseItems = [];
+  }
+  buildExpenseItemList();
+
+  document.getElementById('editTaskOverlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('etName').focus(), 50);
+}
+
+function toggleEtPastStart() {
+  const on  = document.getElementById('etPastStartOn').checked;
+  document.getElementById('etPastStartRow').style.display = on ? '' : 'none';
+  if (on && !document.getElementById('etPastStart').value) {
+    document.getElementById('etPastStart').value = toLocalDT(Date.now());
+  }
+}
+
+function toggleEtDueDate() {
+  const on = document.getElementById('etDueDateOn').checked;
+  document.getElementById('etDueDateRow').style.display = on ? '' : 'none';
+  if (on && !document.getElementById('etDueDate').value) {
+    const d = new Date(); d.setDate(d.getDate() + 7);
+    document.getElementById('etDueDate').value = toLocalDT(d);
+  }
+}
+
+function saveEditTask() {
+  const name = document.getElementById('etName').value.trim();
+  if (!name) { document.getElementById('etName').focus(); alert('Task name cannot be empty.'); return; }
+
+  const pastOn = document.getElementById('etPastStartOn').checked;
+  let createdAt = Date.now();
+  if (pastOn) {
+    const dtVal = document.getElementById('etPastStart').value;
+    if (dtVal) {
+      const parsed = new Date(dtVal).getTime();
+      if (!isNaN(parsed)) createdAt = parsed;
+    }
+  }
+
+  const dueOn = document.getElementById('etDueDateOn').checked;
+  let dueAt = null;
+  if (dueOn) {
+    const dtVal = document.getElementById('etDueDate').value;
+    if (dtVal) {
+      const parsed = new Date(dtVal).getTime();
+      if (!isNaN(parsed)) dueAt = parsed;
+    }
+  }
+
+  const assignee = document.getElementById('etAssignee').value.trim() || '—';
+  saveAssigneeIfNew(assignee === '—' ? null : assignee);
+
+  // Build expense items from tmpExpenseItems, filtering out empty
+  const expItems = tmpExpenseItems.filter(item => Number(item.amount) > 0)
+    .map(item => ({ desc: (item.desc || '').trim(), amount: Number(item.amount), taxDed: !!item.taxDed }));
+
+  const expCat   = document.getElementById('etExpCat').value || null;
+  const budgetVal = parseFloat(document.getElementById('etBudget').value);
+
+  tasksRef.child(editingTaskKey).update({
+    name,
+    assignee,
+    category: document.getElementById('etCategory').value,
+    createdAt,
+    dueAt,
+    notes: document.getElementById('etNotes').value.trim() || null,
+    timeSpent: parseFloat(document.getElementById('etTimeSpent').value) || null,
+    urgent: document.getElementById('etUrgent').checked || null,
+    expenseItems: expItems.length ? expItems : null,
+    expenseCategory: expCat,
+    estimatedBudget: !isNaN(budgetVal) && budgetVal > 0 ? budgetVal : null,
+    // Clear old format fields
+    expense: null,
+    taxDeductible: null
+  });
+  closeEditTask();
+}
+
+function markDoneFromEdit() {
+  if (!editingTaskKey) return;
+  markDone(editingTaskKey);
+  closeEditTask();
+}
+
+function closeEditTask() {
+  editingTaskKey = null;
+  tmpExpenseItems = [];
+  document.getElementById('editTaskOverlay').classList.add('hidden');
+}
+
+// ── EXTEND DATES ──────────────────────────────────────────────────────────────
+function extendDates() {
+  const days = parseInt(document.getElementById('extendDays').value, 10);
+  if (!days || days < 1) { alert('Please enter a valid number of days (1 or more).'); return; }
+  const ms = days * 86400000;
+  const pastOn = document.getElementById('etPastStartOn').checked;
+  const dueOn  = document.getElementById('etDueDateOn').checked;
+  let extended = 0;
+  if (pastOn) {
+    const el = document.getElementById('etPastStart');
+    if (el.value) { el.value = toLocalDT(new Date(new Date(el.value).getTime() + ms)); extended++; }
+  }
+  if (dueOn) {
+    const el = document.getElementById('etDueDate');
+    if (el.value) { el.value = toLocalDT(new Date(new Date(el.value).getTime() + ms)); extended++; }
+  }
+  if (!extended) alert('No dates are currently enabled to extend. Toggle on a start or due date first.');
+}
+
+// ── EXPENSE CATEGORY HELPERS ──────────────────────────────────────────────────
+function buildExpenseCatSelect(selectId, currentVal) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const cats = cfg.expenseCategories || [];
+  sel.innerHTML = '<option value="">— NONE —</option>' +
+    cats.map(c => `<option value="${esc(c)}"${c === currentVal ? ' selected' : ''}>${esc(c)}</option>`).join('');
+  if (currentVal && cats.includes(currentVal)) sel.value = currentVal;
+}
+
+function buildExpenseCatList() {
+  const el = document.getElementById('expenseCatList');
+  if (!el) return;
+  el.innerHTML = tmpExpenseCats.map((c, i) => `
+<div class="expense-cat-row">
+  <input type="text" value="${esc(c)}" placeholder="CATEGORY NAME" maxlength="40"
+    oninput="tmpExpenseCats[${i}]=this.value.toUpperCase();this.value=this.value.toUpperCase()">
+  <button class="btn-rm-item" onclick="removeExpenseCat(${i})">✕</button>
+</div>`).join('');
+}
+function addExpenseCatRow() { tmpExpenseCats.push(''); buildExpenseCatList(); }
+function removeExpenseCat(i) { tmpExpenseCats.splice(i, 1); buildExpenseCatList(); }
+
+// ── EXPENSE ITEM MANAGEMENT ───────────────────────────────────────────────────
+function buildExpenseItemList() {
+  const container = document.getElementById('etExpenseItems');
+  if (!container) return;
+  if (!tmpExpenseItems.length) { container.innerHTML = ''; return; }
+  container.innerHTML = tmpExpenseItems.map((item, i) => `
+<div class="expense-item-row">
+  <input type="text" class="expense-item-desc" placeholder="DESCRIPTION" maxlength="80" value="${esc(item.desc || '')}"
+    oninput="tmpExpenseItems[${i}].desc=this.value">
+  <input type="number" class="expense-item-amt" placeholder="0.00" min="0" step="0.01" value="${item.amount || ''}"
+    oninput="tmpExpenseItems[${i}].amount=parseFloat(this.value)||0">
+  <label class="expense-item-tax">
+    <input type="checkbox" ${item.taxDed ? 'checked' : ''} onchange="tmpExpenseItems[${i}].taxDed=this.checked"> TAX DED.
+  </label>
+  <button class="btn-rm-expense" onclick="removeExpenseItemRow(${i})">✕</button>
+</div>`).join('');
+}
+
+function addExpenseItemRow() {
+  tmpExpenseItems.push({ desc: '', amount: 0, taxDed: false });
+  buildExpenseItemList();
+  // Focus the last description input
+  const inputs = document.querySelectorAll('#etExpenseItems .expense-item-desc');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+function removeExpenseItemRow(i) {
+  tmpExpenseItems.splice(i, 1);
+  buildExpenseItemList();
+}
+
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function catById(id) {
   return cfg.categories.find(c => c.id === id)
@@ -903,7 +2581,35 @@ function fmtTime(ts) {
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+function fmtHours(h) {
+  if (!h && h !== 0) return '';
+  const hrs  = Math.floor(h);
+  const mins = Math.round((h - hrs) * 60);
+  if (hrs === 0)  return `${mins}m`;
+  if (mins === 0) return `${hrs}h`;
+  return `${hrs}h ${mins}m`;
+}
 const FILL = { green:'#00c853', yellow:'#ffd600', orange:'#ff6d00', red:'#d50000', done:'#2e7d32' };
+
+// ── EXPENSE HELPER ────────────────────────────────────────────────────────────
+// Returns { total, taxDed } or null. Handles both old (expense/taxDeductible) and new (expenseItems) format.
+function getTaskExpense(t) {
+  if (t.expenseItems && t.expenseItems.length) {
+    let total = 0, taxDed = 0;
+    t.expenseItems.forEach(item => {
+      const amt = Number(item.amount || 0);
+      total += amt;
+      if (item.taxDed) taxDed += amt;
+    });
+    return total > 0 ? { total, taxDed } : null;
+  }
+  // Backward compatibility with old single-expense fields
+  if (t.expense != null && Number(t.expense) > 0) {
+    const total = Number(t.expense);
+    return { total, taxDed: t.taxDeductible ? total : 0 };
+  }
+  return null;
+}
 
 // ── TASK META ─────────────────────────────────────────────────────────────────
 function getTaskMeta(t, now) {
@@ -914,6 +2620,17 @@ function getTaskMeta(t, now) {
   if (isDone) {
     const dispSecs = ((t.doneAt || now) - t.createdAt) / 1000;
     return { colorCls: 'done', statusLbl: 'DONE', timerTxt: fmtDuration(dispSecs), progPct: 100 };
+  }
+
+  // URGENT task — treat as 24h deadline from creation
+  if (t.urgent) {
+    const urgentDeadline = t.createdAt + 86400000;
+    const remaining = (urgentDeadline - now) / 1000;
+    if (remaining <= 0) {
+      return { colorCls: 'red', statusLbl: '⚡ URGENT OVERDUE', timerTxt: '−' + fmtDuration(remaining), progPct: 100, isUrgent: true };
+    }
+    const progPct = Math.min(100, ((now - t.createdAt) / 86400000) * 100);
+    return { colorCls: 'red', statusLbl: '⚡ URGENT', timerTxt: fmtDuration(remaining) + ' LEFT', progPct, isUrgent: true };
   }
 
   if (t.dueAt) {
@@ -946,49 +2663,103 @@ function render() {
   sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
   if (cfg.categories.find(c => c.id === cur)) sel.value = cur;
   if (viewMode === 'table') renderTable();
+  else if (viewMode === 'category') renderCategoryBoard();
   else renderBoard();
 }
 
 function renderBoard() {
   const container = document.getElementById('mainContainer');
   container.className = 'board';
-  if (!tasks.length) {
-    container.innerHTML = `<div class="empty-state">NO TASKS IN QUEUE<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">ENTER A TASK ABOVE TO GET STARTED</span></div>`;
-    document.getElementById('taskCount').textContent = '0 ACTIVE · 0 DONE';
+  const now = Date.now();
+  const urgencyOrder = { red: 0, orange: 1, yellow: 2, green: 3, done: 4 };
+
+  // Count all tasks first
+  let active = 0, done = 0;
+  tasks.forEach(t => { if (t.status === 'done') done++; else active++; });
+
+  // Filter based on showDone toggle
+  const displayTasks = showDone ? tasks : tasks.filter(t => t.status !== 'done');
+
+  if (!displayTasks.length) {
+    const msg = !tasks.length
+      ? 'NO TASKS IN QUEUE<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">ENTER A TASK ABOVE TO GET STARTED</span>'
+      : 'ALL TASKS COMPLETE<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">TOGGLE "SHOW DONE" TO SEE COMPLETED TASKS</span>';
+    container.innerHTML = `<div class="empty-state">${msg}</div>`;
+    document.getElementById('taskCount').textContent = `${active} ACTIVE · ${done} DONE`;
     return;
   }
-  const now = Date.now();
-  let active = 0, done = 0;
-  container.innerHTML = tasks.map(t => {
+
+  // Sort by urgency (urgent+overdue first), done tasks last
+  const sorted = displayTasks.slice().sort((a, b) => {
+    const ma = getTaskMeta(a, now);
+    const mb = getTaskMeta(b, now);
+    // Urgent tasks sort before everything else (even regular red)
+    const oa = ma.isUrgent ? -1 : (urgencyOrder[ma.colorCls] ?? 5);
+    const ob = mb.isUrgent ? -1 : (urgencyOrder[mb.colorCls] ?? 5);
+    if (oa !== ob) return oa - ob;
+    // Within same urgency, oldest first
+    return a.createdAt - b.createdAt;
+  });
+
+  container.innerHTML = sorted.map(t => {
     const { colorCls, statusLbl, timerTxt, progPct } = getTaskMeta(t, now);
     const cat    = catById(t.category);
     const isDone = t.status === 'done';
-    if (isDone) done++; else active++;
+    const safeKey  = esc(t._key);
+    const safeName = esc(t.name);
+    const isSelected = selectedTasks.has(t._key);
+
     const threshLine  = isDone ? '' : `<div class="card-thresh">⏱ Y:${cat.yellow}d · O:${cat.orange}d · R:${cat.red}d</div>`;
     const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
     const dueColor    = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
     const dueLine     = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : '';
-    const safeKey     = esc(t._key);
-    const safeName    = esc(t.name);
+    const timeLine    = t.timeSpent != null ? `<div class="card-time-spent">⏲ TIME SPENT: ${fmtHours(t.timeSpent)}</div>` : '';
+    const exp = getTaskExpense(t);
+    const expLine = exp ? `<div class="card-expense">💰 $${exp.total.toFixed(2)}${exp.taxDed > 0 ? ' · TAX DED.' : ''}</div>` : '';
+    const notesLine   = (showCardNotes && t.notes) ? `<div class="card-notes">${esc(t.notes)}</div>` : '';
+
+    const checkboxHtml = bulkMode
+      ? `<input type="checkbox" class="card-checkbox" ${isSelected ? 'checked' : ''} onchange="toggleTaskSelect('${safeKey}',this.checked)">`
+      : '';
+    const idBadge = `<div class="card-select-wrap">${checkboxHtml}<span class="card-id">${esc(t.id)}</span></div>`;
+
+    const actionBtn = isDone
+      ? `<button class="btn-reopen"  onclick="markPending('${safeKey}')">↩ REOPEN</button>`
+      : `<button class="btn-done"    onclick="markDone('${safeKey}')">✓ MARK DONE</button>`;
+
     return `
-<div class="card ${colorCls}">
+<div class="card ${colorCls}${isSelected ? ' selected-task' : ''}">
   <div class="card-header">
-    <span class="card-id">${esc(t.id)}</span>
+    ${idBadge}
     <span class="card-category" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span>
   </div>
   <div class="card-name">${safeName}</div>
   <div class="card-assignee">${esc(t.assignee)}</div>
   <div class="card-timer ${colorCls}">${timerTxt}</div>
-  ${startedLine}${dueLine}${threshLine}
+  ${startedLine}${dueLine}${threshLine}${timeLine}${expLine}
   <div class="card-status">${statusLbl}</div>
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
-  <div class="card-actions">
-    <button class="btn-done"   onclick="markDone('${safeKey}')">✓ MARK DONE</button>
+  ${notesLine}<div class="card-actions">
+    ${actionBtn}
+    <button class="btn-edit"   onclick="openEditTask('${safeKey}')">✎ EDIT</button>
     <button class="btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button>
   </div>
 </div>`;
   }).join('');
   document.getElementById('taskCount').textContent = `${active} ACTIVE · ${done} DONE`;
+}
+
+function sortTable(col) {
+  if (tableSortCol === col) { tableSortDir *= -1; }
+  else { tableSortCol = col; tableSortDir = 1; }
+  renderTable();
+}
+
+function toggleCardNotes() {
+  showCardNotes = !showCardNotes;
+  const btn = document.getElementById('btnNotesToggle');
+  if (btn) btn.classList.toggle('notes-on', showCardNotes);
+  render();
 }
 
 function renderTable() {
@@ -1001,31 +2772,149 @@ function renderTable() {
   }
   const now = Date.now();
   let active = 0, done = 0;
-  const rows = tasks.map(t => {
-    const { colorCls, statusLbl, timerTxt } = getTaskMeta(t, now);
-    const cat    = catById(t.category);
-    const isDone = t.status === 'done';
-    if (isDone) done++; else active++;
+
+  // Build meta for each task so we can sort by derived fields
+  const withMeta = tasks.map(t => {
+    const meta = getTaskMeta(t, now);
+    const cat  = catById(t.category);
+    const sortStatusOrder = { 'red': 0, 'orange': 1, 'yellow': 2, 'green': 3, 'done': 4 };
+    return { t, cat, meta, sortStatusOrder: sortStatusOrder[meta.colorCls] ?? 5 };
+  });
+
+  // Apply sort
+  if (tableSortCol) {
+    withMeta.sort((a, b) => {
+      let va, vb;
+      if (tableSortCol === 'name')     { va = (a.t.name || '').toLowerCase(); vb = (b.t.name || '').toLowerCase(); }
+      else if (tableSortCol === 'assignee') { va = (a.t.assignee || '').toLowerCase(); vb = (b.t.assignee || '').toLowerCase(); }
+      else if (tableSortCol === 'category') { va = a.cat.label.toLowerCase(); vb = b.cat.label.toLowerCase(); }
+      else if (tableSortCol === 'status')   { va = a.sortStatusOrder; vb = b.sortStatusOrder; }
+      else if (tableSortCol === 'timer')    { va = a.t.createdAt || 0; vb = b.t.createdAt || 0; }
+      else if (tableSortCol === 'due')      { va = a.t.dueAt || Infinity; vb = b.t.dueAt || Infinity; }
+      if (va < vb) return -1 * tableSortDir;
+      if (va > vb) return  1 * tableSortDir;
+      return 0;
+    });
+  }
+
+  const arrow = col => tableSortCol === col ? (tableSortDir === 1 ? ' ▲' : ' ▼') : '';
+  const th = (col, label) =>
+    `<th class="tbl-sort-th${tableSortCol === col ? ' tbl-sort-active' : ''}" onclick="sortTable('${col}')">${label}${arrow(col)}</th>`;
+
+  // Count all tasks and filter for display
+  tasks.forEach(t => { if (t.status === 'done') done++; else active++; });
+  const displayMeta = showDone ? withMeta : withMeta.filter(({ t }) => t.status !== 'done');
+
+  const rows = displayMeta.map(({ t, cat, meta }) => {
+    const { colorCls, statusLbl, timerTxt } = meta;
+    const isDone   = t.status === 'done';
     const safeKey  = esc(t._key);
     const safeName = esc(t.name);
-    const doneBtn  = isDone ? '' :
-      `<button class="tbl-btn-done" onclick="markDone('${safeKey}')">✓ DONE</button>`;
+    const isSelected = selectedTasks.has(t._key);
+    const cbCell   = bulkMode
+      ? `<td><input type="checkbox" class="tbl-checkbox" ${isSelected ? 'checked' : ''} onchange="toggleTaskSelect('${safeKey}',this.checked)"></td>`
+      : '';
+    const statusBtn = isDone
+      ? `<button class="tbl-btn-reopen" onclick="markPending('${safeKey}')">↩ REOPEN</button>`
+      : `<button class="tbl-btn-done"   onclick="markDone('${safeKey}')">✓ DONE</button>`;
+    const timeCell = t.timeSpent != null ? fmtHours(t.timeSpent) : '—';
+    const expTbl = getTaskExpense(t);
+    const expCell = expTbl ? `$${expTbl.total.toFixed(2)}${expTbl.taxDed > 0 ? ' ✓' : ''}` : '—';
     return `
-<tr class="tr-${colorCls}">
+<tr class="tr-${colorCls}${isSelected ? ' selected-task' : ''}">
+  ${cbCell}
   <td class="td-task">${safeName}</td>
   <td class="td-muted">${esc(t.assignee)}</td>
   <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
   <td class="td-status ${colorCls}">${statusLbl}</td>
   <td class="td-timer ${colorCls}">${timerTxt}</td>
   <td class="td-muted">${t.dueAt ? fmtDate(t.dueAt) : '—'}</td>
-  <td><div class="tbl-actions">${doneBtn}<button class="tbl-btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button></div></td>
+  <td class="td-muted">${timeCell}</td>
+  <td class="td-muted">${expCell}</td>
+  <td><div class="tbl-actions">${statusBtn}<button class="tbl-btn-edit" onclick="openEditTask('${safeKey}')">✎ EDIT</button><button class="tbl-btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button></div></td>
 </tr>`;
   }).join('');
+
+  const cbHeader = bulkMode ? '<th style="width:30px"></th>' : '';
   container.innerHTML = `
 <table class="task-table">
-  <thead><tr><th>TASK</th><th>ASSIGNEE</th><th>CATEGORY</th><th>STATUS</th><th>PENDING TIME</th><th>DUE DATE</th><th>ACTIONS</th></tr></thead>
+  <thead><tr>${cbHeader}${th('name','TASK')}${th('assignee','ASSIGNEE')}${th('category','CATEGORY')}${th('status','STATUS')}${th('timer','PENDING TIME')}${th('due','DUE DATE')}<th>TIME SPENT</th><th>EXPENSE</th><th>ACTIONS</th></tr></thead>
   <tbody>${rows}</tbody>
 </table>`;
+  document.getElementById('taskCount').textContent = `${active} ACTIVE · ${done} DONE`;
+}
+
+function renderCategoryBoard() {
+  const container = document.getElementById('mainContainer');
+  container.className = 'cat-board';
+  if (!tasks.length) {
+    container.innerHTML = `<div class="empty-state">NO TASKS IN QUEUE<br><span style="font-size:.72rem;color:#444;display:block;margin-top:8px">ENTER A TASK ABOVE TO GET STARTED</span></div>`;
+    document.getElementById('taskCount').textContent = '0 ACTIVE · 0 DONE';
+    return;
+  }
+  const now = Date.now();
+  let active = 0, done = 0;
+  tasks.forEach(t => { if (t.status === 'done') done++; else active++; });
+  // Category board always shows active tasks only (done tasks optionally shown if showDone)
+  const displayTasks = showDone ? tasks : tasks.filter(t => t.status !== 'done');
+
+  const cols = getOrderedCategories().map(cat => {
+    const catTasks = displayTasks.filter(t => t.category === cat.id);
+    const cards = catTasks.map(t => {
+      const { colorCls, statusLbl, timerTxt, progPct } = getTaskMeta(t, now);
+      const isDone = t.status === 'done';
+      const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
+      const dueColor = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
+      const dueLine = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : '';
+      const timeLine = t.timeSpent != null ? `<div class="card-time-spent">⏲ TIME SPENT: ${fmtHours(t.timeSpent)}</div>` : '';
+      const exp2 = getTaskExpense(t);
+      const expLine = exp2 ? `<div class="card-expense">💰 $${exp2.total.toFixed(2)}${exp2.taxDed > 0 ? ' · TAX DED.' : ''}</div>` : '';
+      const notesLine = (showCardNotes && t.notes) ? `<div class="card-notes">${esc(t.notes)}</div>` : '';
+      const safeKey  = esc(t._key);
+      const safeName = esc(t.name);
+      const safeCat  = esc(cat.id);
+      const actionBtn = isDone
+        ? `<button class="btn-reopen" onclick="markPending('${safeKey}')">↩ REOPEN</button>`
+        : `<button class="btn-done"   onclick="markDone('${safeKey}')">✓ MARK DONE</button>`;
+      return `<div class="card ${colorCls}" draggable="true"
+  ondragstart="catDragStart('${safeKey}',event)"
+  ondragover="event.preventDefault()"
+  ondrop="event.preventDefault();catCardDrop('${safeCat}',event)">
+  <div class="card-header"><span class="card-id">${esc(t.id)}</span><span class="card-assignee" style="font-size:0.63rem">${esc(t.assignee)}</span></div>
+  <div class="card-name">${safeName}</div>
+  <div class="card-timer ${colorCls}">${timerTxt}</div>
+  ${startedLine}${dueLine}${timeLine}${expLine}
+  <div class="card-status">${statusLbl}</div>
+  <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
+  ${notesLine}<div class="card-actions">
+    ${actionBtn}
+    <button class="btn-edit" onclick="openEditTask('${safeKey}')">✎ EDIT</button>
+    <button class="btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button>
+  </div>
+</div>`;
+    }).join('');
+    return `<div class="cat-col"
+  ondragover="event.preventDefault()"
+  ondrop="event.preventDefault();catDrop('${esc(cat.id)}',this)">
+  <div class="cat-col-header" style="border-top-color:${cat.color}"
+    draggable="true"
+    ondragstart="catColDragStart('${esc(cat.id)}',event)"
+    ondragend="catColDragEnd()"
+    ondragover="event.preventDefault()"
+    ondrop="event.preventDefault();catColDrop('${esc(cat.id)}',this.parentElement)">
+    <span style="color:${cat.color}" title="Drag to reorder columns">${esc(cat.label)}</span>
+    <span class="cat-col-count">${catTasks.length}</span>
+  </div>
+  <div class="cat-col-cards"
+    ondragover="event.preventDefault()"
+    ondragenter="event.preventDefault();if(draggingTaskKey)this.classList.add('drag-over')"
+    ondragleave="this.classList.remove('drag-over')"
+    ondrop="event.preventDefault();event.stopPropagation();catDrop('${esc(cat.id)}',this)">${cards || `<div class="cat-col-empty">EMPTY — DROP HERE</div>`}</div>
+  <div class="cat-col-add" onclick="addTaskFromCatBoard('${esc(cat.id)}')">+ ADD TASK</div>
+</div>`;
+  }).join('');
+
+  container.innerHTML = cols;
   document.getElementById('taskCount').textContent = `${active} ACTIVE · ${done} DONE`;
 }
 
@@ -1043,10 +2932,19 @@ tick();
 
 // ── SETTINGS MODAL ────────────────────────────────────────────────────────────
 function openSettings() {
-  tmpCats      = JSON.parse(JSON.stringify(cfg.categories));
-  tmpAssignees = JSON.parse(JSON.stringify(cfg.assignees || []));
+  tmpCats        = JSON.parse(JSON.stringify(cfg.categories));
+  tmpAssignees   = JSON.parse(JSON.stringify(cfg.assignees || []));
+  tmpExpenseCats = JSON.parse(JSON.stringify(cfg.expenseCategories || []));
   buildAssigneeList();
   buildCatList();
+  buildExpenseCatList();
+  // Pre-fill subtitle
+  document.getElementById('subtitleInput').value = cfg.subtitle || DEFAULTS.subtitle;
+  // Pre-fill workspace rename field
+  const wsInput = document.getElementById('wsRenameInput');
+  if (wsInput && currentWsId && userWsList[currentWsId]) {
+    wsInput.value = userWsList[currentWsId].name;
+  }
   document.getElementById('overlay').classList.remove('hidden');
 }
 function closeSettings() { document.getElementById('overlay').classList.add('hidden'); }
@@ -1087,12 +2985,56 @@ function saveSettings() {
       alert(`"${c.label}": thresholds must be in order — YELLOW < ORANGE < RED`); return;
     }
   }
-  cfg.categories = cats;
-  cfg.assignees  = tmpAssignees.map(a => a.trim()).filter(Boolean);
+  cfg.categories       = cats;
+  cfg.assignees        = tmpAssignees.map(a => a.trim()).filter(Boolean);
+  cfg.expenseCategories = tmpExpenseCats.map(c => c.trim()).filter(Boolean);
+  cfg.subtitle         = document.getElementById('subtitleInput').value.trim().toUpperCase() || DEFAULTS.subtitle;
+  applySubtitle();
   pushSettingsToCloud();
   refreshDatalist();
   closeSettings();
   render();
+}
+
+// ── EVENT TIME HELPERS ────────────────────────────────────────────────────────
+// Auto-advance end time when start changes
+function evStartChanged() {
+  const sv = document.getElementById('evStart').value;
+  if (!sv) return;
+  const start = new Date(sv);
+  if (isNaN(start.getTime())) return;
+  document.getElementById('evEnd').value = toLocalDT(new Date(start.getTime() + 3600000));
+}
+
+// Attach mouse scroll wheel to event date/time fields
+function attachScrollHandlers() {
+  ['evStart', 'evEnd'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      if (!this.value) return;
+      const d = new Date(this.value);
+      if (isNaN(d.getTime())) return;
+      const dir  = e.deltaY > 0 ? 1 : -1;
+      const mins = e.shiftKey ? 60 : 15;
+      d.setMinutes(d.getMinutes() + dir * mins);
+      this.value = toLocalDT(d);
+      if (id === 'evStart') evStartChanged();
+    }, { passive: false });
+  });
+  ['evDateStart', 'evDateEnd'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      if (!this.value) return;
+      const d = new Date(this.value + 'T12:00:00');
+      if (isNaN(d.getTime())) return;
+      d.setDate(d.getDate() + (e.deltaY > 0 ? 1 : -1));
+      this.value = toLocalDate(d);
+    }, { passive: false });
+  });
 }
 
 // ── CALENDAR ──────────────────────────────────────────────────────────────────
@@ -1147,14 +3089,50 @@ function renderCalendar() {
   else                         renderDayView();
 }
 
-// Helper: get events overlapping a day [dayStart, dayStart+86400000)
-function getEventsForDay(dayStart) {
+// ── RECURRENCE HELPERS ────────────────────────────────────────────────────────
+// Returns true if recurring event ev should generate an instance on dayStart (not the original day)
+function matchesRecurrence(ev, dayStart) {
+  if (!ev.recurrence || ev.recurrence === 'none') return false;
+  const origStart = new Date(ev.startAt);
+  const origDay   = new Date(origStart.getFullYear(), origStart.getMonth(), origStart.getDate()).getTime();
+  // Don't generate a duplicate for the original day (handled normally)
+  if (dayStart === origDay) return false;
+  // Event must have already started
+  if (dayStart < origDay) return false;
+  // Check recurEnd
+  if (ev.recurEnd && dayStart > ev.recurEnd) return false;
+  const day = new Date(dayStart);
+  if (ev.recurrence === 'daily')   return true;
+  if (ev.recurrence === 'weekly')  return origStart.getDay()   === day.getDay();
+  if (ev.recurrence === 'monthly') return origStart.getDate()  === day.getDate();
+  if (ev.recurrence === 'yearly')  return origStart.getMonth() === day.getMonth() && origStart.getDate() === day.getDate();
+  return false;
+}
+
+// Returns all event instances (including virtual recurring) for a day
+function getEventInstances(dayStart) {
   const dayEnd = dayStart + 86400000;
-  return events.filter(e => {
+  const instances = [];
+  events.forEach(e => {
     const es = e.startAt;
     const ee = e.endAt || (e.allDay ? es + 86400000 : es + 3600000);
-    return es < dayEnd && ee > dayStart;
-  }).sort((a, b) => a.startAt - b.startAt);
+    if (es < dayEnd && ee > dayStart) {
+      instances.push(e); // original occurrence
+    } else if (matchesRecurrence(e, dayStart)) {
+      // Create a virtual instance shifted to this day
+      const origDay = new Date(e.startAt); origDay.setHours(0,0,0,0);
+      const offset  = dayStart - origDay.getTime();
+      const vs = e.startAt + offset;
+      const ve = e.endAt ? e.endAt + offset : vs + (e.allDay ? 86400000 : 3600000);
+      instances.push({ ...e, startAt: vs, endAt: ve, _recur: true });
+    }
+  });
+  return instances.sort((a, b) => a.startAt - b.startAt);
+}
+
+// Helper: get events overlapping a day [dayStart, dayStart+86400000)
+function getEventsForDay(dayStart) {
+  return getEventInstances(dayStart);
 }
 
 // ── MONTH VIEW ────────────────────────────────────────────────────────────────
@@ -1183,10 +3161,11 @@ function renderMonthView() {
     const dateISO  = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
 
     const chips = shown.map(ev => {
-      const color = ev.color || EVENT_COLORS[0];
+      const color = catById(ev.category).color;
       const timeStr = ev.allDay ? 'ALL DAY' : fmtTime(ev.startAt);
+      const recurIcon = ev.recurrence && ev.recurrence !== 'none' ? ' 🔁' : '';
       return `<div class="cal-event-chip" style="background:${color}33;color:${color};border-left:2px solid ${color}"
-        onclick="openEditEvent('${esc(ev._key)}',event)" title="${esc(ev.title)}">${timeStr} ${esc(ev.title)}</div>`;
+        onclick="openEditEvent('${esc(ev._key)}',event)" title="${esc(ev.title)}">${timeStr} ${esc(ev.title)}${recurIcon}</div>`;
     }).join('');
     const moreHtml = more > 0 ? `<div class="cal-event-more">+${more} more</div>` : '';
 
@@ -1227,14 +3206,16 @@ function renderWeekView() {
     return `<div class="cal-week-col-name${isToday?' today-col':''}">${dayNames[i]} ${d.getDate()}</div>`;
   }).join('');
 
-  // All-day events row
+  // All-day events row (includes multi-day events that span this day)
   const allDayCols = days.map(d => {
     const dayStart = d.getTime();
-    const allDayEvts = events.filter(e => e.allDay && e.startAt >= dayStart && e.startAt < dayStart + 86400000);
+    const dayEnd   = dayStart + 86400000;
+    const allDayEvts = events.filter(e => e.allDay && e.startAt < dayEnd && (e.endAt || e.startAt + 86400000) > dayStart);
     const chips = allDayEvts.map(ev => {
-      const color = ev.color || EVENT_COLORS[0];
+      const color = catById(ev.category).color;
+      const recurIcon = ev.recurrence && ev.recurrence !== 'none' ? ' 🔁' : '';
       return `<div class="cal-allday-chip" style="background:${color}44;color:${color}"
-        onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}</div>`;
+        onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}${recurIcon}</div>`;
     }).join('');
     return `<div class="cal-allday-col">${chips}</div>`;
   }).join('');
@@ -1296,9 +3277,10 @@ function renderDayView() {
   const isoDate  = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
   const HOUR_H   = 60;
 
-  const allDayEvts = events.filter(e => e.allDay && e.startAt >= dayStart && e.startAt < dayStart + 86400000);
+  const dayEnd2    = dayStart + 86400000;
+  const allDayEvts = events.filter(e => e.allDay && e.startAt < dayEnd2 && (e.endAt || e.startAt + 86400000) > dayStart);
   const allDayChips = allDayEvts.map(ev => {
-    const color = ev.color || EVENT_COLORS[0];
+    const color = catById(ev.category).color;
     return `<div class="cal-allday-chip" style="background:${color}44;color:${color};display:inline-block;margin-right:4px;margin-bottom:2px;padding:2px 8px;border-radius:3px;font-size:0.7rem;cursor:pointer"
       onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}</div>`;
   }).join('');
@@ -1349,7 +3331,7 @@ function packAndRenderBlocks(evts, dayStart, hourH) {
   const totalCols = cols.length;
 
   return evts.map(ev => {
-    const color  = ev.color || EVENT_COLORS[0];
+    const color  = catById(ev.category).color;
     const evStart = Math.max(ev.startAt, dayStart);
     const evEnd   = Math.min(ev.endAt || ev.startAt + 3600000, dayStart + 86400000);
     const topPx   = ((evStart - dayStart) / 3600000) * hourH;
@@ -1366,19 +3348,13 @@ function packAndRenderBlocks(evts, dayStart, hourH) {
 }
 
 // ── EVENT MODAL ───────────────────────────────────────────────────────────────
-function buildColorPalette(currentColor) {
-  document.getElementById('evColorPalette').innerHTML = EVENT_COLORS.map(c => {
-    const sel = c === currentColor ? ' selected' : '';
-    return `<div class="color-swatch${sel}" style="background:${c}" title="${c}"
-      onclick="selectEventColor('${c}')"></div>`;
-  }).join('');
-}
-
-function selectEventColor(color) {
-  selectedColor = color;
-  document.querySelectorAll('.color-swatch').forEach(sw => {
-    sw.classList.toggle('selected', sw.style.background === color || sw.title === color);
-  });
+function buildEventCategorySelect(currentCatId) {
+  const sel = document.getElementById('evCategory');
+  sel.innerHTML = cfg.categories.map(c =>
+    `<option value="${c.id}" style="color:${c.color}">${c.label}</option>`
+  ).join('');
+  const defaultId = currentCatId || cfg.categories[0]?.id || '';
+  if (cfg.categories.find(c => c.id === defaultId)) sel.value = defaultId;
 }
 
 function toggleEventAllDay() {
@@ -1387,30 +3363,45 @@ function toggleEventAllDay() {
   document.getElementById('evAllDayDateRow').style.display = allDay ? '' : 'none';
 }
 
+function toggleEventRecurrence() {
+  const val = document.getElementById('evRecurrence').value;
+  document.getElementById('evRecurEndRow').style.display = (val && val !== 'none') ? '' : 'none';
+}
+
 function openAddEvent(prefillDateISO, prefillHour) {
   editingEventKey = null;
-  selectedColor   = EVENT_COLORS[0];
   document.getElementById('eventModalTitle').textContent = '+ ADD EVENT';
   document.getElementById('btnEventDelete').classList.add('hidden');
-  document.getElementById('evTitle').value = '';
-  document.getElementById('evDesc').value  = '';
+  document.getElementById('btnEventCopy').classList.add('hidden');
+  document.getElementById('evTitle').value    = '';
+  document.getElementById('evDesc').value     = '';
+  document.getElementById('evLocation').value = '';
+  document.getElementById('evAssignee').value = '';
+  document.getElementById('evBudget').value   = '';
   document.getElementById('evAllDay').checked = false;
   toggleEventAllDay();
+  document.getElementById('evRecurrence').value = 'none';
+  document.getElementById('evRecurEnd').value   = '';
+  toggleEventRecurrence();
+  buildExpenseCatSelect('evExpCat', '');
 
   const now = new Date();
+  const today = toLocalDate(Date.now());
   if (prefillDateISO) {
     const h = prefillHour !== undefined ? prefillHour : now.getHours();
-    document.getElementById('evStart').value = `${prefillDateISO}T${pad2(h)}:00`;
-    document.getElementById('evEnd').value   = `${prefillDateISO}T${pad2(h+1<=23?h+1:h)}:${h+1>23?'59':'00'}`;
-    document.getElementById('evDate').value  = prefillDateISO;
+    document.getElementById('evStart').value    = `${prefillDateISO}T${pad2(h)}:00`;
+    document.getElementById('evEnd').value      = `${prefillDateISO}T${pad2(h+1<=23?h+1:h)}:${h+1>23?'59':'00'}`;
+    document.getElementById('evDateStart').value = prefillDateISO;
+    document.getElementById('evDateEnd').value   = prefillDateISO;
   } else {
-    document.getElementById('evStart').value = toLocalDT(Date.now());
+    document.getElementById('evStart').value    = toLocalDT(Date.now());
     const endD = new Date(Date.now() + 3600000);
-    document.getElementById('evEnd').value   = toLocalDT(endD);
-    document.getElementById('evDate').value  = toLocalDate(Date.now());
+    document.getElementById('evEnd').value      = toLocalDT(endD);
+    document.getElementById('evDateStart').value = today;
+    document.getElementById('evDateEnd').value   = today;
   }
 
-  buildColorPalette(selectedColor);
+  buildEventCategorySelect();
   document.getElementById('eventOverlay').classList.remove('hidden');
   setTimeout(() => document.getElementById('evTitle').focus(), 50);
 }
@@ -1429,22 +3420,34 @@ function openEditEvent(key, e) {
   if (!ev) return;
 
   editingEventKey = key;
-  selectedColor   = ev.color || EVENT_COLORS[0];
   document.getElementById('eventModalTitle').textContent = 'EDIT EVENT';
   document.getElementById('btnEventDelete').classList.remove('hidden');
-  document.getElementById('evTitle').value = ev.title || '';
-  document.getElementById('evDesc').value  = ev.description || '';
+  document.getElementById('btnEventCopy').classList.remove('hidden');
+  document.getElementById('evTitle').value    = ev.title       || '';
+  document.getElementById('evDesc').value     = ev.description  || '';
+  document.getElementById('evLocation').value = ev.location     || '';
+  document.getElementById('evAssignee').value = ev.assignee     || '';
+  document.getElementById('evBudget').value   = ev.estimatedBudget != null ? ev.estimatedBudget : '';
+  buildExpenseCatSelect('evExpCat', ev.expenseCategory || '');
   document.getElementById('evAllDay').checked = !!ev.allDay;
   toggleEventAllDay();
 
   if (ev.allDay) {
-    document.getElementById('evDate').value = toLocalDate(ev.startAt);
+    document.getElementById('evDateStart').value = toLocalDate(ev.startAt);
+    // endAt is stored as exclusive day end; show last day inclusive
+    const evEndTs = ev.endAt ? ev.endAt - 86400000 : ev.startAt;
+    document.getElementById('evDateEnd').value = toLocalDate(Math.max(evEndTs, ev.startAt));
   } else {
     document.getElementById('evStart').value = toLocalDT(ev.startAt);
     document.getElementById('evEnd').value   = toLocalDT(ev.endAt || ev.startAt + 3600000);
   }
 
-  buildColorPalette(selectedColor);
+  // Recurrence
+  document.getElementById('evRecurrence').value = ev.recurrence || 'none';
+  document.getElementById('evRecurEnd').value   = ev.recurEnd ? toLocalDate(ev.recurEnd) : '';
+  toggleEventRecurrence();
+
+  buildEventCategorySelect(ev.category);
   document.getElementById('eventOverlay').classList.remove('hidden');
 }
 
@@ -1461,10 +3464,16 @@ function saveEvent() {
   let startAt, endAt;
 
   if (allDay) {
-    const dateVal = document.getElementById('evDate').value;
-    if (!dateVal) { alert('Please pick a date.'); return; }
-    startAt = new Date(dateVal + 'T00:00:00').getTime();
-    endAt   = startAt + 86400000;
+    const startDateVal = document.getElementById('evDateStart').value;
+    const endDateVal   = document.getElementById('evDateEnd').value;
+    if (!startDateVal) { alert('Please pick a start date.'); return; }
+    startAt = new Date(startDateVal + 'T00:00:00').getTime();
+    // endAt is exclusive: last day + 1 day
+    if (endDateVal && endDateVal >= startDateVal) {
+      endAt = new Date(endDateVal + 'T00:00:00').getTime() + 86400000;
+    } else {
+      endAt = startAt + 86400000; // single-day fallback
+    }
   } else {
     const sv = document.getElementById('evStart').value;
     const ev = document.getElementById('evEnd').value;
@@ -1474,13 +3483,25 @@ function saveEvent() {
     if (endAt <= startAt) { alert('End time must be after start time.'); return; }
   }
 
+  const recurVal = document.getElementById('evRecurrence').value;
+  const recurEndVal = document.getElementById('evRecurEnd').value;
+  const recurEnd = (recurVal && recurVal !== 'none' && recurEndVal)
+    ? new Date(recurEndVal + 'T23:59:59').getTime() : null;
+
+  const evBudgetVal = parseFloat(document.getElementById('evBudget').value);
   const data = {
     title,
-    description: document.getElementById('evDesc').value.trim(),
+    description:     document.getElementById('evDesc').value.trim() || null,
     allDay,
     startAt,
     endAt,
-    color: selectedColor
+    category:        document.getElementById('evCategory').value,
+    location:        document.getElementById('evLocation').value.trim() || null,
+    assignee:        document.getElementById('evAssignee').value.trim() || null,
+    estimatedBudget: !isNaN(evBudgetVal) && evBudgetVal > 0 ? evBudgetVal : null,
+    expenseCategory: document.getElementById('evExpCat').value || null,
+    recurrence:      (recurVal && recurVal !== 'none') ? recurVal : null,
+    recurEnd:        recurEnd
   };
 
   if (editingEventKey) {
@@ -1490,6 +3511,47 @@ function saveEvent() {
   }
 
   closeEventModal();
+}
+
+function copyEvent() {
+  if (!editingEventKey) return;
+  copyingEventKey = editingEventKey;
+  const src = events.find(e => e._key === copyingEventKey);
+  closeEventModal();
+  // Pre-fill with source event's date
+  document.getElementById('copyEventDate').value = src ? toLocalDate(src.startAt) : toLocalDate(Date.now());
+  document.getElementById('copyEventOverlay').classList.remove('hidden');
+}
+
+function closeCopyEventModal() {
+  copyingEventKey = null;
+  document.getElementById('copyEventOverlay').classList.add('hidden');
+}
+
+function confirmCopyEvent() {
+  if (!copyingEventKey) return;
+  const src = events.find(e => e._key === copyingEventKey);
+  if (!src) { closeCopyEventModal(); return; }
+  const newDateVal = document.getElementById('copyEventDate').value;
+  if (!newDateVal) { alert('Please select a date for the copy.'); return; }
+  const newDayStart  = new Date(newDateVal + 'T00:00:00').getTime();
+  const origDayStart = new Date(toLocalDate(src.startAt) + 'T00:00:00').getTime();
+  const offset       = newDayStart - origDayStart;
+  eventsRef.push({
+    title:           src.title + ' (COPY)',
+    description:     src.description || null,
+    allDay:          src.allDay,
+    startAt:         src.startAt + offset,
+    endAt:           src.endAt ? src.endAt + offset : null,
+    category:        src.category,
+    location:        src.location || null,
+    assignee:        src.assignee || null,
+    estimatedBudget: src.estimatedBudget || null,
+    expenseCategory: src.expenseCategory || null,
+    recurrence:      null,
+    recurEnd:        null
+  });
+  closeCopyEventModal();
 }
 
 function deleteEditingEvent() {
@@ -1503,9 +3565,23 @@ function deleteEditingEvent() {
 document.getElementById('overlay').addEventListener('click', function(e) { if (e.target === this) closeSettings(); });
 document.getElementById('confirmOverlay').addEventListener('click', function(e) { if (e.target === this) closeConfirm(); });
 document.getElementById('eventOverlay').addEventListener('click', function(e) { if (e.target === this) closeEventModal(); });
+document.getElementById('createWsOverlay').addEventListener('click', function(e) { if (e.target === this) closeCreateWs(); });
+document.getElementById('editTaskOverlay').addEventListener('click', function(e) { if (e.target === this) closeEditTask(); });
+document.getElementById('expenseReportOverlay').addEventListener('click', function(e) { if (e.target === this) closeExpenseReport(); });
+document.getElementById('timeReportOverlay').addEventListener('click', function(e) { if (e.target === this) closeTimeReport(); });
+document.getElementById('userReportOverlay').addEventListener('click', function(e) { if (e.target === this) closeUserReport(); });
+document.getElementById('copyEventOverlay').addEventListener('click', function(e) { if (e.target === this) closeCopyEventModal(); });
+document.getElementById('emailSettingsOverlay').addEventListener('click', function(e) { if (e.target === this) closeEmailSettings(); });
+
+// Close workspace dropdown when clicking outside it
+document.addEventListener('click', function(e) {
+  const switcher = document.getElementById('wsSwitcher');
+  if (switcher && !switcher.contains(e.target)) closeWsDropdown();
+});
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
-refreshDatalist();
+attachScrollHandlers();
+loadCatColOrder();
 render();
 </script>
 </body>
