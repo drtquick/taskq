@@ -780,6 +780,37 @@ input[type="date"] { color-scheme: dark; }
 .extend-dates-row input:focus { border-color: var(--accent); }
 .btn-extend { background: none; border: 1px solid var(--accent); color: var(--accent); padding: 6px 12px; font-family: var(--font); font-size: 0.7rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
 .btn-extend:hover { background: var(--accent); color: #000; }
+
+/* ── MULTIPLE ASSIGNEES ─────────────────────────────────────────── */
+.av-stack { display: flex; align-items: center; gap: 0; margin-bottom: 6px; flex-wrap: wrap; gap: 2px; }
+.av-bubble { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font-size: 0.6rem; font-weight: bold; letter-spacing: 0; border: 2px solid var(--bg); cursor: default; flex-shrink: 0; }
+.av-bubble.overflow { background: var(--border); color: var(--muted); font-size: 0.55rem; }
+.et-assignees-wrap { border: 1px solid var(--border); border-radius: 4px; padding: 8px; background: var(--bg); }
+.et-assignees-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; min-height: 0; }
+.et-assignee-chip { display: inline-flex; align-items: center; gap: 5px; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 3px 8px 3px 10px; font-size: 0.72rem; color: var(--text); }
+.et-assignee-chip button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.8rem; padding: 0; line-height: 1; }
+.et-assignee-chip button:hover { color: var(--red); }
+.et-assignee-add-row { display: flex; gap: 6px; align-items: center; }
+.et-assignee-add-row input { flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 0.82rem; padding: 4px 0; outline: none; }
+.et-assignee-add-row input:focus { border-bottom-color: var(--accent); }
+.btn-add-et-assignee { background: none; border: 1px solid var(--border); color: var(--muted); padding: 4px 10px; font-family: var(--font); font-size: 0.68rem; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+.btn-add-et-assignee:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── FILE ATTACHMENTS ───────────────────────────────────────────── */
+.et-files-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+.et-file-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem; }
+.et-file-item a { color: var(--accent); text-decoration: none; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.et-file-item a:hover { text-decoration: underline; }
+.et-file-size { color: var(--muted); font-size: 0.68rem; white-space: nowrap; }
+.btn-file-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.85rem; padding: 0 2px; flex-shrink: 0; }
+.btn-file-del:hover { color: var(--red); }
+.btn-file-upload { display: inline-flex; align-items: center; gap: 5px; border: 1px dashed var(--border); color: var(--muted); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-family: var(--font); font-size: 0.7rem; letter-spacing: 1px; transition: border-color 0.2s, color 0.2s; }
+.btn-file-upload:hover { border-color: var(--accent); color: var(--accent); }
+.file-uploading { opacity: 0.6; font-size: 0.7rem; color: var(--muted); }
+
+/* ── CALENDAR DUE DATE CHIPS ────────────────────────────────────── */
+.cal-due-chip { font-size: 0.6rem; padding: 1px 4px; margin-top: 1px; border-radius: 3px; background: var(--accent)22; color: var(--accent); border-left: 2px solid var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.cal-due-chip:hover { background: var(--accent)44; }
 </style>
 </head>
 <body>
@@ -833,7 +864,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v1.3</span>
+    <span class="beta-badge">β v1.4</span>
     <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
 </header>
@@ -951,8 +982,15 @@ input[type="date"] { color-scheme: dark; }
       <input type="text" id="etName" maxlength="80" onkeydown="if(event.key==='Enter')saveEditTask()">
     </div>
     <div class="edit-task-form-row">
-      <label>ASSIGNEE</label>
-      <input type="text" id="etAssignee" maxlength="30" list="assigneeList" autocomplete="off">
+      <label>ASSIGNEES</label>
+      <div class="et-assignees-wrap">
+        <div class="et-assignees-chips" id="etAssigneesChips"></div>
+        <div class="et-assignee-add-row">
+          <input type="text" id="etAssigneeInput" placeholder="Add person..." maxlength="30" list="assigneeList" autocomplete="off"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();addEtAssignee();}">
+          <button class="btn-add-et-assignee" onclick="addEtAssignee()">+ ADD</button>
+        </div>
+      </div>
     </div>
     <div class="edit-task-form-row">
       <label>CATEGORY</label>
@@ -998,6 +1036,12 @@ input[type="date"] { color-scheme: dark; }
     <div class="edit-task-form-row">
       <label>ESTIMATED BUDGET (OPTIONAL)</label>
       <input type="number" id="etBudget" min="0" step="0.01" placeholder="e.g. 500.00">
+    </div>
+    <div class="edit-task-form-row">
+      <label>ATTACHMENTS</label>
+      <div class="et-files-list" id="etFilesList"></div>
+      <label class="btn-file-upload" for="etFileInput">📎 ATTACH FILE</label>
+      <input type="file" id="etFileInput" multiple style="display:none" onchange="handleEtFileUpload(this)">
     </div>
     <div class="extend-dates-row" id="extendDatesRow">
       <label>EXTEND DATES BY</label>
@@ -1306,6 +1350,7 @@ input[type="date"] { color-scheme: dark; }
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 
 <script>
 // ── FIREBASE ──────────────────────────────────────────────────────────────────
@@ -1321,6 +1366,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db             = firebase.database();
 const auth           = firebase.auth();
+const storage        = firebase.storage();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 // Dynamic refs — set by switchWorkspace()
 let tasksRef         = null;
@@ -1365,6 +1411,8 @@ let selectedTasks     = new Set(); // keys of tasks selected in bulk mode
 let draggingTaskKey   = null;   // key of card being dragged in category board
 let urgentMode        = false;  // next task added will be marked urgent
 let tmpExpenseItems   = [];     // expense items being edited in modal
+let etAssigneesList   = [];     // assignees being edited in modal (array of strings)
+let etFilesList       = [];     // file attachments being edited in modal [{name,url,path,size}]
 let tmpExpenseCats    = [];     // expense categories being edited in settings
 let emailSettings     = {};    // loaded from Firebase /emailSettings
 let tmpEmailRecipients = [];   // recipients being edited in email modal
@@ -1789,14 +1837,15 @@ function addTask() {
     }
   }
 
-  const assignee = document.getElementById('iAssignee').value.trim() || '—';
-  saveAssigneeIfNew(assignee === '—' ? null : assignee);
+  const assigneeRaw = document.getElementById('iAssignee').value.trim();
+  saveAssigneeIfNew(assigneeRaw || null);
+  const assignees = assigneeRaw ? [assigneeRaw] : null;
 
   const isUrgent = urgentMode;
   const num = tasks.length + 1;
   tasksRef.push({
     id: 'T-' + String(num).padStart(3, '0'),
-    name, assignee,
+    name, assignees,
     category: document.getElementById('iCategory').value,
     createdAt, dueAt,
     urgent: isUrgent || null,
@@ -1862,7 +1911,7 @@ function copyTask() {
   tasksRef.push({
     id: 'T-' + String(num).padStart(3, '0'),
     name:             src.name + ' (COPY)',
-    assignee:         src.assignee,
+    assignees:        src.assignees ? [...src.assignees] : (src.assignee && src.assignee !== '—' ? [src.assignee] : null),
     category:         src.category,
     createdAt:        Date.now(),
     dueAt:            src.dueAt || null,
@@ -2100,10 +2149,15 @@ function openTimeReport() {
   let grandTotal = 0;
   const byAssignee = {};
   timeTasks.forEach(t => {
-    const key = t.assignee || '—';
-    if (!byAssignee[key]) byAssignee[key] = { tasks: [], total: 0 };
-    byAssignee[key].tasks.push(t);
-    byAssignee[key].total += Number(t.timeSpent);
+    const names = taskAssigneesArr(t);
+    const keys = names.length ? names : ['—'];
+    keys.forEach(key => {
+      if (!byAssignee[key]) byAssignee[key] = { tasks: [], total: 0 };
+      byAssignee[key].tasks.push(t);
+    });
+    // only count time once (under first assignee or '—')
+    const primaryKey = keys[0];
+    byAssignee[primaryKey].total += Number(t.timeSpent);
     grandTotal += Number(t.timeSpent);
   });
   let rows = '';
@@ -2141,7 +2195,7 @@ function closeTimeReport() { document.getElementById('timeReportOverlay').classL
 function openUserReport() {
   // Build assignee list from cfg.assignees + any assignees found in tasks/events
   const assigneeSet = new Set(cfg.assignees || []);
-  tasks.forEach(t => { if (t.assignee) assigneeSet.add(t.assignee); });
+  tasks.forEach(t => { taskAssigneesArr(t).forEach(a => assigneeSet.add(a)); });
   events.forEach(e => { if (e.assignee) assigneeSet.add(e.assignee); });
   const sorted = Array.from(assigneeSet).sort((a, b) => a.localeCompare(b));
 
@@ -2162,7 +2216,7 @@ function renderUserReport(assignee) {
   if (!assignee) { el.innerHTML = ''; return; }
 
   const now = Date.now();
-  const myTasks  = tasks.filter(t => t.assignee === assignee);
+  const myTasks  = tasks.filter(t => taskAssigneesArr(t).includes(assignee));
   const myEvents = events.filter(e => e.assignee === assignee);
 
   // Tasks section
@@ -2354,8 +2408,22 @@ function openEditTask(key) {
   if (!task) return;
   editingTaskKey = key;
 
-  document.getElementById('etName').value      = task.name || '';
-  document.getElementById('etAssignee').value  = (task.assignee === '—' ? '' : task.assignee) || '';
+  document.getElementById('etName').value = task.name || '';
+
+  // Assignees — normalize old single-assignee format
+  if (Array.isArray(task.assignees)) {
+    etAssigneesList = [...task.assignees];
+  } else if (task.assignee && task.assignee !== '—') {
+    etAssigneesList = [task.assignee];
+  } else {
+    etAssigneesList = [];
+  }
+  document.getElementById('etAssigneeInput').value = '';
+  renderEtAssigneeChips();
+
+  // Files
+  etFilesList = task.files ? JSON.parse(JSON.stringify(task.files)) : [];
+  renderEtFiles();
 
   // Populate category select
   const sel = document.getElementById('etCategory');
@@ -2445,8 +2513,9 @@ function saveEditTask() {
     }
   }
 
-  const assignee = document.getElementById('etAssignee').value.trim() || '—';
-  saveAssigneeIfNew(assignee === '—' ? null : assignee);
+  // Assignees
+  const assignees = etAssigneesList.filter(Boolean);
+  assignees.forEach(a => saveAssigneeIfNew(a));
 
   // Build expense items from tmpExpenseItems, filtering out empty
   const expItems = tmpExpenseItems.filter(item => Number(item.amount) > 0)
@@ -2457,7 +2526,8 @@ function saveEditTask() {
 
   tasksRef.child(editingTaskKey).update({
     name,
-    assignee,
+    assignees: assignees.length ? assignees : null,
+    assignee: null,   // clear legacy field
     category: document.getElementById('etCategory').value,
     createdAt,
     dueAt,
@@ -2467,6 +2537,7 @@ function saveEditTask() {
     expenseItems: expItems.length ? expItems : null,
     expenseCategory: expCat,
     estimatedBudget: !isNaN(budgetVal) && budgetVal > 0 ? budgetVal : null,
+    files: etFilesList.length ? etFilesList : null,
     // Clear old format fields
     expense: null,
     taxDeductible: null
@@ -2483,7 +2554,95 @@ function markDoneFromEdit() {
 function closeEditTask() {
   editingTaskKey = null;
   tmpExpenseItems = [];
+  etAssigneesList = [];
+  etFilesList = [];
   document.getElementById('editTaskOverlay').classList.add('hidden');
+}
+
+// ── MULTI-ASSIGNEE CHIP UI ────────────────────────────────────────────────────
+function renderEtAssigneeChips() {
+  const container = document.getElementById('etAssigneesChips');
+  if (!container) return;
+  container.innerHTML = etAssigneesList.map((a, i) => {
+    const c = avColor(a);
+    return `<span class="et-assignee-chip">
+      <span class="av-bubble" style="background:${c}33;color:${c};width:18px;height:18px;font-size:0.52rem;border:none">${avInitials(a)}</span>
+      ${esc(a)}
+      <button onclick="removeEtAssignee(${i})" title="Remove">✕</button>
+    </span>`;
+  }).join('');
+}
+
+function addEtAssignee() {
+  const input = document.getElementById('etAssigneeInput');
+  const name = (input.value || '').trim();
+  if (!name) return;
+  if (!etAssigneesList.map(a=>a.toLowerCase()).includes(name.toLowerCase())) {
+    etAssigneesList.push(name);
+    saveAssigneeIfNew(name);
+  }
+  input.value = '';
+  renderEtAssigneeChips();
+  input.focus();
+}
+
+function removeEtAssignee(i) {
+  etAssigneesList.splice(i, 1);
+  renderEtAssigneeChips();
+}
+
+// ── FILE ATTACHMENTS ──────────────────────────────────────────────────────────
+function renderEtFiles() {
+  const container = document.getElementById('etFilesList');
+  if (!container) return;
+  if (!etFilesList.length) { container.innerHTML = ''; return; }
+  container.innerHTML = etFilesList.map((f, i) => `
+<div class="et-file-item">
+  <a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a>
+  <span class="et-file-size">${fmtFileSize(f.size)}</span>
+  <button class="btn-file-del" onclick="removeEtFile(${i})" title="Remove attachment">✕</button>
+</div>`).join('');
+}
+
+function fmtFileSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1048576).toFixed(1) + ' MB';
+}
+
+function removeEtFile(i) {
+  // Delete from Firebase Storage, then remove from local list
+  const f = etFilesList[i];
+  if (f && f.path) {
+    storage.ref(f.path).delete().catch(() => {});
+  }
+  etFilesList.splice(i, 1);
+  renderEtFiles();
+}
+
+function handleEtFileUpload(input) {
+  if (!input.files || !input.files.length) return;
+  if (!editingTaskKey || !currentWsId) { alert('Save the task first before attaching files.'); return; }
+  const uploadLabel = document.querySelector('.btn-file-upload');
+  Array.from(input.files).forEach(file => {
+    const maxMB = 20;
+    if (file.size > maxMB * 1048576) { alert(`${file.name} is larger than ${maxMB} MB and was skipped.`); return; }
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `workspaces/${currentWsId}/tasks/${editingTaskKey}/${Date.now()}_${safeName}`;
+    const ref = storage.ref(path);
+    if (uploadLabel) uploadLabel.textContent = '⏳ UPLOADING…';
+    ref.put(file).then(snap => snap.ref.getDownloadURL()).then(url => {
+      etFilesList.push({ name: file.name, url, path, size: file.size, type: file.type || '' });
+      renderEtFiles();
+      if (uploadLabel) uploadLabel.textContent = '📎 ATTACH FILE';
+    }).catch(err => {
+      console.error('Upload error', err);
+      alert('Upload failed: ' + (err.message || err));
+      if (uploadLabel) uploadLabel.textContent = '📎 ATTACH FILE';
+    });
+  });
+  input.value = ''; // reset so same file can be re-uploaded if needed
 }
 
 // ── EXTEND DATES ──────────────────────────────────────────────────────────────
@@ -2571,6 +2730,34 @@ function fmtDuration(secs) {
   if (secs < 86400) return Math.floor(secs / 3600) + 'h ' + Math.floor((secs % 3600) / 60) + 'm';
   return Math.floor(secs / 86400) + 'd ' + Math.floor((secs % 86400) / 3600) + 'h';
 }
+// ── ASSIGNEE AVATAR HELPERS ───────────────────────────────────────────────────
+const AV_COLORS = ['#ff6b00','#00c853','#2979ff','#d500f9','#ff1744','#00bcd4','#ffd600','#76ff03'];
+function avColor(name) {
+  let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffffffff;
+  return AV_COLORS[Math.abs(h) % AV_COLORS.length];
+}
+function avInitials(name) {
+  const parts = name.trim().split(/\s+/);
+  return parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : name.substring(0,2).toUpperCase();
+}
+function taskAssigneesArr(t) {
+  if (Array.isArray(t.assignees) && t.assignees.length) return t.assignees;
+  if (t.assignee && t.assignee !== '—') return [t.assignee];
+  return [];
+}
+function renderAvStack(assignees, max) {
+  if (!assignees || !assignees.length) return '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px">—</div>';
+  max = max || 4;
+  const shown = assignees.slice(0, max);
+  const overflow = assignees.length - max;
+  const bubbles = shown.map(a => {
+    const c = avColor(a); const ini = avInitials(a);
+    return `<span class="av-bubble" style="background:${c}33;color:${c};border-color:var(--bg)" title="${esc(a)}">${ini}</span>`;
+  }).join('');
+  const more = overflow > 0 ? `<span class="av-bubble overflow" title="+${overflow} more">+${overflow}</span>` : '';
+  return `<div class="av-stack">${bubbles}${more}</div>`;
+}
+
 function fmtDate(ts) {
   return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     + ' ' + new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -2734,7 +2921,7 @@ function renderBoard() {
     <span class="card-category" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span>
   </div>
   <div class="card-name">${safeName}</div>
-  <div class="card-assignee">${esc(t.assignee)}</div>
+  ${renderAvStack(taskAssigneesArr(t), 4)}
   <div class="card-timer ${colorCls}">${timerTxt}</div>
   ${startedLine}${dueLine}${threshLine}${timeLine}${expLine}
   <div class="card-status">${statusLbl}</div>
@@ -2786,7 +2973,7 @@ function renderTable() {
     withMeta.sort((a, b) => {
       let va, vb;
       if (tableSortCol === 'name')     { va = (a.t.name || '').toLowerCase(); vb = (b.t.name || '').toLowerCase(); }
-      else if (tableSortCol === 'assignee') { va = (a.t.assignee || '').toLowerCase(); vb = (b.t.assignee || '').toLowerCase(); }
+      else if (tableSortCol === 'assignee') { va = (taskAssigneesArr(a.t)[0] || '').toLowerCase(); vb = (taskAssigneesArr(b.t)[0] || '').toLowerCase(); }
       else if (tableSortCol === 'category') { va = a.cat.label.toLowerCase(); vb = b.cat.label.toLowerCase(); }
       else if (tableSortCol === 'status')   { va = a.sortStatusOrder; vb = b.sortStatusOrder; }
       else if (tableSortCol === 'timer')    { va = a.t.createdAt || 0; vb = b.t.createdAt || 0; }
@@ -2824,7 +3011,7 @@ function renderTable() {
 <tr class="tr-${colorCls}${isSelected ? ' selected-task' : ''}">
   ${cbCell}
   <td class="td-task">${safeName}</td>
-  <td class="td-muted">${esc(t.assignee)}</td>
+  <td class="td-muted">${esc(taskAssigneesArr(t).join(', ') || '—')}</td>
   <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
   <td class="td-status ${colorCls}">${statusLbl}</td>
   <td class="td-timer ${colorCls}">${timerTxt}</td>
@@ -2880,7 +3067,7 @@ function renderCategoryBoard() {
   ondragstart="catDragStart('${safeKey}',event)"
   ondragover="event.preventDefault()"
   ondrop="event.preventDefault();catCardDrop('${safeCat}',event)">
-  <div class="card-header"><span class="card-id">${esc(t.id)}</span><span class="card-assignee" style="font-size:0.63rem">${esc(t.assignee)}</span></div>
+  <div class="card-header"><span class="card-id">${esc(t.id)}</span>${renderAvStack(taskAssigneesArr(t), 3)}</div>
   <div class="card-name">${safeName}</div>
   <div class="card-timer ${colorCls}">${timerTxt}</div>
   ${startedLine}${dueLine}${timeLine}${expLine}
@@ -3135,6 +3322,12 @@ function getEventsForDay(dayStart) {
   return getEventInstances(dayStart);
 }
 
+// ── DUE DATE HELPERS ─────────────────────────────────────────────────────────
+function getTasksDueOnDay(dayStart) {
+  const dayEnd = dayStart + 86400000;
+  return tasks.filter(t => t.dueAt && t.dueAt >= dayStart && t.dueAt < dayEnd && t.status !== 'done');
+}
+
 // ── MONTH VIEW ────────────────────────────────────────────────────────────────
 function renderMonthView() {
   const container = document.getElementById('calMain');
@@ -3169,8 +3362,14 @@ function renderMonthView() {
     }).join('');
     const moreHtml = more > 0 ? `<div class="cal-event-more">+${more} more</div>` : '';
 
+    // Due date chips for tasks
+    const dueTasks = getTasksDueOnDay(dayStart);
+    const dueChips = dueTasks.map(t =>
+      `<div class="cal-due-chip" onclick="event.stopPropagation();openEditTask('${esc(t._key)}')" title="DUE: ${esc(t.name)}">● ${esc(t.name)}</div>`
+    ).join('');
+
     cells += `<div class="cal-day-cell${isToday?' today':''}${otherMo?' other-month':''}" onclick="openAddEventOnDay('${dateISO}')">
-  <div class="cal-day-num">${d.getDate()}</div>${chips}${moreHtml}
+  <div class="cal-day-num">${d.getDate()}</div>${chips}${moreHtml}${dueChips}
 </div>`;
   }
 
@@ -3217,7 +3416,12 @@ function renderWeekView() {
       return `<div class="cal-allday-chip" style="background:${color}44;color:${color}"
         onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}${recurIcon}</div>`;
     }).join('');
-    return `<div class="cal-allday-col">${chips}</div>`;
+    // Task due dates in all-day row
+    const dueTasks = getTasksDueOnDay(dayStart);
+    const dueChips = dueTasks.map(t =>
+      `<div class="cal-due-chip" onclick="event.stopPropagation();openEditTask('${esc(t._key)}')" title="DUE: ${esc(t.name)}">● ${esc(t.name)}</div>`
+    ).join('');
+    return `<div class="cal-allday-col">${chips}${dueChips}</div>`;
   }).join('');
 
   // Time grid — 24 rows (one per hour)
