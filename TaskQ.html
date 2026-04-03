@@ -864,7 +864,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v1.4</span>
+    <span class="beta-badge">β v1.5</span>
     <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
 </header>
@@ -1044,7 +1044,7 @@ input[type="date"] { color-scheme: dark; }
       <input type="file" id="etFileInput" multiple style="display:none" onchange="handleEtFileUpload(this)">
     </div>
     <div class="extend-dates-row" id="extendDatesRow">
-      <label>EXTEND DATES BY</label>
+      <label>EXTEND DUE DATE BY</label>
       <input type="number" id="extendDays" min="1" max="365" placeholder="7" value="7">
       <label>DAYS</label>
       <button class="btn-extend" onclick="extendDates()">+ APPLY</button>
@@ -2650,18 +2650,11 @@ function extendDates() {
   const days = parseInt(document.getElementById('extendDays').value, 10);
   if (!days || days < 1) { alert('Please enter a valid number of days (1 or more).'); return; }
   const ms = days * 86400000;
-  const pastOn = document.getElementById('etPastStartOn').checked;
   const dueOn  = document.getElementById('etDueDateOn').checked;
-  let extended = 0;
-  if (pastOn) {
-    const el = document.getElementById('etPastStart');
-    if (el.value) { el.value = toLocalDT(new Date(new Date(el.value).getTime() + ms)); extended++; }
-  }
-  if (dueOn) {
-    const el = document.getElementById('etDueDate');
-    if (el.value) { el.value = toLocalDT(new Date(new Date(el.value).getTime() + ms)); extended++; }
-  }
-  if (!extended) alert('No dates are currently enabled to extend. Toggle on a start or due date first.');
+  if (!dueOn) { alert('Toggle on the due date first to extend it.'); return; }
+  const el = document.getElementById('etDueDate');
+  if (!el.value) { alert('Set a due date first before extending.'); return; }
+  el.value = toLocalDT(new Date(new Date(el.value).getTime() + ms));
 }
 
 // ── EXPENSE CATEGORY HELPERS ──────────────────────────────────────────────────
@@ -2814,7 +2807,8 @@ function getTaskMeta(t, now) {
     const urgentDeadline = t.createdAt + 86400000;
     const remaining = (urgentDeadline - now) / 1000;
     if (remaining <= 0) {
-      return { colorCls: 'red', statusLbl: '⚡ URGENT OVERDUE', timerTxt: '−' + fmtDuration(remaining), progPct: 100, isUrgent: true };
+      const daysOver = Math.floor(Math.abs(remaining) / 86400);
+      return { colorCls: 'red', statusLbl: '⚡ URGENT OVERDUE' + (daysOver > 0 ? ' (' + daysOver + 'd)' : ''), timerTxt: '−' + fmtDuration(remaining), progPct: 100, isUrgent: true };
     }
     const progPct = Math.min(100, ((now - t.createdAt) / 86400000) * 100);
     return { colorCls: 'red', statusLbl: '⚡ URGENT', timerTxt: fmtDuration(remaining) + ' LEFT', progPct, isUrgent: true };
@@ -2823,7 +2817,7 @@ function getTaskMeta(t, now) {
   if (t.dueAt) {
     const remaining = (t.dueAt - now) / 1000;
     let colorCls, statusLbl;
-    if      (remaining <= 0)                          { colorCls = 'red';    statusLbl = 'OVERDUE';   }
+    if      (remaining <= 0)                          { colorCls = 'red';    const dOver = Math.floor(Math.abs(remaining) / 86400); statusLbl = 'OVERDUE' + (dOver > 0 ? ' (' + dOver + 'd)' : ''); }
     else if (remaining <= daysSecs(cat, 'yellow'))    { colorCls = 'red';    statusLbl = 'DUE SOON';  }
     else if (remaining <= daysSecs(cat, 'orange'))    { colorCls = 'orange'; statusLbl = 'URGENT';    }
     else if (remaining <= daysSecs(cat, 'red'))       { colorCls = 'yellow'; statusLbl = 'ATTENTION'; }
@@ -2835,7 +2829,7 @@ function getTaskMeta(t, now) {
   }
 
   let colorCls, statusLbl;
-  if      (elapsed >= daysSecs(cat, 'red'))    { colorCls = 'red';    statusLbl = 'OVERDUE';   }
+  if      (elapsed >= daysSecs(cat, 'red'))    { colorCls = 'red';    const dOver = Math.floor((elapsed - daysSecs(cat, 'red')) / 86400); statusLbl = 'OVERDUE' + (dOver > 0 ? ' (' + dOver + 'd)' : ''); }
   else if (elapsed >= daysSecs(cat, 'orange')) { colorCls = 'orange'; statusLbl = 'URGENT';    }
   else if (elapsed >= daysSecs(cat, 'yellow')) { colorCls = 'yellow'; statusLbl = 'ATTENTION'; }
   else                                         { colorCls = 'green';  statusLbl = 'ON TRACK';  }
@@ -2899,7 +2893,7 @@ function renderBoard() {
     const threshLine  = isDone ? '' : `<div class="card-thresh">⏱ Y:${cat.yellow}d · O:${cat.orange}d · R:${cat.red}d</div>`;
     const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
     const dueColor    = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
-    const dueLine     = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : '';
+    const dueLine     = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : `<div class="card-due" style="color:var(--muted)">DUE: —</div>`;
     const timeLine    = t.timeSpent != null ? `<div class="card-time-spent">⏲ TIME SPENT: ${fmtHours(t.timeSpent)}</div>` : '';
     const exp = getTaskExpense(t);
     const expLine = exp ? `<div class="card-expense">💰 $${exp.total.toFixed(2)}${exp.taxDed > 0 ? ' · TAX DED.' : ''}</div>` : '';
@@ -3052,7 +3046,7 @@ function renderCategoryBoard() {
       const isDone = t.status === 'done';
       const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
       const dueColor = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
-      const dueLine = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : '';
+      const dueLine = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : `<div class="card-due" style="color:var(--muted)">DUE: —</div>`;
       const timeLine = t.timeSpent != null ? `<div class="card-time-spent">⏲ TIME SPENT: ${fmtHours(t.timeSpent)}</div>` : '';
       const exp2 = getTaskExpense(t);
       const expLine = exp2 ? `<div class="card-expense">💰 $${exp2.total.toFixed(2)}${exp2.taxDed > 0 ? ' · TAX DED.' : ''}</div>` : '';
