@@ -465,6 +465,10 @@ input[type="date"] { color-scheme: dark; }
 .btn-urgent { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
 .btn-urgent:hover { border-color: var(--red); color: var(--red); }
 .btn-urgent.urgent-on { background: rgba(213,0,0,0.12); border-color: var(--red); color: var(--red); }
+.btn-hipri { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-hipri:hover { border-color: #ff9100; color: #ff9100; }
+.btn-hipri.hipri-on { background: rgba(255,145,0,0.12); border-color: #ff9100; color: #ff9100; }
+.card-hipri { font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; color: #ff9100; margin-bottom: 3px; }
 
 /* BULK ACTION BAR */
 .bulk-bar { background: rgba(255,214,0,0.07); border-bottom: 1px solid var(--yellow); padding: 7px 20px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
@@ -864,7 +868,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v1.5</span>
+    <span class="beta-badge">β v1.6</span>
     <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
 </header>
@@ -903,6 +907,7 @@ input[type="date"] { color-scheme: dark; }
         <button class="btn-quick-time" onclick="setQuickTime('iDueDate','eod')" title="End of Day — 11:59 PM">11PM</button>
       </div>
       <button class="btn btn-urgent" id="btnUrgent" onclick="toggleUrgentMode()" title="Mark new task as urgent (24h deadline)">⚡ URGENT</button>
+      <button class="btn btn-hipri" id="btnHiPri" onclick="toggleHiPriMode()" title="Mark new task as high priority">★ HIGH PRIORITY</button>
       <button class="btn btn-add" onclick="addTask()">+ ADD TASK</button>
       <button class="btn btn-clear" onclick="clearForm()" title="Clear the task creation form">CLEAR</button>
       <div class="task-count" id="taskCount">0 ACTIVE · 0 DONE</div>
@@ -1023,6 +1028,10 @@ input[type="date"] { color-scheme: dark; }
     <div class="edit-task-toggle-row">
       <input type="checkbox" id="etUrgent">
       <label for="etUrgent">⚡ URGENT — MUST COMPLETE WITHIN 24 HOURS</label>
+    </div>
+    <div class="edit-task-toggle-row">
+      <input type="checkbox" id="etHiPri">
+      <label for="etHiPri" style="color:#ff9100">★ HIGH PRIORITY</label>
     </div>
     <div class="edit-task-form-row">
       <label>EXPENSES — OPTIONAL (DESCRIPTION · AMOUNT · TAX DED.)</label>
@@ -1410,6 +1419,7 @@ let bulkMode          = false;  // bulk-selection mode active
 let selectedTasks     = new Set(); // keys of tasks selected in bulk mode
 let draggingTaskKey   = null;   // key of card being dragged in category board
 let urgentMode        = false;  // next task added will be marked urgent
+let hiPriMode         = false;  // next task added will be marked high priority
 let tmpExpenseItems   = [];     // expense items being edited in modal
 let etAssigneesList   = [];     // assignees being edited in modal (array of strings)
 let etFilesList       = [];     // file attachments being edited in modal [{name,url,path,size}]
@@ -1781,6 +1791,7 @@ function clearForm() {
   if (pastStartOn) togglePastStart();
   if (dueDateOn)   toggleDueDate();
   if (urgentMode)  toggleUrgentMode();
+  if (hiPriMode)   toggleHiPriMode();
   document.getElementById('iTask').focus();
 }
 
@@ -1842,6 +1853,7 @@ function addTask() {
   const assignees = assigneeRaw ? [assigneeRaw] : null;
 
   const isUrgent = urgentMode;
+  const isHiPri  = hiPriMode;
   const num = tasks.length + 1;
   tasksRef.push({
     id: 'T-' + String(num).padStart(3, '0'),
@@ -1849,11 +1861,13 @@ function addTask() {
     category: document.getElementById('iCategory').value,
     createdAt, dueAt,
     urgent: isUrgent || null,
+    highPriority: isHiPri || null,
     status: 'active', doneAt: null
   });
 
-  // Reset urgent mode after adding
+  // Reset toggle modes after adding
   if (urgentMode) { urgentMode = false; document.getElementById('btnUrgent').classList.remove('urgent-on'); }
+  if (hiPriMode)  { hiPriMode = false;  document.getElementById('btnHiPri').classList.remove('hipri-on'); }
   el.value = '';
   el.focus();
 }
@@ -1902,6 +1916,13 @@ function toggleUrgentMode() {
   if (btn) btn.classList.toggle('urgent-on', urgentMode);
 }
 
+// ── HIGH PRIORITY MODE TOGGLE ────────────────────────────────────────────────
+function toggleHiPriMode() {
+  hiPriMode = !hiPriMode;
+  const btn = document.getElementById('btnHiPri');
+  if (btn) btn.classList.toggle('hipri-on', hiPriMode);
+}
+
 // ── COPY TASK ─────────────────────────────────────────────────────────────────
 function copyTask() {
   if (!editingTaskKey) return;
@@ -1918,6 +1939,7 @@ function copyTask() {
     notes:            src.notes || null,
     timeSpent:        null,
     urgent:           src.urgent || null,
+    highPriority:     src.highPriority || null,
     expenseItems:     src.expenseItems ? JSON.parse(JSON.stringify(src.expenseItems)) : null,
     expenseCategory:  src.expenseCategory || null,
     estimatedBudget:  src.estimatedBudget || null,
@@ -2238,7 +2260,7 @@ function renderUserReport(assignee) {
     const overdue = t.dueAt && t.dueAt < now;
     const meta   = getTaskMeta(t);
     taskRows += `<tr class="tr-${meta.cls}" onclick="openEditTask('${esc(t._key)}')" style="cursor:pointer">
-      <td class="td-task">${esc(t.name)}${t.urgent ? ' <span style="color:var(--orange)">⚡</span>' : ''}</td>
+      <td class="td-task">${esc(t.name)}${t.urgent ? ' <span style="color:var(--orange)">⚡</span>' : ''}${t.highPriority ? ' <span style="color:#ff9100;font-weight:700">★</span>' : ''}</td>
       <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
       <td class="td-muted" style="${overdue?'color:var(--red)':''}">${t.dueAt ? fmtDate(t.dueAt) : '—'}</td>
       <td class="td-muted">${overdue ? '<span style="color:var(--red)">OVERDUE</span>' : 'ACTIVE'}</td>
@@ -2451,6 +2473,9 @@ function openEditTask(key) {
   // Urgent
   document.getElementById('etUrgent').checked = !!task.urgent;
 
+  // High Priority
+  document.getElementById('etHiPri').checked = !!task.highPriority;
+
   // Mark-done button visibility
   document.getElementById('btnMarkDoneModal').classList.toggle('hidden', task.status === 'done');
 
@@ -2534,6 +2559,7 @@ function saveEditTask() {
     notes: document.getElementById('etNotes').value.trim() || null,
     timeSpent: parseFloat(document.getElementById('etTimeSpent').value) || null,
     urgent: document.getElementById('etUrgent').checked || null,
+    highPriority: document.getElementById('etHiPri').checked || null,
     expenseItems: expItems.length ? expItems : null,
     expenseCategory: expCat,
     estimatedBudget: !isNaN(budgetVal) && budgetVal > 0 ? budgetVal : null,
@@ -2890,6 +2916,7 @@ function renderBoard() {
     const safeName = esc(t.name);
     const isSelected = selectedTasks.has(t._key);
 
+    const hiPriLine   = t.highPriority ? `<div class="card-hipri">★ HIGH PRIORITY</div>` : '';
     const threshLine  = isDone ? '' : `<div class="card-thresh">⏱ Y:${cat.yellow}d · O:${cat.orange}d · R:${cat.red}d</div>`;
     const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
     const dueColor    = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
@@ -2915,6 +2942,7 @@ function renderBoard() {
     <span class="card-category" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span>
   </div>
   <div class="card-name">${safeName}</div>
+  ${hiPriLine}
   ${renderAvStack(taskAssigneesArr(t), 4)}
   <div class="card-timer ${colorCls}">${timerTxt}</div>
   ${startedLine}${dueLine}${threshLine}${timeLine}${expLine}
@@ -3044,6 +3072,7 @@ function renderCategoryBoard() {
     const cards = catTasks.map(t => {
       const { colorCls, statusLbl, timerTxt, progPct } = getTaskMeta(t, now);
       const isDone = t.status === 'done';
+      const hiPriLine = t.highPriority ? `<div class="card-hipri">★ HIGH PRIORITY</div>` : '';
       const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
       const dueColor = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
       const dueLine = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : `<div class="card-due" style="color:var(--muted)">DUE: —</div>`;
@@ -3063,6 +3092,7 @@ function renderCategoryBoard() {
   ondrop="event.preventDefault();catCardDrop('${safeCat}',event)">
   <div class="card-header"><span class="card-id">${esc(t.id)}</span>${renderAvStack(taskAssigneesArr(t), 3)}</div>
   <div class="card-name">${safeName}</div>
+  ${hiPriLine}
   <div class="card-timer ${colorCls}">${timerTxt}</div>
   ${startedLine}${dueLine}${timeLine}${expLine}
   <div class="card-status">${statusLbl}</div>
@@ -3189,7 +3219,8 @@ function evStartChanged() {
 
 // Attach mouse scroll wheel to event date/time fields
 function attachScrollHandlers() {
-  ['evStart', 'evEnd'].forEach(id => {
+  // Datetime-local inputs: scroll changes time (15m default, Shift=1h, Ctrl/Cmd=1d)
+  ['evStart', 'evEnd', 'iPastStart', 'iDueDate', 'etPastStart', 'etDueDate'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('wheel', function(e) {
@@ -3197,14 +3228,15 @@ function attachScrollHandlers() {
       if (!this.value) return;
       const d = new Date(this.value);
       if (isNaN(d.getTime())) return;
-      const dir  = e.deltaY > 0 ? 1 : -1;
-      const mins = e.shiftKey ? 60 : 15;
-      d.setMinutes(d.getMinutes() + dir * mins);
+      const dir = e.deltaY > 0 ? 1 : -1;
+      if (e.ctrlKey || e.metaKey) { d.setDate(d.getDate() + dir); }
+      else { const mins = e.shiftKey ? 60 : 15; d.setMinutes(d.getMinutes() + dir * mins); }
       this.value = toLocalDT(d);
       if (id === 'evStart') evStartChanged();
     }, { passive: false });
   });
-  ['evDateStart', 'evDateEnd'].forEach(id => {
+  // Date-only inputs: scroll changes day (Shift=7d, Ctrl/Cmd=1mo)
+  ['evDateStart', 'evDateEnd', 'evRecurEnd', 'copyEventDate'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('wheel', function(e) {
@@ -3212,7 +3244,9 @@ function attachScrollHandlers() {
       if (!this.value) return;
       const d = new Date(this.value + 'T12:00:00');
       if (isNaN(d.getTime())) return;
-      d.setDate(d.getDate() + (e.deltaY > 0 ? 1 : -1));
+      const dir = e.deltaY > 0 ? 1 : -1;
+      if (e.ctrlKey || e.metaKey) { d.setMonth(d.getMonth() + dir); }
+      else { d.setDate(d.getDate() + (e.shiftKey ? 7 : 1) * dir); }
       this.value = toLocalDate(d);
     }, { passive: false });
   });
