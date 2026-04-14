@@ -631,6 +631,38 @@ function matchIgnoreCase(want, list) {
   return list.find(x => String(x).trim().toLowerCase() === w) || null;
 }
 
+// Send an acknowledgment reply, threaded to the original message.
+async function sendAck(smtpPassword, toEmail, origSubject, origMessageId, bodyLines, ok) {
+  if (!toEmail) return;
+  try {
+    const transport = createTransport(smtpPassword);
+    const subj = (ok ? '✓ ' : '✗ ') + 'Re: ' + (origSubject || '(No subject)').replace(/^\s*Re:\s*/i, '');
+    const headers = {};
+    if (origMessageId) {
+      headers['In-Reply-To'] = origMessageId;
+      headers['References']  = origMessageId;
+    }
+    await transport.sendMail({
+      from: `"TaskQ" <${SMTP_USER}>`,
+      to: toEmail,
+      subject: subj,
+      text: bodyLines.join('\n'),
+      headers
+    });
+  } catch (err) {
+    console.warn('sendAck failed:', err.message);
+  }
+}
+
+function fmtAckDate(ts) {
+  if (!ts) return '(none)';
+  return new Date(ts).toLocaleString('en-US', {
+    timeZone: DEFAULT_TZ,
+    weekday: 'short', month: 'short', day: 'numeric',
+    year: 'numeric', hour: 'numeric', minute: '2-digit'
+  });
+}
+
 async function resolveWorkspaceByName(uid, name) {
   if (!name) return null;
   const wsSnap = await db.ref(`users/${uid}/workspaces`).once('value');
@@ -847,6 +879,9 @@ exports.pollInbox = onSchedule(
           const parsed = await simpleParser(msg.source);
           const fromEmail = bareEmail(parsed.from);
           const dkimOk = checkDkimPass(parsed.headers);
+          const origSubject = parsed.subject || '';
+          const origMsgId   = parsed.messageId || null;
+          const smtpPass    = SMTP_PASSWORD.value();
           if (!fromEmail) {
             console.log('No from address, marking seen');
             await client.messageFlagsAdd(uid, ['\\Seen'], { uid: true });
@@ -855,6 +890,15 @@ exports.pollInbox = onSchedule(
           }
           if (!dkimOk) {
             console.log(`DKIM did not pass for ${fromEmail}, rejecting`);
+            await sendAck(smtpPass, fromEmail, origSubject, origMsgId, [
+              'TaskQ could not process your email.',
+              '',
+              'Reason: DKIM signature did not verify. For security, TaskQ only accepts',
+              'mail whose authenticity can be confirmed by your email provider.',
+              '',
+              'If you sent this from Gmail, Outlook, or iCloud and still see this,',
+              'try resending directly (not forwarded through another service).'
+            ], false);
             await client.messageFlagsAdd(uid, ['\\Seen', '\\Flagged'], { uid: true });
             skipped++;
             continue;
@@ -862,6 +906,14 @@ exports.pollInbox = onSchedule(
           const userUid = await resolveUidByEmail(fromEmail);
           if (!userUid) {
             console.log(`No TaskQ user for ${fromEmail}, rejecting`);
+            await sendAck(smtpPass, fromEmail, origSubject, origMsgId, [
+              'TaskQ could not process your email.',
+              '',
+              `Reason: Sender ${fromEmail} is not a registered TaskQ user.`,
+              '',
+              'To use TaskQ email intake, the sending address must match the email',
+              'address on your TaskQ account.'
+            ], false);
             await client.messageFlagsAdd(uid, ['\\Seen', '\\Flagged'], { uid: true });
             skipped++;
             continue;
@@ -880,17 +932,49 @@ exports.pollInbox = onSchedule(
           if (!wsId) wsId = await pickWorkspaceForUser(userUid, parsed.subject);
           if (!wsId) {
             console.log(`No workspace for uid ${userUid}`);
+            await sendAck(smtpPass, fromEmail, origSubject, origMsgId, [
+              'TaskQ could not process your email.',
+              '',
+              'Reason: Your TaskQ account has no workspaces yet.',
+              '',
+              'Open TaskQ in your browser and create a workspace, then try again.'
+            ], false);
             await client.messageFlagsAdd(uid, ['\\Seen', '\\Flagged'], { uid: true });
             skipped++;
             continue;
           }
+          // Look up the workspace name for the ack
+          const wsNameSnap = await db.ref(`users/${userUid}/workspaces/${wsId}/name`).once('value');
+          const wsNameForAck = wsNameSnap.val() || wsId;
+
           const vevents = extractIcsEvents(parsed.attachments);
           if (vevents.length) {
             for (const ve of vevents) await createEventFromIcs(userUid, wsId, ve, fromEmail, fields);
             console.log(`Created ${vevents.length} event(s) for ${fromEmail} in ${wsId}`);
+            const ve = vevents[0];
+            const startTs = new Date(ve.start).getTime();
+            await sendAck(smtpPass, fromEmail, origSubject, origMsgId, [
+              `Calendar event created in ${wsNameForAck}.`,
+              '',
+              `Title:    ${String(ve.summary || '(No title)')}`,
+              `Starts:   ${fmtAckDate(startTs)}`,
+              ve.location ? `Location: ${ve.location}` : null,
+              vevents.length > 1 ? `Also created: ${vevents.length - 1} additional event(s).` : null,
+              '',
+              'View in TaskQ: https://drtquick.github.io/taskq/'
+            ].filter(Boolean), true);
           } else if (fields.forceEvent && fields.due) {
             const evKey = await createEventFromFields(userUid, wsId, subjParsed.cleanSubject, bodyParsed.bodyRest, fields, fromEmail);
+            const startTs = parseNaturalDate(fields.due);
             console.log(`Created forced event ${evKey} in ${wsId} for ${fromEmail}`);
+            await sendAck(smtpPass, fromEmail, origSubject, origMsgId, [
+              `Calendar event created in ${wsNameForAck}.`,
+              '',
+              `Title:  ${subjParsed.cleanSubject}`,
+              `Starts: ${fmtAckDate(startTs)}`,
+              '',
+              'View in TaskQ: https://drtquick.github.io/taskq/'
+            ], true);
           } else {
             const taskKey = await createTaskFromEmail(userUid, wsId, subjParsed.cleanSubject, bodyParsed.bodyRest, fromEmail, fields);
             const fileMeta = await uploadAttachmentsToStorage(parsed.attachments, wsId, taskKey);
@@ -898,6 +982,21 @@ exports.pollInbox = onSchedule(
               await db.ref(`workspaces/${wsId}/tasks/${taskKey}/files`).set(fileMeta);
             }
             console.log(`Created task in ${wsId} for ${fromEmail} (files: ${fileMeta.length}, due: ${fields.due || 'none'}, assignees: ${fields.assignees.join(',') || 'none'})`);
+            const dueTs = parseNaturalDate(fields.due);
+            const lines = [
+              `Task created in ${wsNameForAck}.`,
+              '',
+              `Title:     ${subjParsed.cleanSubject}`,
+              `Assignees: ${fields.assignees.length ? fields.assignees.join(', ') : '(none)'}`,
+              `Category:  ${fields.category || '(default)'}`,
+              `Due:       ${dueTs ? fmtAckDate(dueTs) : '(none)'}`,
+              `Urgent:    ${fields.urgent ? 'yes' : 'no'}`,
+              `Priority:  ${fields.highPriority ? 'high' : 'normal'}`,
+              fileMeta.length ? `Attachments: ${fileMeta.length}` : null,
+              '',
+              'View in TaskQ: https://drtquick.github.io/taskq/'
+            ].filter(Boolean);
+            await sendAck(smtpPass, fromEmail, origSubject, origMsgId, lines, true);
           }
           await client.messageFlagsAdd(uid, ['\\Seen'], { uid: true });
           processed++;
