@@ -1121,6 +1121,22 @@ input[type="date"] { color-scheme: dark; }
       </p>
     </div>
 
+    <div class="section" id="adminSection" style="display:none">
+      <h3>Members &amp; Permissions <span id="adminBadge" style="font-size:0.55rem;color:var(--green);letter-spacing:2px;margin-left:8px">ADMIN</span></h3>
+      <button class="btn-add-item" onclick="openMembersModal()" style="margin-bottom:12px">👥 MANAGE MEMBERS</button>
+      <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px;display:block;margin-top:4px">LOCKS (ADMIN-ONLY WHEN ON)</label>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.78rem;"><input type="checkbox" id="lockAssignees"> Lock assignee list</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.78rem;"><input type="checkbox" id="lockCategories"> Lock category list</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.78rem;"><input type="checkbox" id="lockSubtitle"> Lock workspace name &amp; subtitle</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.78rem;"><input type="checkbox" id="lockUrgent"> Lock urgent &amp; high-priority task flags</label>
+      </div>
+      <button class="btn-add-item" onclick="saveLocks()" style="margin-top:10px">💾 SAVE LOCKS</button>
+      <p style="font-size:0.65rem;color:var(--muted);margin-top:10px;">
+        When a setting is locked, only admins of this workspace can change it.
+      </p>
+    </div>
+
     <div class="section">
       <h3>Assignees</h3>
       <div class="assignee-list" id="assigneeListSettings"></div>
@@ -1156,6 +1172,70 @@ input[type="date"] { color-scheme: dark; }
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeSettings()">CANCEL</button>
       <button class="btn-save" onclick="saveSettings()">SAVE SETTINGS</button>
+    </div>
+  </div>
+</div>
+
+<!-- MEMBERS MODAL -->
+<div class="overlay hidden" id="membersOverlay">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">👥 WORKSPACE MEMBERS</div>
+        <div style="font-size:0.62rem;color:var(--muted);margin-top:4px;letter-spacing:1px;" id="membersWsName"></div>
+      </div>
+      <button class="modal-close" onclick="closeMembersModal()">✕</button>
+    </div>
+
+    <div class="section">
+      <h3>Invite a member</h3>
+      <p style="font-size:0.65rem;color:var(--muted);margin:4px 0 10px">The invitee must already have a TaskQ account. Enter the exact email they signed up with.</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="email" id="inviteEmail" placeholder="user@example.com" style="flex:1;min-width:220px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 12px;font-size:0.82rem;border-radius:4px;">
+        <select id="inviteRole" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 12px;font-size:0.82rem;border-radius:4px;">
+          <option value="member">MEMBER</option>
+          <option value="admin">ADMIN</option>
+        </select>
+        <button class="btn-add-item" onclick="inviteMember()">+ INVITE</button>
+      </div>
+      <div id="inviteStatus" style="font-size:0.7rem;color:var(--muted);margin-top:8px"></div>
+    </div>
+
+    <div class="section">
+      <h3>Current members</h3>
+      <div id="membersList" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeMembersModal()">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- MEMBER REPORT CONFIG MODAL -->
+<div class="overlay hidden" id="reportConfigOverlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📧 MEMBER REPORT CONFIG</div>
+        <div style="font-size:0.62rem;color:var(--muted);margin-top:4px;" id="rcEmail"></div>
+      </div>
+      <button class="modal-close" onclick="closeReportConfig()">✕</button>
+    </div>
+    <div class="section">
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;"><input type="checkbox" id="rcEnabled"> Daily report enabled</label>
+      <div style="margin-top:14px">
+        <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px;">SEND HOUR (0-23, LOCAL)</label>
+        <input type="number" id="rcSendHour" min="0" max="23" style="width:100px;margin-top:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;font-size:0.82rem;border-radius:4px;">
+      </div>
+      <div style="margin-top:14px">
+        <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px;">INCLUDE CATEGORIES (empty = all)</label>
+        <div id="rcCategoryList" style="display:flex;flex-direction:column;gap:4px;margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeReportConfig()">CANCEL</button>
+      <button class="btn-save" onclick="saveReportConfig()">SAVE</button>
     </div>
   </div>
 </div>
@@ -1523,6 +1603,14 @@ function setupConnectionListener() {
 function attachDataListeners() {
   if (!tasksRef || !eventsRef || !settingsRef) return;
 
+  // Live listen to members + locks for admin-aware UI
+  db.ref(`workspaces/${currentWsId}/members`).on('value', snap => {
+    currentWsMembers = snap.val() || {};
+  });
+  db.ref(`workspaces/${currentWsId}/locks`).on('value', snap => {
+    currentWsLocks = Object.assign({ assignees:false, categories:false, subtitle:false, urgentFlag:false }, snap.val() || {});
+  });
+
   settingsRef.on('value', snapshot => {
     const cloudCfg = snapshot.val();
     if (cloudCfg && cloudCfg.categories && cloudCfg.categories.length) {
@@ -1560,6 +1648,12 @@ function detachDataListeners() {
   if (tasksRef)    tasksRef.off();
   if (settingsRef) settingsRef.off();
   if (eventsRef)   eventsRef.off();
+  if (currentWsId) {
+    db.ref(`workspaces/${currentWsId}/members`).off();
+    db.ref(`workspaces/${currentWsId}/locks`).off();
+  }
+  currentWsMembers = {};
+  currentWsLocks = { assignees:false, categories:false, subtitle:false, urgentFlag:false };
   listenersActive = false;
   settingsSynced  = false;
 }
@@ -1641,17 +1735,36 @@ async function checkMigrationAndInit(uid) {
 
 async function doCreateWorkspace(name) {
   if (!name || !name.trim() || !wsListRef) return;
+  const user = auth.currentUser;
   const wsRef = db.ref('workspaces').push();
   const wsId  = wsRef.key;
-  await Promise.all([
+  const now = Date.now();
+  const memberEntry = user ? {
+    email: user.email || '',
+    role: 'admin',
+    addedAt: now,
+    addedBy: user.uid,
+    reportConfig: { enabled: true, sendHour: 7, categoryFilter: null }
+  } : null;
+  const defaultLocks = { assignees: false, categories: false, subtitle: false, urgentFlag: false };
+  const writes = [
     db.ref(`workspaces/${wsId}/settings`).set(JSON.parse(JSON.stringify(DEFAULTS))),
-    wsListRef.child(wsId).set({ name: name.trim().toUpperCase(), createdAt: Date.now() })
-  ]);
+    db.ref(`workspaces/${wsId}/locks`).set(defaultLocks),
+    wsListRef.child(wsId).set({ name: name.trim().toUpperCase(), createdAt: now, role: user ? 'admin' : null })
+  ];
+  if (memberEntry && user) {
+    writes.push(db.ref(`workspaces/${wsId}/members/${user.uid}`).set(memberEntry));
+  }
+  await Promise.all(writes);
   switchWorkspace(wsId);
 }
 
 function renameCurrentWorkspace(name) {
   if (!name || !name.trim() || !currentWsId || !wsListRef) return;
+  if (!isCurrentUserAdmin() && currentWsLocks.subtitle) {
+    alert('Workspace name is locked. Only admins can rename this workspace.');
+    return;
+  }
   wsListRef.child(currentWsId).update({ name: name.trim().toUpperCase() });
 }
 
@@ -1926,6 +2039,10 @@ function toggleShowDone() {
 
 // ── URGENT MODE TOGGLE ────────────────────────────────────────────────────────
 function toggleUrgentMode() {
+  if (!isCurrentUserAdmin() && currentWsLocks.urgentFlag) {
+    alert('Urgent/high-priority flags are locked in this workspace. Only admins can set them.');
+    return;
+  }
   urgentMode = !urgentMode;
   const btn = document.getElementById('btnUrgent');
   if (btn) btn.classList.toggle('urgent-on', urgentMode);
@@ -1933,6 +2050,10 @@ function toggleUrgentMode() {
 
 // ── HIGH PRIORITY MODE TOGGLE ────────────────────────────────────────────────
 function toggleHiPriMode() {
+  if (!isCurrentUserAdmin() && currentWsLocks.urgentFlag) {
+    alert('Urgent/high-priority flags are locked in this workspace. Only admins can set them.');
+    return;
+  }
   hiPriMode = !hiPriMode;
   const btn = document.getElementById('btnHiPri');
   if (btn) btn.classList.toggle('hipri-on', hiPriMode);
@@ -2613,8 +2734,12 @@ function saveEditTask() {
     dueAt,
     notes: document.getElementById('etNotes').value.trim() || null,
     timeSpent: parseFloat(document.getElementById('etTimeSpent').value) || null,
-    urgent: document.getElementById('etUrgent').checked || null,
-    highPriority: document.getElementById('etHiPri').checked || null,
+    urgent: ((!isCurrentUserAdmin() && currentWsLocks.urgentFlag)
+              ? (tasks.find(t => t._key === editingTaskKey)?.urgent || null)
+              : (document.getElementById('etUrgent').checked || null)),
+    highPriority: ((!isCurrentUserAdmin() && currentWsLocks.urgentFlag)
+                    ? (tasks.find(t => t._key === editingTaskKey)?.highPriority || null)
+                    : (document.getElementById('etHiPri').checked || null)),
     expenseItems: expItems.length ? expItems : null,
     expenseCategory: expCat,
     estimatedBudget: !isNaN(budgetVal) && budgetVal > 0 ? budgetVal : null,
@@ -3312,9 +3437,182 @@ function openSettings() {
   if (wsInput && currentWsId && userWsList[currentWsId]) {
     wsInput.value = userWsList[currentWsId].name;
   }
+  // Show admin section only if current user is an admin of this workspace
+  refreshAdminSection();
   document.getElementById('overlay').classList.remove('hidden');
 }
 function closeSettings() { document.getElementById('overlay').classList.add('hidden'); }
+
+// ── ADMIN / MEMBERS ───────────────────────────────────────────────────────────
+const CF_BASE = 'https://us-central1-taskq-80ce7.cloudfunctions.net';
+let currentWsMembers = {};   // cached workspaces/{wsId}/members
+let currentWsLocks   = { assignees:false, categories:false, subtitle:false, urgentFlag:false };
+
+async function callAdminApi(path, payload) {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not signed in');
+  const token = await user.getIdToken();
+  const resp = await fetch(`${CF_BASE}/${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify(payload)
+  });
+  const json = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error(json.error || ('HTTP ' + resp.status));
+  return json;
+}
+
+function isCurrentUserAdmin() {
+  const u = auth.currentUser;
+  if (!u || !currentWsId) return false;
+  return currentWsMembers[u.uid]?.role === 'admin';
+}
+
+async function loadMembersAndLocks() {
+  if (!currentWsId) return;
+  const [mSnap, lSnap] = await Promise.all([
+    db.ref(`workspaces/${currentWsId}/members`).once('value'),
+    db.ref(`workspaces/${currentWsId}/locks`).once('value'),
+  ]);
+  currentWsMembers = mSnap.val() || {};
+  currentWsLocks = Object.assign({ assignees:false, categories:false, subtitle:false, urgentFlag:false }, lSnap.val() || {});
+}
+
+async function refreshAdminSection() {
+  await loadMembersAndLocks();
+  const adminSection = document.getElementById('adminSection');
+  if (!adminSection) return;
+  adminSection.style.display = isCurrentUserAdmin() ? '' : 'none';
+  document.getElementById('lockAssignees').checked  = !!currentWsLocks.assignees;
+  document.getElementById('lockCategories').checked = !!currentWsLocks.categories;
+  document.getElementById('lockSubtitle').checked   = !!currentWsLocks.subtitle;
+  document.getElementById('lockUrgent').checked     = !!currentWsLocks.urgentFlag;
+}
+
+async function saveLocks() {
+  try {
+    const locks = {
+      assignees:  document.getElementById('lockAssignees').checked,
+      categories: document.getElementById('lockCategories').checked,
+      subtitle:   document.getElementById('lockSubtitle').checked,
+      urgentFlag: document.getElementById('lockUrgent').checked,
+    };
+    await callAdminApi('setWorkspaceLocks', { wsId: currentWsId, locks });
+    currentWsLocks = locks;
+    alert('Locks saved.');
+  } catch (e) { alert('Failed to save locks: ' + e.message); }
+}
+
+async function openMembersModal() {
+  if (!isCurrentUserAdmin()) { alert('Only admins can manage members.'); return; }
+  await loadMembersAndLocks();
+  document.getElementById('membersWsName').textContent = (userWsList[currentWsId]?.name || currentWsId);
+  document.getElementById('inviteEmail').value = '';
+  document.getElementById('inviteRole').value = 'member';
+  document.getElementById('inviteStatus').textContent = '';
+  renderMembersList();
+  document.getElementById('membersOverlay').classList.remove('hidden');
+}
+function closeMembersModal() { document.getElementById('membersOverlay').classList.add('hidden'); }
+
+function renderMembersList() {
+  const list = document.getElementById('membersList');
+  const entries = Object.entries(currentWsMembers);
+  if (!entries.length) { list.innerHTML = '<p style="font-size:0.75rem;color:var(--muted)">No members yet.</p>'; return; }
+  list.innerHTML = entries.map(([uid, m]) => {
+    const roleBadge = m.role === 'admin'
+      ? '<span style="font-size:0.6rem;color:var(--green);letter-spacing:2px;">ADMIN</span>'
+      : '<span style="font-size:0.6rem;color:var(--muted);letter-spacing:2px;">MEMBER</span>';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:4px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.82rem">${esc(m.email || uid)}</div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">${roleBadge}</div>
+      </div>
+      <button class="btn-add-item" onclick="openReportConfig('${esc(uid)}')">📧 REPORT</button>
+      <button class="btn-add-item" onclick="toggleRole('${esc(uid)}')">${m.role === 'admin' ? 'DEMOTE' : 'PROMOTE'}</button>
+      <button class="btn-delete-ws" onclick="removeMember('${esc(uid)}')" style="padding:6px 12px">✕ REMOVE</button>
+    </div>`;
+  }).join('');
+}
+
+async function inviteMember() {
+  const email = document.getElementById('inviteEmail').value.trim().toLowerCase();
+  const role  = document.getElementById('inviteRole').value;
+  const status = document.getElementById('inviteStatus');
+  if (!email || !email.includes('@')) { status.textContent = 'Enter a valid email.'; return; }
+  status.textContent = 'Sending invite...';
+  try {
+    const res = await callAdminApi('inviteUserToWorkspace', { wsId: currentWsId, email, role });
+    status.textContent = `✓ Added ${res.email} as ${role}.`;
+    await loadMembersAndLocks();
+    renderMembersList();
+    document.getElementById('inviteEmail').value = '';
+  } catch (e) {
+    status.textContent = '✗ ' + e.message;
+  }
+}
+
+async function toggleRole(uid) {
+  const cur = currentWsMembers[uid]?.role;
+  if (!cur) return;
+  const next = cur === 'admin' ? 'member' : 'admin';
+  if (!confirm(`Change role to ${next.toUpperCase()}?`)) return;
+  try {
+    await callAdminApi('setUserRole', { wsId: currentWsId, uid, role: next });
+    await loadMembersAndLocks();
+    renderMembersList();
+  } catch (e) { alert('Failed: ' + e.message); }
+}
+
+async function removeMember(uid) {
+  const m = currentWsMembers[uid];
+  if (!m) return;
+  if (!confirm(`Remove ${m.email || uid} from this workspace?`)) return;
+  try {
+    await callAdminApi('removeUserFromWorkspace', { wsId: currentWsId, uid });
+    await loadMembersAndLocks();
+    renderMembersList();
+  } catch (e) { alert('Failed: ' + e.message); }
+}
+
+let rcEditingUid = null;
+function openReportConfig(uid) {
+  rcEditingUid = uid;
+  const m = currentWsMembers[uid];
+  if (!m) return;
+  const rc = m.reportConfig || { enabled: true, sendHour: 7, categoryFilter: null };
+  document.getElementById('rcEmail').textContent = m.email || uid;
+  document.getElementById('rcEnabled').checked = !!rc.enabled;
+  document.getElementById('rcSendHour').value = rc.sendHour != null ? rc.sendHour : 7;
+  const cats = cfg.categories || [];
+  const filterSet = new Set((rc.categoryFilter || []).map(String));
+  document.getElementById('rcCategoryList').innerHTML = cats.map(c => `
+    <label style="display:flex;align-items:center;gap:8px;font-size:0.75rem;">
+      <input type="checkbox" class="rc-cat-chk" value="${esc(c.id)}" ${filterSet.has(c.id) ? 'checked' : ''}>
+      ${esc(c.label || c.id)}
+    </label>
+  `).join('');
+  document.getElementById('reportConfigOverlay').classList.remove('hidden');
+}
+function closeReportConfig() { rcEditingUid = null; document.getElementById('reportConfigOverlay').classList.add('hidden'); }
+
+async function saveReportConfig() {
+  if (!rcEditingUid) return;
+  const enabled = document.getElementById('rcEnabled').checked;
+  const sendHour = parseInt(document.getElementById('rcSendHour').value, 10);
+  const checks = Array.from(document.querySelectorAll('.rc-cat-chk:checked')).map(el => el.value);
+  // Empty list = null (all categories)
+  const categoryFilter = checks.length ? checks : null;
+  try {
+    await callAdminApi('setMemberReportConfig', {
+      wsId: currentWsId, uid: rcEditingUid,
+      reportConfig: { enabled, sendHour, categoryFilter }
+    });
+    await loadMembersAndLocks();
+    renderMembersList();
+    closeReportConfig();
+  } catch (e) { alert('Failed: ' + e.message); }
+}
 
 function buildAssigneeList() {
   document.getElementById('assigneeListSettings').innerHTML = tmpAssignees.map((a, i) => `
@@ -3352,10 +3650,25 @@ function saveSettings() {
       alert(`"${c.label}": thresholds must be in order — GREEN < YELLOW < ORANGE`); return;
     }
   }
+  // Enforce locks: non-admin cannot modify locked lists
+  const isAdmin = isCurrentUserAdmin();
+  const newAssignees = tmpAssignees.map(a => a.trim()).filter(Boolean);
+  const newSubtitle  = document.getElementById('subtitleInput').value.trim().toUpperCase() || DEFAULTS.subtitle;
+  if (!isAdmin) {
+    if (currentWsLocks.assignees  && JSON.stringify(newAssignees) !== JSON.stringify(cfg.assignees || [])) {
+      alert('The assignee list is locked. Only admins can change it.'); return;
+    }
+    if (currentWsLocks.categories && JSON.stringify(cats) !== JSON.stringify(cfg.categories || [])) {
+      alert('The category list is locked. Only admins can change it.'); return;
+    }
+    if (currentWsLocks.subtitle && newSubtitle !== (cfg.subtitle || DEFAULTS.subtitle)) {
+      alert('The workspace subtitle is locked. Only admins can change it.'); return;
+    }
+  }
   cfg.categories       = cats;
-  cfg.assignees        = tmpAssignees.map(a => a.trim()).filter(Boolean);
+  cfg.assignees        = newAssignees;
   cfg.expenseCategories = tmpExpenseCats.map(c => c.trim()).filter(Boolean);
-  cfg.subtitle         = document.getElementById('subtitleInput').value.trim().toUpperCase() || DEFAULTS.subtitle;
+  cfg.subtitle         = newSubtitle;
   applySubtitle();
   pushSettingsToCloud();
   refreshDatalist();

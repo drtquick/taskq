@@ -317,14 +317,127 @@ async function buildAndSendReport(smtpPassword) {
 // Scheduled function -- runs daily at 7 AM Central
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Build a personalized report email for one member in one workspace.
+// Applies categoryFilter (list of category ids); if empty/null, includes all categories.
+async function buildAndSendPersonalizedReport(smtpPassword, uid, email, wsIdsWithConfig) {
+  const [usersSnap, wsSnap] = await Promise.all([
+    db.ref('users').once('value'),
+    db.ref('workspaces').once('value'),
+  ]);
+  const users = usersSnap.val() || {};
+  const workspaces = wsSnap.val() || {};
+  const wsNameById = {};
+  Object.values(users).forEach(userData => {
+    const userWs = userData?.workspaces || {};
+    Object.entries(userWs).forEach(([wsId, entry]) => {
+      if (entry?.name && !wsNameById[wsId]) wsNameById[wsId] = entry.name;
+    });
+  });
+
+  const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0);
+  const todayStart = todayMidnight.getTime();
+  const todayEnd   = todayStart + 86400000;
+  const weekEnd    = todayStart + 7 * 86400000;
+
+  const allTasks = [];
+  const allEvents = [];
+  for (const { wsId, categoryFilter } of wsIdsWithConfig) {
+    const wsData = workspaces[wsId];
+    if (!wsData) continue;
+    const wsName = wsNameById[wsId] || wsData.settings?.subtitle || wsId;
+    const filterSet = Array.isArray(categoryFilter) && categoryFilter.length ? new Set(categoryFilter.map(String)) : null;
+    Object.entries(wsData.tasks || {}).forEach(([k, v]) => {
+      if (filterSet && !filterSet.has(String(v.category))) return;
+      allTasks.push({ ...v, _key: k, _wsId: wsId, _wsName: wsName });
+    });
+    Object.entries(wsData.events || {}).forEach(([k, v]) => {
+      if (filterSet && !filterSet.has(String(v.category))) return;
+      allEvents.push({ ...v, _key: k, _wsId: wsId, _wsName: wsName });
+    });
+  }
+  if (!allTasks.length && !allEvents.length) {
+    console.log(`No matching items for ${email}; skipping send.`);
+    return { skipped: true };
+  }
+  const overdueTasks = allTasks
+    .filter(t => t.status !== 'done' && t.dueAt && t.dueAt < todayStart)
+    .sort((a, b) => a.dueAt - b.dueAt);
+  const todayTasks = allTasks
+    .filter(t => t.status !== 'done' && t.dueAt && t.dueAt >= todayStart && t.dueAt < todayEnd)
+    .sort((a, b) => a.dueAt - b.dueAt);
+  const upcomingEvents = allEvents
+    .filter(e => e.startAt >= todayStart && e.startAt < weekEnd)
+    .sort((a, b) => a.startAt - b.startAt);
+  const byPerson = {};
+  [...overdueTasks, ...todayTasks].forEach(t => {
+    const people = getAssigneeArr(t);
+    if (!people.length) people.push('Unassigned');
+    people.forEach(p => {
+      if (!byPerson[p]) byPerson[p] = { tasks: [], events: [] };
+      byPerson[p].tasks.push(t);
+    });
+  });
+  upcomingEvents.forEach(e => {
+    const people = getAssigneeArr(e);
+    people.forEach(p => {
+      if (!byPerson[p]) byPerson[p] = { tasks: [], events: [] };
+      byPerson[p].events.push(e);
+    });
+  });
+  const html    = buildEmailHTML({ overdueTasks, todayTasks, upcomingEvents, byPerson });
+  const subject = `TaskQ Daily Report -- ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`;
+  const transporter = createTransport(smtpPassword);
+  await transporter.sendMail({
+    from: `"TaskQ Daily" <${SMTP_USER}>`,
+    to: email,
+    subject,
+    html
+  });
+  console.log(`Personalized report sent to ${email} covering ${wsIdsWithConfig.length} workspace(s).`);
+  return { sent: true, to: email };
+}
+
+// Gather all members whose reportConfig matches the given hour (local time).
+// Returns array of { uid, email, wsList: [{wsId, categoryFilter}] }
+async function collectMembersForHour(hour) {
+  const wsSnap = await db.ref('workspaces').once('value');
+  const workspaces = wsSnap.val() || {};
+  const byUid = {};
+  for (const [wsId, wsData] of Object.entries(workspaces)) {
+    const members = wsData?.members || {};
+    for (const [uid, m] of Object.entries(members)) {
+      const rc = m?.reportConfig || {};
+      if (!rc.enabled) continue;
+      const memberHour = Number.isFinite(+rc.sendHour) ? +rc.sendHour : 7;
+      if (hour != null && memberHour !== hour) continue;
+      if (!byUid[uid]) byUid[uid] = { uid, email: m.email, wsList: [] };
+      byUid[uid].wsList.push({ wsId, categoryFilter: rc.categoryFilter || null });
+      if (!byUid[uid].email && m.email) byUid[uid].email = m.email;
+    }
+  }
+  return Object.values(byUid).filter(x => x.email);
+}
+
 exports.scheduledEmailReport = onSchedule(
   {
-    schedule:  '0 7 * * *',
+    schedule:  '0 * * * *',
     timeZone:  'America/Chicago',
     secrets:   [SMTP_PASSWORD],
   },
   async () => {
-    await buildAndSendReport(SMTP_PASSWORD.value());
+    // Determine local hour in America/Chicago
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: DEFAULT_TZ, hour: 'numeric', hour12: false }).formatToParts(new Date());
+    const hourPart = parts.find(p => p.type === 'hour');
+    const hour = hourPart ? parseInt(hourPart.value, 10) % 24 : 7;
+    const members = await collectMembersForHour(hour);
+    console.log(`scheduledEmailReport at hour ${hour}: ${members.length} member(s) match`);
+    for (const m of members) {
+      try {
+        await buildAndSendPersonalizedReport(SMTP_PASSWORD.value(), m.uid, m.email, m.wsList);
+      } catch (e) {
+        console.error(`Failed to send to ${m.email}:`, e);
+      }
+    }
   }
 );
 
@@ -343,6 +456,32 @@ exports.sendEmailNow = onRequest(
       return;
     }
     try {
+      // If the caller is authed, send a personalized report to them across all workspaces they belong to.
+      const authHeader = req.get('Authorization') || '';
+      const match = authHeader.match(/^Bearer\s+(.+)$/);
+      if (match) {
+        try {
+          const decoded = await admin.auth().verifyIdToken(match[1]);
+          const uid = decoded.uid;
+          const email = decoded.email;
+          const wsSnap = await db.ref('workspaces').once('value');
+          const workspaces = wsSnap.val() || {};
+          const wsList = [];
+          for (const [wsId, wsData] of Object.entries(workspaces)) {
+            const m = wsData?.members?.[uid];
+            if (!m) continue;
+            wsList.push({ wsId, categoryFilter: m.reportConfig?.categoryFilter || null });
+          }
+          if (wsList.length && email) {
+            const result = await buildAndSendPersonalizedReport(SMTP_PASSWORD.value(), uid, email, wsList);
+            res.json({ success: true, ...result });
+            return;
+          }
+        } catch (e) {
+          console.warn('sendEmailNow: auth provided but lookup failed, falling back to legacy');
+        }
+      }
+      // Legacy fallback: fire the old global-settings report.
       const result = await buildAndSendReport(SMTP_PASSWORD.value());
       res.json({ success: true, ...result });
     } catch (err) {
@@ -1086,6 +1225,279 @@ exports.dailyBackup = onSchedule(
       }
     }
     console.log(`Pruned ${pruned} backup(s) older than 30 days.`);
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin / Membership Functions
+// Workspace members live at workspaces/{wsId}/members/{uid} = {
+//   email, role: 'admin'|'member', addedAt, addedBy, reportConfig: { enabled, sendHour, categoryFilter }
+// }
+// Locks at workspaces/{wsId}/locks = { assignees, categories, subtitle, urgentFlag } (booleans)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Verify the caller is an admin of the workspace. Throws on failure.
+async function assertAdmin(req, wsId) {
+  const authHeader = req.get('Authorization') || '';
+  const match = authHeader.match(/^Bearer\s+(.+)$/);
+  if (!match) throw new Error('Missing Authorization header');
+  let decoded;
+  try {
+    decoded = await admin.auth().verifyIdToken(match[1]);
+  } catch (e) {
+    throw new Error('Invalid auth token');
+  }
+  const callerUid = decoded.uid;
+  const memberSnap = await db.ref(`workspaces/${wsId}/members/${callerUid}`).once('value');
+  const member = memberSnap.val();
+  if (!member || member.role !== 'admin') throw new Error('Caller is not an admin of this workspace');
+  return { uid: callerUid, email: decoded.email };
+}
+
+// Read JSON body regardless of content-type
+function getBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body;
+  try { return JSON.parse(req.body || '{}'); } catch { return {}; }
+}
+
+exports.inviteUserToWorkspace = onRequest(
+  { cors: true },
+  async (req, res) => {
+    try {
+      if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+      const body = getBody(req);
+      const { wsId, email, role } = body;
+      if (!wsId || !email || !['admin', 'member'].includes(role)) {
+        res.status(400).json({ error: 'wsId, email, role required (role: admin or member)' });
+        return;
+      }
+      const caller = await assertAdmin(req, wsId);
+      // Look up target user by email (must exist)
+      let target;
+      try {
+        target = await admin.auth().getUserByEmail(String(email).trim().toLowerCase());
+      } catch {
+        res.status(404).json({ error: 'No TaskQ user found with that email. They must sign up first.' });
+        return;
+      }
+      // Workspace must exist
+      const wsMetaSnap = await db.ref(`workspaces/${wsId}/settings`).once('value');
+      if (!wsMetaSnap.exists()) { res.status(404).json({ error: 'Workspace not found' }); return; }
+      const existingMemberSnap = await db.ref(`workspaces/${wsId}/members/${target.uid}`).once('value');
+      if (existingMemberSnap.exists()) {
+        res.status(409).json({ error: 'User is already a member of this workspace' });
+        return;
+      }
+      // Pull the workspace display name from the inviter's list so we can mirror it
+      const inviterWsEntrySnap = await db.ref(`users/${caller.uid}/workspaces/${wsId}`).once('value');
+      const wsEntry = inviterWsEntrySnap.val() || {};
+      const wsName = wsEntry.name || 'SHARED WORKSPACE';
+      const now = Date.now();
+      const multi = {};
+      multi[`workspaces/${wsId}/members/${target.uid}`] = {
+        email: target.email || email,
+        role,
+        addedAt: now,
+        addedBy: caller.uid,
+        reportConfig: { enabled: true, sendHour: 7, categoryFilter: null }
+      };
+      multi[`users/${target.uid}/workspaces/${wsId}`] = {
+        name: wsName,
+        createdAt: now,
+        role
+      };
+      await db.ref().update(multi);
+      res.json({ success: true, uid: target.uid, email: target.email });
+    } catch (err) {
+      console.error('inviteUserToWorkspace error:', err);
+      res.status(err.message.includes('admin') || err.message.includes('token') || err.message.includes('Authorization') ? 403 : 500).json({ error: err.message });
+    }
+  }
+);
+
+exports.removeUserFromWorkspace = onRequest(
+  { cors: true },
+  async (req, res) => {
+    try {
+      if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+      const body = getBody(req);
+      const { wsId, uid } = body;
+      if (!wsId || !uid) { res.status(400).json({ error: 'wsId and uid required' }); return; }
+      const caller = await assertAdmin(req, wsId);
+      // Protect last admin
+      const membersSnap = await db.ref(`workspaces/${wsId}/members`).once('value');
+      const members = membersSnap.val() || {};
+      const targetRole = members[uid]?.role;
+      if (!members[uid]) { res.status(404).json({ error: 'User is not a member' }); return; }
+      if (targetRole === 'admin') {
+        const adminCount = Object.values(members).filter(m => m?.role === 'admin').length;
+        if (adminCount <= 1) { res.status(400).json({ error: 'Cannot remove the last admin' }); return; }
+      }
+      const multi = {};
+      multi[`workspaces/${wsId}/members/${uid}`] = null;
+      multi[`users/${uid}/workspaces/${wsId}`] = null;
+      await db.ref().update(multi);
+      res.json({ success: true });
+    } catch (err) {
+      console.error('removeUserFromWorkspace error:', err);
+      res.status(err.message.includes('admin') || err.message.includes('token') || err.message.includes('Authorization') ? 403 : 500).json({ error: err.message });
+    }
+  }
+);
+
+exports.setUserRole = onRequest(
+  { cors: true },
+  async (req, res) => {
+    try {
+      if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+      const body = getBody(req);
+      const { wsId, uid, role } = body;
+      if (!wsId || !uid || !['admin', 'member'].includes(role)) {
+        res.status(400).json({ error: 'wsId, uid, role required (role: admin or member)' });
+        return;
+      }
+      await assertAdmin(req, wsId);
+      const membersSnap = await db.ref(`workspaces/${wsId}/members`).once('value');
+      const members = membersSnap.val() || {};
+      if (!members[uid]) { res.status(404).json({ error: 'User is not a member' }); return; }
+      if (members[uid].role === 'admin' && role === 'member') {
+        const adminCount = Object.values(members).filter(m => m?.role === 'admin').length;
+        if (adminCount <= 1) { res.status(400).json({ error: 'Cannot demote the last admin' }); return; }
+      }
+      const multi = {};
+      multi[`workspaces/${wsId}/members/${uid}/role`] = role;
+      multi[`users/${uid}/workspaces/${wsId}/role`] = role;
+      await db.ref().update(multi);
+      res.json({ success: true });
+    } catch (err) {
+      console.error('setUserRole error:', err);
+      res.status(err.message.includes('admin') || err.message.includes('token') || err.message.includes('Authorization') ? 403 : 500).json({ error: err.message });
+    }
+  }
+);
+
+exports.setWorkspaceLocks = onRequest(
+  { cors: true },
+  async (req, res) => {
+    try {
+      if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+      const body = getBody(req);
+      const { wsId, locks } = body;
+      if (!wsId || !locks || typeof locks !== 'object') {
+        res.status(400).json({ error: 'wsId and locks object required' });
+        return;
+      }
+      await assertAdmin(req, wsId);
+      const clean = {
+        assignees:   !!locks.assignees,
+        categories:  !!locks.categories,
+        subtitle:    !!locks.subtitle,
+        urgentFlag:  !!locks.urgentFlag
+      };
+      await db.ref(`workspaces/${wsId}/locks`).set(clean);
+      res.json({ success: true, locks: clean });
+    } catch (err) {
+      console.error('setWorkspaceLocks error:', err);
+      res.status(err.message.includes('admin') || err.message.includes('token') || err.message.includes('Authorization') ? 403 : 500).json({ error: err.message });
+    }
+  }
+);
+
+exports.setMemberReportConfig = onRequest(
+  { cors: true },
+  async (req, res) => {
+    try {
+      if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+      const body = getBody(req);
+      const { wsId, uid, reportConfig } = body;
+      if (!wsId || !uid || !reportConfig || typeof reportConfig !== 'object') {
+        res.status(400).json({ error: 'wsId, uid, reportConfig required' });
+        return;
+      }
+      await assertAdmin(req, wsId);
+      const memberSnap = await db.ref(`workspaces/${wsId}/members/${uid}`).once('value');
+      if (!memberSnap.exists()) { res.status(404).json({ error: 'User is not a member' }); return; }
+      const clean = {
+        enabled: !!reportConfig.enabled,
+        sendHour: Number.isFinite(+reportConfig.sendHour) ? +reportConfig.sendHour : 7,
+        categoryFilter: Array.isArray(reportConfig.categoryFilter) && reportConfig.categoryFilter.length
+          ? reportConfig.categoryFilter.map(String)
+          : null
+      };
+      await db.ref(`workspaces/${wsId}/members/${uid}/reportConfig`).set(clean);
+      res.json({ success: true, reportConfig: clean });
+    } catch (err) {
+      console.error('setMemberReportConfig error:', err);
+      res.status(err.message.includes('admin') || err.message.includes('token') || err.message.includes('Authorization') ? 403 : 500).json({ error: err.message });
+    }
+  }
+);
+
+// One-time migration: backfill every existing workspace with its owner(s) as admin.
+// Triggerable via HTTP, idempotent (skips workspaces that already have members).
+exports.migrateAdminsBackfill = onRequest(
+  { cors: true },
+  async (req, res) => {
+    try {
+      // Require auth: caller must be an existing TaskQ user
+      const authHeader = req.get('Authorization') || '';
+      const match = authHeader.match(/^Bearer\s+(.+)$/);
+      if (!match) { res.status(403).json({ error: 'Missing auth' }); return; }
+      await admin.auth().verifyIdToken(match[1]); // caller must be signed in
+
+      const [usersSnap, wsSnap] = await Promise.all([
+        db.ref('users').once('value'),
+        db.ref('workspaces').once('value'),
+      ]);
+      const users = usersSnap.val() || {};
+      const workspaces = wsSnap.val() || {};
+
+      // Map wsId -> array of { uid, email, createdAt }
+      const wsToOwners = {};
+      for (const [uid, userData] of Object.entries(users)) {
+        const userWs = userData?.workspaces || {};
+        for (const [wsId, entry] of Object.entries(userWs)) {
+          if (!wsToOwners[wsId]) wsToOwners[wsId] = [];
+          wsToOwners[wsId].push({ uid, createdAt: entry.createdAt || 0 });
+        }
+      }
+
+      const changes = {};
+      let promoted = 0;
+      for (const [wsId, wsData] of Object.entries(workspaces)) {
+        if (wsData?.members) continue; // already migrated
+        const owners = (wsToOwners[wsId] || []).slice().sort((a, b) => a.createdAt - b.createdAt);
+        if (!owners.length) continue;
+        for (let i = 0; i < owners.length; i++) {
+          const o = owners[i];
+          let email = '';
+          try {
+            const rec = await admin.auth().getUser(o.uid);
+            email = rec.email || '';
+          } catch { /* ignore */ }
+          changes[`workspaces/${wsId}/members/${o.uid}`] = {
+            email,
+            role: 'admin',
+            addedAt: o.createdAt || Date.now(),
+            addedBy: o.uid,
+            reportConfig: { enabled: true, sendHour: 7, categoryFilter: null }
+          };
+          changes[`users/${o.uid}/workspaces/${wsId}/role`] = 'admin';
+          promoted++;
+        }
+        // Default locks: all off
+        if (!wsData.locks) {
+          changes[`workspaces/${wsId}/locks`] = {
+            assignees: false, categories: false, subtitle: false, urgentFlag: false
+          };
+        }
+      }
+      if (Object.keys(changes).length) await db.ref().update(changes);
+      res.json({ success: true, promoted, workspaces: Object.keys(workspaces).length });
+    } catch (err) {
+      console.error('migrateAdminsBackfill error:', err);
+      res.status(500).json({ error: err.message });
+    }
   }
 );
 
