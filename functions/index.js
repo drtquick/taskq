@@ -21,6 +21,7 @@ const { ImapFlow }     = require('imapflow');
 const { simpleParser } = require('mailparser');
 const ical             = require('node-ical');
 const chrono           = require('chrono-node');
+const { authenticate } = require('mailauth');
 
 const DEFAULT_TZ = 'America/Chicago';
 
@@ -442,12 +443,18 @@ const IMAP_HOST = 'chocobo.mxrouting.net';
 const IMAP_PORT = 993;
 const IMAP_USER = 'taskq@qponent.com';
 
-// Extract first "pass" or "fail" result for dkim from Authentication-Results header
-function checkDkimPass(headers) {
-  const ar = headers.get('authentication-results');
-  if (!ar) return false;
-  const str = Array.isArray(ar) ? ar.join(' ') : String(ar);
-  return /dkim=pass/i.test(str);
+// Verify DKIM cryptographically from the raw message source.
+// Returns { ok, summary } where ok=true if any DKIM signature passed.
+async function verifyDkim(rawSource) {
+  try {
+    const result = await authenticate(rawSource, { trustReceived: false });
+    const dkim = result?.dkim?.results || [];
+    const anyPass = dkim.some(r => r.status?.result === 'pass');
+    const summary = dkim.map(r => `${r.signingDomain || '?'}=${r.status?.result || '?'}`).join(', ');
+    return { ok: anyPass, summary: summary || 'no DKIM signatures found' };
+  } catch (err) {
+    return { ok: false, summary: 'verify error: ' + err.message };
+  }
 }
 
 // Strip RFC 5322 display name, return lowercase bare address
@@ -878,7 +885,9 @@ exports.pollInbox = onSchedule(
           if (!msg) { skipped++; continue; }
           const parsed = await simpleParser(msg.source);
           const fromEmail = bareEmail(parsed.from);
-          const dkimOk = checkDkimPass(parsed.headers);
+          const dkimResult = await verifyDkim(msg.source);
+          const dkimOk = dkimResult.ok;
+          console.log(`DKIM check for ${fromEmail}: ${dkimOk ? 'pass' : 'fail'} [${dkimResult.summary}]`);
           const origSubject = parsed.subject || '';
           const origMsgId   = parsed.messageId || null;
           const smtpPass    = SMTP_PASSWORD.value();
@@ -894,7 +903,9 @@ exports.pollInbox = onSchedule(
               'TaskQ could not process your email.',
               '',
               'Reason: DKIM signature did not verify. For security, TaskQ only accepts',
-              'mail whose authenticity can be confirmed by your email provider.',
+              'mail whose authenticity can be confirmed by cryptographic signature.',
+              '',
+              `DKIM results: ${dkimResult.summary}`,
               '',
               'If you sent this from Gmail, Outlook, or iCloud and still see this,',
               'try resending directly (not forwarded through another service).'
