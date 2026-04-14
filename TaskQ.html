@@ -9,7 +9,7 @@
 :root {
   --bg: #0d0d0d; --surface: #1a1a1a; --surface2: #242424; --border: #333;
   --text: #e8e8e8; --muted: #888; --accent: #ff6b00;
-  --green: #00c853; --yellow: #ffd600; --orange: #ff6d00; --red: #d50000;
+  --blue: #2196f3; --green: #00c853; --yellow: #ffd600; --orange: #ff6d00; --red: #d50000;
   --font: 'Courier New', Courier, monospace;
 }
 body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display: flex; flex-direction: column; }
@@ -110,7 +110,8 @@ input[type="date"] { color-scheme: dark; }
 .empty-state { grid-column: 1/-1; text-align: center; padding: 70px 20px; color: var(--muted); font-size: 0.85rem; letter-spacing: 2px; }
 
 /* CARDS */
-.card { background: var(--surface); border-radius: 6px; padding: 14px; border-left: 4px solid var(--green); position: relative; transition: border-color 0.5s; }
+.card { background: var(--surface); border-radius: 6px; padding: 14px; border-left: 4px solid var(--blue); position: relative; transition: border-color 0.5s; }
+.card.green  { border-left-color: var(--green); }
 .card.yellow { border-left-color: var(--yellow); }
 .card.orange { border-left-color: var(--orange); }
 .card.red    { border-left-color: var(--red); animation: pulse-red 1.5s ease-in-out infinite; }
@@ -123,6 +124,7 @@ input[type="date"] { color-scheme: dark; }
 .card-name     { font-size: 0.92rem; font-weight: bold; margin-bottom: 4px; line-height: 1.3; word-break: break-word; }
 .card-assignee { font-size: 0.72rem; color: var(--muted); margin-bottom: 10px; }
 .card-timer    { font-size: 1.55rem; font-weight: bold; letter-spacing: 2px; margin-bottom: 2px; }
+.card-timer.blue   { color: var(--blue); }
 .card-timer.green  { color: var(--green); }
 .card-timer.yellow { color: var(--yellow); }
 .card-timer.orange { color: var(--orange); }
@@ -158,6 +160,7 @@ input[type="date"] { color-scheme: dark; }
 .task-table tbody tr:hover { background: var(--surface2); }
 .task-table td { padding: 10px 12px; vertical-align: middle; }
 .task-table tbody tr td:first-child { border-left: 3px solid transparent; padding-left: 10px; }
+.task-table tbody tr.tr-blue   td:first-child { border-left-color: var(--blue); }
 .task-table tbody tr.tr-green  td:first-child { border-left-color: var(--green); }
 .task-table tbody tr.tr-yellow td:first-child { border-left-color: var(--yellow); }
 .task-table tbody tr.tr-orange td:first-child { border-left-color: var(--orange); }
@@ -166,11 +169,13 @@ input[type="date"] { color-scheme: dark; }
 .task-table tbody tr.tr-done { opacity: 0.55; }
 .td-task  { font-weight: bold; max-width: 280px; word-break: break-word; }
 .td-muted { color: var(--muted); font-size: 0.78rem; }
+.td-timer.blue   { color: var(--blue);   font-weight: bold; }
 .td-timer.green  { color: var(--green);  font-weight: bold; }
 .td-timer.yellow { color: var(--yellow); font-weight: bold; }
 .td-timer.orange { color: var(--orange); font-weight: bold; }
 .td-timer.red    { color: var(--red);    font-weight: bold; }
 .td-timer.done   { color: #4caf50; }
+.td-status.blue   { color: var(--blue);   font-size: 0.72rem; letter-spacing: 1px; }
 .td-status.green  { color: var(--green);  font-size: 0.72rem; letter-spacing: 1px; }
 .td-status.yellow { color: var(--yellow); font-size: 0.72rem; letter-spacing: 1px; }
 .td-status.orange { color: var(--orange); font-size: 0.72rem; letter-spacing: 1px; }
@@ -229,9 +234,9 @@ input[type="date"] { color-scheme: dark; }
 .cat-row input[type="text"]:focus { border-color: var(--accent); }
 .cat-row input[type="color"] { width: 36px; height: 30px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; padding: 2px; background: var(--bg); }
 .cat-row input[type="number"] { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 6px; font-size: 0.78rem; border-radius: 4px; outline: none; width: 100%; text-align: center; }
+.cat-row input.green-input:focus  { border-color: var(--green); }
 .cat-row input.yellow-input:focus { border-color: var(--yellow); }
 .cat-row input.orange-input:focus { border-color: var(--orange); }
-.cat-row input.red-input:focus    { border-color: var(--red); }
 .btn-rm-cat { background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer; padding: 5px 8px; border-radius: 4px; font-size: 0.78rem; }
 .btn-rm-cat:hover { border-color: var(--red); color: var(--red); }
 .btn-add-cat { background: var(--surface2); border: 1px dashed var(--border); color: var(--muted); cursor: pointer; padding: 7px; border-radius: 4px; font-family: var(--font); font-size: 0.72rem; letter-spacing: 1px; width: 100%; }
@@ -469,6 +474,7 @@ input[type="date"] { color-scheme: dark; }
 .btn-hipri:hover { border-color: #ff9100; color: #ff9100; }
 .btn-hipri.hipri-on { background: rgba(255,145,0,0.12); border-color: #ff9100; color: #ff9100; }
 .card-hipri { font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; color: #ff9100; margin-bottom: 3px; }
+.card-files { font-size: 0.6rem; color: var(--muted); letter-spacing: 1px; margin-bottom: 3px; }
 
 /* BULK ACTION BAR */
 .bulk-bar { background: rgba(255,214,0,0.07); border-bottom: 1px solid var(--yellow); padding: 7px 20px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
@@ -858,9 +864,10 @@ input[type="date"] { color-scheme: dark; }
   </div>
   <div class="header-right">
     <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#00c853"></div>ON TRACK</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ffd600"></div>ATTENTION</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ff6d00"></div>URGENT</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#2196f3"></div>ON TRACK</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#00c853"></div>ATTENTION</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffd600"></div>URGENT</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff6d00"></div>DUE SOON</div>
       <div class="legend-item"><div class="legend-dot" style="background:#d50000"></div>OVERDUE</div>
     </div>
     <div class="datetime" id="datetime">-- --- -- · --:--</div>
@@ -868,7 +875,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v1.6</span>
+    <span class="beta-badge">β v1.7</span>
     <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
 </header>
@@ -1124,16 +1131,16 @@ input[type="date"] { color-scheme: dark; }
       <div class="cat-table-header">
         <span>CATEGORY NAME</span>
         <span>COLOR</span>
+        <span style="color:var(--green)">GREEN</span>
         <span style="color:var(--yellow)">YELLOW</span>
         <span style="color:var(--orange)">ORANGE</span>
-        <span style="color:var(--red)">RED</span>
         <span></span>
       </div>
       <div class="cat-list" id="catList"></div>
       <button class="btn-add-cat" onclick="addCatRow()">+ ADD CATEGORY</button>
       <p style="font-size:0.65rem;color:var(--muted);margin-top:10px;">
-        Elapsed mode: task turns yellow/orange/red after the specified number of days since creation.<br>
-        Due date mode: task turns yellow/orange/red when that many days remain until the due date.
+        Elapsed mode: task escalates through green/yellow/orange after the specified days since creation. Past the orange threshold it turns red (overdue).<br>
+        Due date mode: task escalates through green/yellow/orange when that many days remain. Past the deadline it turns red (overdue).
       </p>
     </div>
 
@@ -1203,8 +1210,13 @@ input[type="date"] { color-scheme: dark; }
       <input type="text" id="evLocation" placeholder="Address or place..." maxlength="150">
     </div>
     <div class="event-form-row">
-      <label>ASSIGNEE (OPTIONAL)</label>
-      <input type="text" id="evAssignee" placeholder="Person responsible..." maxlength="30" list="assigneeList" autocomplete="off">
+      <label>ASSIGNEES (OPTIONAL)</label>
+      <div class="et-assignees-chips" id="evAssigneesChips"></div>
+      <div class="et-assignee-add-row">
+        <input type="text" id="evAssigneeInput" placeholder="Add person..." maxlength="30" list="assigneeList" autocomplete="off"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();addEvAssignee();}">
+        <button class="btn-add-et-assignee" onclick="addEvAssignee()">+ ADD</button>
+      </div>
     </div>
     <div class="event-form-row">
       <label>EXPENSE CATEGORY (OPTIONAL)</label>
@@ -1418,6 +1430,8 @@ let showDone          = false;  // show completed tasks in board/table views
 let bulkMode          = false;  // bulk-selection mode active
 let selectedTasks     = new Set(); // keys of tasks selected in bulk mode
 let draggingTaskKey   = null;   // key of card being dragged in category board
+let boardDragKey      = null;   // key of card being dragged in board view
+let boardCustomOrder  = null;   // array of task keys for custom board ordering
 let urgentMode        = false;  // next task added will be marked urgent
 let hiPriMode         = false;  // next task added will be marked high priority
 let tmpExpenseItems   = [];     // expense items being edited in modal
@@ -1433,6 +1447,7 @@ let currentPage       = 'tasks';
 let calView           = 'month';
 let calDate           = new Date();
 let editingEventKey   = null;
+let evAssigneesList   = [];     // assignees being edited in event modal
 let selectedColor     = EVENT_COLORS[0];
 let pendingRemoveKey  = null;
 let pendingRemoveName = '';
@@ -2044,6 +2059,37 @@ function getOrderedCategories() {
 }
 
 // ── CATEGORY DRAG-AND-DROP ────────────────────────────────────────────────────
+// ── BOARD VIEW DRAG-AND-DROP ──────────────────────────────────────────────────
+function boardDragStart(key, e) {
+  boardDragKey = key;
+  e.dataTransfer.effectAllowed = 'move';
+  e.stopPropagation();
+}
+function boardDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+function boardDrop(targetKey, e) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!boardDragKey || boardDragKey === targetKey) return;
+  // Build current order from rendered cards
+  const container = document.getElementById('taskContainer');
+  const keys = Array.from(container.querySelectorAll('.card[draggable]')).map(el => {
+    const m = el.querySelector('.btn-edit');
+    return m ? m.getAttribute('onclick').match(/'([^']+)'/)?.[1] : null;
+  }).filter(Boolean);
+  const fromIdx = keys.indexOf(boardDragKey);
+  const toIdx   = keys.indexOf(targetKey);
+  if (fromIdx < 0 || toIdx < 0) return;
+  keys.splice(fromIdx, 1);
+  keys.splice(toIdx, 0, boardDragKey);
+  boardCustomOrder = keys;
+  boardDragKey = null;
+  render();
+}
+function clearBoardOrder() { boardCustomOrder = null; render(); }
+
 function catDragStart(key, e) {
   draggingTaskKey = key;
   draggingColId   = null;
@@ -2617,6 +2663,33 @@ function removeEtAssignee(i) {
   renderEtAssigneeChips();
 }
 
+// ── EVENT ASSIGNEE HELPERS ────────────────────────────────────────────────────
+function renderEvAssigneeChips() {
+  const container = document.getElementById('evAssigneesChips');
+  if (!container) return;
+  container.innerHTML = evAssigneesList.map((a, i) => {
+    return `<span class="et-assignee-chip">
+      ${esc(a)} <button onclick="removeEvAssignee(${i})">✕</button>
+    </span>`;
+  }).join('');
+}
+function addEvAssignee() {
+  const input = document.getElementById('evAssigneeInput');
+  const name = input.value.trim();
+  if (!name) return;
+  if (!evAssigneesList.map(a=>a.toLowerCase()).includes(name.toLowerCase())) {
+    evAssigneesList.push(name);
+    saveAssigneeIfNew(name);
+  }
+  input.value = '';
+  renderEvAssigneeChips();
+  input.focus();
+}
+function removeEvAssignee(i) {
+  evAssigneesList.splice(i, 1);
+  renderEvAssigneeChips();
+}
+
 // ── FILE ATTACHMENTS ──────────────────────────────────────────────────────────
 function renderEtFiles() {
   const container = document.getElementById('etFilesList');
@@ -2795,7 +2868,7 @@ function fmtHours(h) {
   if (mins === 0) return `${hrs}h`;
   return `${hrs}h ${mins}m`;
 }
-const FILL = { green:'#00c853', yellow:'#ffd600', orange:'#ff6d00', red:'#d50000', done:'#2e7d32' };
+const FILL = { blue:'#2196f3', green:'#00c853', yellow:'#ffd600', orange:'#ff6d00', red:'#d50000', done:'#2e7d32' };
 
 // ── EXPENSE HELPER ────────────────────────────────────────────────────────────
 // Returns { total, taxDed } or null. Handles both old (expense/taxDeductible) and new (expenseItems) format.
@@ -2837,28 +2910,30 @@ function getTaskMeta(t, now) {
       return { colorCls: 'red', statusLbl: '⚡ URGENT OVERDUE' + (daysOver > 0 ? ' (' + daysOver + 'd)' : ''), timerTxt: '−' + fmtDuration(remaining), progPct: 100, isUrgent: true };
     }
     const progPct = Math.min(100, ((now - t.createdAt) / 86400000) * 100);
-    return { colorCls: 'red', statusLbl: '⚡ URGENT', timerTxt: fmtDuration(remaining) + ' LEFT', progPct, isUrgent: true };
+    return { colorCls: 'orange', statusLbl: '⚡ URGENT', timerTxt: fmtDuration(remaining) + ' LEFT', progPct, isUrgent: true };
   }
 
+  // Due-date mode: thresholds represent remaining time before deadline
   if (t.dueAt) {
     const remaining = (t.dueAt - now) / 1000;
     let colorCls, statusLbl;
     if      (remaining <= 0)                          { colorCls = 'red';    const dOver = Math.floor(Math.abs(remaining) / 86400); statusLbl = 'OVERDUE' + (dOver > 0 ? ' (' + dOver + 'd)' : ''); }
-    else if (remaining <= daysSecs(cat, 'yellow'))    { colorCls = 'red';    statusLbl = 'DUE SOON';  }
-    else if (remaining <= daysSecs(cat, 'orange'))    { colorCls = 'orange'; statusLbl = 'URGENT';    }
-    else if (remaining <= daysSecs(cat, 'red'))       { colorCls = 'yellow'; statusLbl = 'ATTENTION'; }
-    else                                              { colorCls = 'green';  statusLbl = 'ON TRACK';  }
+    else if (remaining <= daysSecs(cat, 'yellow'))    { colorCls = 'orange'; statusLbl = 'DUE SOON';  }
+    else if (remaining <= daysSecs(cat, 'orange'))    { colorCls = 'yellow'; statusLbl = 'URGENT';    }
+    else if (remaining <= daysSecs(cat, 'red'))       { colorCls = 'green';  statusLbl = 'ATTENTION'; }
+    else                                              { colorCls = 'blue';   statusLbl = 'ON TRACK';  }
     const timerTxt  = remaining <= 0 ? '−' + fmtDuration(remaining) : fmtDuration(remaining) + ' LEFT';
     const totalSpan = t.dueAt - t.createdAt;
     const progPct   = totalSpan > 0 ? Math.min(100, Math.max(0, ((now - t.createdAt) / totalSpan) * 100)) : 0;
     return { colorCls, statusLbl, timerTxt, progPct };
   }
 
+  // Elapsed mode: thresholds represent time since creation
   let colorCls, statusLbl;
   if      (elapsed >= daysSecs(cat, 'red'))    { colorCls = 'red';    const dOver = Math.floor((elapsed - daysSecs(cat, 'red')) / 86400); statusLbl = 'OVERDUE' + (dOver > 0 ? ' (' + dOver + 'd)' : ''); }
-  else if (elapsed >= daysSecs(cat, 'orange')) { colorCls = 'orange'; statusLbl = 'URGENT';    }
-  else if (elapsed >= daysSecs(cat, 'yellow')) { colorCls = 'yellow'; statusLbl = 'ATTENTION'; }
-  else                                         { colorCls = 'green';  statusLbl = 'ON TRACK';  }
+  else if (elapsed >= daysSecs(cat, 'orange')) { colorCls = 'orange'; statusLbl = 'CRITICAL';  }
+  else if (elapsed >= daysSecs(cat, 'yellow')) { colorCls = 'yellow'; statusLbl = 'URGENT';    }
+  else                                         { colorCls = 'blue';   statusLbl = 'ON TRACK';  }
   const progPct = Math.min(100, (elapsed / daysSecs(cat, 'red')) * 100);
   return { colorCls, statusLbl, timerTxt: fmtDuration(elapsed), progPct };
 }
@@ -2878,7 +2953,7 @@ function renderBoard() {
   const container = document.getElementById('mainContainer');
   container.className = 'board';
   const now = Date.now();
-  const urgencyOrder = { red: 0, orange: 1, yellow: 2, green: 3, done: 4 };
+  const urgencyOrder = { red: 0, orange: 1, yellow: 2, green: 3, blue: 4, done: 5 };
 
   // Count all tasks first
   let active = 0, done = 0;
@@ -2896,17 +2971,25 @@ function renderBoard() {
     return;
   }
 
-  // Sort by urgency (urgent+overdue first), done tasks last
-  const sorted = displayTasks.slice().sort((a, b) => {
-    const ma = getTaskMeta(a, now);
-    const mb = getTaskMeta(b, now);
-    // Urgent tasks sort before everything else (even regular red)
-    const oa = ma.isUrgent ? -1 : (urgencyOrder[ma.colorCls] ?? 5);
-    const ob = mb.isUrgent ? -1 : (urgencyOrder[mb.colorCls] ?? 5);
-    if (oa !== ob) return oa - ob;
-    // Within same urgency, oldest first
-    return a.createdAt - b.createdAt;
-  });
+  // Sort: use custom order if set by drag, otherwise by urgency
+  let sorted;
+  if (boardCustomOrder) {
+    const orderMap = new Map(boardCustomOrder.map((k, i) => [k, i]));
+    sorted = displayTasks.slice().sort((a, b) => {
+      const ia = orderMap.has(a._key) ? orderMap.get(a._key) : 9999;
+      const ib = orderMap.has(b._key) ? orderMap.get(b._key) : 9999;
+      return ia - ib;
+    });
+  } else {
+    sorted = displayTasks.slice().sort((a, b) => {
+      const ma = getTaskMeta(a, now);
+      const mb = getTaskMeta(b, now);
+      const oa = ma.isUrgent ? -1 : (urgencyOrder[ma.colorCls] ?? 5);
+      const ob = mb.isUrgent ? -1 : (urgencyOrder[mb.colorCls] ?? 5);
+      if (oa !== ob) return oa - ob;
+      return a.createdAt - b.createdAt;
+    });
+  }
 
   container.innerHTML = sorted.map(t => {
     const { colorCls, statusLbl, timerTxt, progPct } = getTaskMeta(t, now);
@@ -2917,13 +3000,14 @@ function renderBoard() {
     const isSelected = selectedTasks.has(t._key);
 
     const hiPriLine   = t.highPriority ? `<div class="card-hipri">★ HIGH PRIORITY</div>` : '';
-    const threshLine  = isDone ? '' : `<div class="card-thresh">⏱ Y:${cat.yellow}d · O:${cat.orange}d · R:${cat.red}d</div>`;
+    const threshLine  = isDone ? '' : `<div class="card-thresh">⏱ G:${cat.yellow}d · Y:${cat.orange}d · O:${cat.red}d</div>`;
     const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
-    const dueColor    = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
+    const dueColor    = colorCls === 'blue' ? 'var(--muted)' : FILL[colorCls];
     const dueLine     = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : `<div class="card-due" style="color:var(--muted)">DUE: —</div>`;
     const timeLine    = t.timeSpent != null ? `<div class="card-time-spent">⏲ TIME SPENT: ${fmtHours(t.timeSpent)}</div>` : '';
     const exp = getTaskExpense(t);
     const expLine = exp ? `<div class="card-expense">💰 $${exp.total.toFixed(2)}${exp.taxDed > 0 ? ' · TAX DED.' : ''}</div>` : '';
+    const filesLine   = t.files && t.files.length ? `<div class="card-files">📎 ${t.files.length} FILE${t.files.length > 1 ? 'S' : ''}</div>` : '';
     const notesLine   = (showCardNotes && t.notes) ? `<div class="card-notes">${esc(t.notes)}</div>` : '';
 
     const checkboxHtml = bulkMode
@@ -2936,7 +3020,10 @@ function renderBoard() {
       : `<button class="btn-done"    onclick="markDone('${safeKey}')">✓ MARK DONE</button>`;
 
     return `
-<div class="card ${colorCls}${isSelected ? ' selected-task' : ''}">
+<div class="card ${colorCls}${isSelected ? ' selected-task' : ''}" draggable="true"
+  ondragstart="boardDragStart('${safeKey}',event)"
+  ondragover="boardDragOver(event)"
+  ondrop="boardDrop('${safeKey}',event)">
   <div class="card-header">
     ${idBadge}
     <span class="card-category" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span>
@@ -2945,7 +3032,7 @@ function renderBoard() {
   ${hiPriLine}
   ${renderAvStack(taskAssigneesArr(t), 4)}
   <div class="card-timer ${colorCls}">${timerTxt}</div>
-  ${startedLine}${dueLine}${threshLine}${timeLine}${expLine}
+  ${startedLine}${dueLine}${threshLine}${timeLine}${expLine}${filesLine}
   <div class="card-status">${statusLbl}</div>
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
   ${notesLine}<div class="card-actions">
@@ -3074,11 +3161,12 @@ function renderCategoryBoard() {
       const isDone = t.status === 'done';
       const hiPriLine = t.highPriority ? `<div class="card-hipri">★ HIGH PRIORITY</div>` : '';
       const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
-      const dueColor = colorCls === 'green' ? 'var(--muted)' : FILL[colorCls];
+      const dueColor = colorCls === 'blue' ? 'var(--muted)' : FILL[colorCls];
       const dueLine = t.dueAt ? `<div class="card-due" style="color:${dueColor}">DUE ${fmtDate(t.dueAt)}</div>` : `<div class="card-due" style="color:var(--muted)">DUE: —</div>`;
       const timeLine = t.timeSpent != null ? `<div class="card-time-spent">⏲ TIME SPENT: ${fmtHours(t.timeSpent)}</div>` : '';
       const exp2 = getTaskExpense(t);
       const expLine = exp2 ? `<div class="card-expense">💰 $${exp2.total.toFixed(2)}${exp2.taxDed > 0 ? ' · TAX DED.' : ''}</div>` : '';
+      const filesLine = t.files && t.files.length ? `<div class="card-files">📎 ${t.files.length} FILE${t.files.length > 1 ? 'S' : ''}</div>` : '';
       const notesLine = (showCardNotes && t.notes) ? `<div class="card-notes">${esc(t.notes)}</div>` : '';
       const safeKey  = esc(t._key);
       const safeName = esc(t.name);
@@ -3094,7 +3182,7 @@ function renderCategoryBoard() {
   <div class="card-name">${safeName}</div>
   ${hiPriLine}
   <div class="card-timer ${colorCls}">${timerTxt}</div>
-  ${startedLine}${dueLine}${timeLine}${expLine}
+  ${startedLine}${dueLine}${timeLine}${expLine}${filesLine}
   <div class="card-status">${statusLbl}</div>
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
   ${notesLine}<div class="card-actions">
@@ -3176,9 +3264,9 @@ function buildCatList() {
   <input type="text" value="${esc(c.label)}" placeholder="NAME" maxlength="14"
     oninput="tmpCats[${i}].label=this.value.toUpperCase();this.value=this.value.toUpperCase()">
   <input type="color" value="${c.color}" oninput="tmpCats[${i}].color=this.value">
-  <input type="number" class="yellow-input" value="${c.yellow}" min="0.5" max="365" step="0.5" oninput="tmpCats[${i}].yellow=parseFloat(this.value)||1">
-  <input type="number" class="orange-input" value="${c.orange}" min="1"   max="365" step="0.5" oninput="tmpCats[${i}].orange=parseFloat(this.value)||2">
-  <input type="number" class="red-input"    value="${c.red}"    min="1"   max="365" step="0.5" oninput="tmpCats[${i}].red=parseFloat(this.value)||3">
+  <input type="number" class="green-input"  value="${c.yellow}" min="0.5" max="365" step="0.5" oninput="tmpCats[${i}].yellow=parseFloat(this.value)||1">
+  <input type="number" class="yellow-input" value="${c.orange}" min="1"   max="365" step="0.5" oninput="tmpCats[${i}].orange=parseFloat(this.value)||2">
+  <input type="number" class="orange-input" value="${c.red}"    min="1"   max="365" step="0.5" oninput="tmpCats[${i}].red=parseFloat(this.value)||3">
   <button class="btn-rm-cat" onclick="removeCat(${i})">✕</button>
 </div>`).join('');
 }
@@ -3193,7 +3281,7 @@ function saveSettings() {
   if (!cats.length) { alert('Please add at least one category.'); return; }
   for (const c of cats) {
     if (!(c.yellow < c.orange && c.orange < c.red)) {
-      alert(`"${c.label}": thresholds must be in order — YELLOW < ORANGE < RED`); return;
+      alert(`"${c.label}": thresholds must be in order — GREEN < YELLOW < ORANGE`); return;
     }
   }
   cfg.categories       = cats;
@@ -3516,6 +3604,11 @@ function renderDayView() {
     return `<div class="cal-allday-chip" style="background:${color}44;color:${color};display:inline-block;margin-right:4px;margin-bottom:2px;padding:2px 8px;border-radius:3px;font-size:0.7rem;cursor:pointer"
       onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}</div>`;
   }).join('');
+  // Task due date chips in day view all-day bar
+  const dueTasks = getTasksDueOnDay(dayStart);
+  const dueChips = dueTasks.map(t =>
+    `<div class="cal-due-chip" style="display:inline-block;margin-right:4px;margin-bottom:2px" onclick="event.stopPropagation();openEditTask('${esc(t._key)}')" title="DUE: ${esc(t.name)}">● ${esc(t.name)}</div>`
+  ).join('');
 
   const timedEvts = events.filter(e => !e.allDay && getEventsForDay(dayStart).includes(e));
   const evBlocks  = packAndRenderBlocks(timedEvts, dayStart, HOUR_H);
@@ -3529,7 +3622,7 @@ function renderDayView() {
   container.innerHTML = `<div class="cal-day-view">
   <div class="cal-day-allday-bar">
     <div class="cal-day-allday-gutter">ALL DAY</div>
-    <div class="cal-day-allday-content">${allDayChips || '<span style="font-size:0.65rem;color:#444">No all-day events</span>'}</div>
+    <div class="cal-day-allday-content">${allDayChips}${dueChips || ''} ${!allDayChips && !dueChips ? '<span style="font-size:0.65rem;color:#444">No all-day events</span>' : ''}</div>
   </div>
   <div class="cal-day-scroll">
     <div class="cal-day-grid">
@@ -3608,7 +3701,9 @@ function openAddEvent(prefillDateISO, prefillHour) {
   document.getElementById('evTitle').value    = '';
   document.getElementById('evDesc').value     = '';
   document.getElementById('evLocation').value = '';
-  document.getElementById('evAssignee').value = '';
+  evAssigneesList = [];
+  renderEvAssigneeChips();
+  document.getElementById('evAssigneeInput').value = '';
   document.getElementById('evBudget').value   = '';
   document.getElementById('evAllDay').checked = false;
   toggleEventAllDay();
@@ -3658,7 +3753,12 @@ function openEditEvent(key, e) {
   document.getElementById('evTitle').value    = ev.title       || '';
   document.getElementById('evDesc').value     = ev.description  || '';
   document.getElementById('evLocation').value = ev.location     || '';
-  document.getElementById('evAssignee').value = ev.assignee     || '';
+  // Multi-assignee: read from assignees array, fall back to legacy single assignee
+  if (ev.assignees && ev.assignees.length) { evAssigneesList = [...ev.assignees]; }
+  else if (ev.assignee && ev.assignee !== '—') { evAssigneesList = [ev.assignee]; }
+  else { evAssigneesList = []; }
+  document.getElementById('evAssigneeInput').value = '';
+  renderEvAssigneeChips();
   document.getElementById('evBudget').value   = ev.estimatedBudget != null ? ev.estimatedBudget : '';
   buildExpenseCatSelect('evExpCat', ev.expenseCategory || '');
   document.getElementById('evAllDay').checked = !!ev.allDay;
@@ -3729,7 +3829,8 @@ function saveEvent() {
     endAt,
     category:        document.getElementById('evCategory').value,
     location:        document.getElementById('evLocation').value.trim() || null,
-    assignee:        document.getElementById('evAssignee').value.trim() || null,
+    assignees:       evAssigneesList.length ? evAssigneesList : null,
+    assignee:        null,   // clear legacy single assignee field
     estimatedBudget: !isNaN(evBudgetVal) && evBudgetVal > 0 ? evBudgetVal : null,
     expenseCategory: document.getElementById('evExpCat').value || null,
     recurrence:      (recurVal && recurVal !== 'none') ? recurVal : null,
