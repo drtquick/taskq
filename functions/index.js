@@ -24,7 +24,7 @@ const db = admin.database();
 const SMTP_PASSWORD = defineSecret('SMTP_PASSWORD');
 
 // SMTP config for MXRoute
-const SMTP_HOST = 'mail.mxroute.com';
+const SMTP_HOST = 'chocobo.mxrouting.net';
 const SMTP_PORT = 465;
 const SMTP_USER = 'taskq@qponent.com';
 
