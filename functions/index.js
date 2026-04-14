@@ -17,6 +17,9 @@ const { onRequest }   = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const admin            = require('firebase-admin');
 const nodemailer       = require('nodemailer');
+const { ImapFlow }     = require('imapflow');
+const { simpleParser } = require('mailparser');
+const ical             = require('node-ical');
 
 admin.initializeApp();
 const db = admin.database();
@@ -423,5 +426,277 @@ exports.inboundEmail = onRequest(
       console.error('inboundEmail error:', err);
       res.status(500).json({ error: err.message });
     }
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IMAP Inbox Polling — scheduled every 5 minutes
+// Pulls unseen messages from taskq@qponent.com, authenticates sender via DKIM,
+// looks up matching TaskQ user by email, creates tasks or calendar events.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const IMAP_HOST = 'chocobo.mxrouting.net';
+const IMAP_PORT = 993;
+const IMAP_USER = 'taskq@qponent.com';
+
+// Extract first "pass" or "fail" result for dkim from Authentication-Results header
+function checkDkimPass(headers) {
+  const ar = headers.get('authentication-results');
+  if (!ar) return false;
+  const str = Array.isArray(ar) ? ar.join(' ') : String(ar);
+  return /dkim=pass/i.test(str);
+}
+
+// Strip RFC 5322 display name, return lowercase bare address
+function bareEmail(addrField) {
+  if (!addrField) return null;
+  const val = addrField.value?.[0]?.address || addrField.text || String(addrField);
+  const m = String(val).match(/[\w.+-]+@[\w.-]+\.\w+/);
+  return m ? m[0].toLowerCase() : null;
+}
+
+async function resolveUidByEmail(email) {
+  try {
+    const rec = await admin.auth().getUserByEmail(email);
+    return rec.uid;
+  } catch (err) {
+    return null;
+  }
+}
+
+async function pickWorkspaceForUser(uid, subject) {
+  const wsSnap = await db.ref(`users/${uid}/workspaces`).once('value');
+  const wsList = wsSnap.val() || {};
+  const entries = Object.entries(wsList);
+  if (!entries.length) return null;
+  // Look for [WS:name] tag in subject
+  const tag = (subject || '').match(/\[WS:([^\]]+)\]/i);
+  if (tag) {
+    const want = tag[1].trim().toUpperCase();
+    const hit = entries.find(([, v]) => (v.name || '').toUpperCase() === want);
+    if (hit) return hit[0];
+  }
+  // Oldest workspace first (matches UI default)
+  entries.sort(([, a], [, b]) => (a.createdAt || 0) - (b.createdAt || 0));
+  return entries[0][0];
+}
+
+function cleanSubjectForTitle(subject) {
+  return (subject || '(No subject)')
+    .replace(/\[WS:[^\]]+\]/gi, '')
+    .replace(/^\s*(Re:|Fwd?:)\s*/gi, '')
+    .trim();
+}
+
+async function uploadAttachmentsToStorage(attachments, wsId, taskKey) {
+  if (!attachments || !attachments.length) return [];
+  const bucket = admin.storage().bucket();
+  const files = [];
+  for (const att of attachments) {
+    if (!att.content || !att.filename) continue;
+    // Skip calendar attachments (handled separately)
+    if (/\.ics$/i.test(att.filename) || att.contentType === 'text/calendar') continue;
+    const safe = att.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `workspaces/${wsId}/tasks/${taskKey}/${Date.now()}_${safe}`;
+    const fileRef = bucket.file(path);
+    await fileRef.save(att.content, {
+      metadata: { contentType: att.contentType || 'application/octet-stream' }
+    });
+    // Make publicly readable download URL via getSignedUrl (long-lived)
+    const [url] = await fileRef.getSignedUrl({
+      action: 'read',
+      expires: '03-01-2500'
+    });
+    files.push({
+      name: att.filename,
+      url,
+      path,
+      size: att.size || (att.content && att.content.length) || 0,
+      type: att.contentType || ''
+    });
+  }
+  return files;
+}
+
+function extractIcsEvents(attachments, htmlOrText) {
+  const events = [];
+  const buffers = [];
+  (attachments || []).forEach(att => {
+    if (/\.ics$/i.test(att.filename || '') || att.contentType === 'text/calendar') {
+      if (att.content) buffers.push(att.content.toString('utf8'));
+    }
+  });
+  for (const buf of buffers) {
+    try {
+      const parsed = ical.sync.parseICS(buf);
+      for (const k of Object.keys(parsed)) {
+        const item = parsed[k];
+        if (item.type === 'VEVENT') events.push(item);
+      }
+    } catch (e) {
+      console.warn('Bad ICS:', e.message);
+    }
+  }
+  return events;
+}
+
+async function createEventFromIcs(uid, wsId, vevent, fromEmail) {
+  const start = new Date(vevent.start).getTime();
+  const end = vevent.end ? new Date(vevent.end).getTime() : start + 3600000;
+  // Detect all-day: if start is at midnight UTC and no time info
+  const isAllDay =
+    (typeof vevent.start === 'string' && !vevent.start.includes('T')) ||
+    (vevent.datetype === 'date');
+  const data = {
+    title: (vevent.summary || '(No title)').toString(),
+    description: vevent.description ? String(vevent.description) : null,
+    allDay: !!isAllDay,
+    startAt: start,
+    endAt: end,
+    category: 'Appointments',
+    location: vevent.location ? String(vevent.location) : null,
+    assignees: null,
+    assignee: null,
+    estimatedBudget: null,
+    expenseCategory: null,
+    recurrence: null,
+    recurEnd: null,
+    source: 'email',
+    sourceFrom: fromEmail
+  };
+  const ref = await db.ref(`workspaces/${wsId}/events`).push(data);
+  return ref.key;
+}
+
+async function createTaskFromEmail(uid, wsId, subject, bodyText, fromEmail) {
+  const cleanName = cleanSubjectForTitle(subject);
+  const tasksRef = db.ref(`workspaces/${wsId}/tasks`);
+  const existingSnap = await tasksRef.once('value');
+  const num = (existingSnap.numChildren() || 0) + 1;
+  const settingsSnap = await db.ref(`workspaces/${wsId}/settings`).once('value');
+  const settings = settingsSnap.val() || {};
+  const category = (settings.categories || [])[0] || 'General';
+  const taskData = {
+    id: 'T-' + String(num).padStart(3, '0'),
+    name: cleanName,
+    assignees: null,
+    category,
+    createdAt: Date.now(),
+    dueAt: null,
+    urgent: null,
+    highPriority: null,
+    status: 'active',
+    doneAt: null,
+    description: bodyText ? String(bodyText).slice(0, 2000) : null,
+    source: 'email',
+    sourceFrom: fromEmail
+  };
+  const ref = await tasksRef.push(taskData);
+  return ref.key;
+}
+
+async function processOneMessage(client, uid, mailbox, seq) {
+  const fetched = await client.fetchOne(seq, { source: true, envelope: true });
+  if (!fetched) return { skipped: true, reason: 'not found' };
+  const parsed = await simpleParser(fetched.source);
+  const subject = parsed.subject || '';
+  const fromEmail = bareEmail(parsed.from);
+  const wsId = await pickWorkspaceForUser(uid, subject);
+  if (!wsId) return { skipped: true, reason: 'no workspace' };
+  const vevents = extractIcsEvents(parsed.attachments, parsed.html || parsed.text);
+  if (vevents.length) {
+    for (const ve of vevents) {
+      await createEventFromIcs(uid, wsId, ve, fromEmail);
+    }
+    return { type: 'event', count: vevents.length, wsId };
+  }
+  const bodyText = parsed.text || (parsed.html ? parsed.html.replace(/<[^>]+>/g, ' ') : '');
+  const taskKey = await createTaskFromEmail(uid, wsId, subject, bodyText, fromEmail);
+  const fileMeta = await uploadAttachmentsToStorage(parsed.attachments, wsId, taskKey);
+  if (fileMeta.length) {
+    await db.ref(`workspaces/${wsId}/tasks/${taskKey}/files`).set(fileMeta);
+  }
+  return { type: 'task', key: taskKey, files: fileMeta.length, wsId };
+}
+
+exports.pollInbox = onSchedule(
+  {
+    schedule: 'every 5 minutes',
+    timeZone: 'America/Chicago',
+    secrets: [SMTP_PASSWORD],
+    timeoutSeconds: 300,
+    memory: '512MiB'
+  },
+  async () => {
+    const client = new ImapFlow({
+      host: IMAP_HOST,
+      port: IMAP_PORT,
+      secure: true,
+      auth: { user: IMAP_USER, pass: SMTP_PASSWORD.value() },
+      logger: false
+    });
+    await client.connect();
+    const lock = await client.getMailboxLock('INBOX');
+    let processed = 0, skipped = 0, errors = 0;
+    try {
+      const unseen = await client.search({ seen: false }, { uid: true });
+      for (const uid of unseen || []) {
+        try {
+          const msg = await client.fetchOne(uid, { source: true, envelope: true }, { uid: true });
+          if (!msg) { skipped++; continue; }
+          const parsed = await simpleParser(msg.source);
+          const fromEmail = bareEmail(parsed.from);
+          const dkimOk = checkDkimPass(parsed.headers);
+          if (!fromEmail) {
+            console.log('No from address, marking seen');
+            await client.messageFlagsAdd(uid, ['\\Seen'], { uid: true });
+            skipped++;
+            continue;
+          }
+          if (!dkimOk) {
+            console.log(`DKIM did not pass for ${fromEmail}, rejecting`);
+            await client.messageFlagsAdd(uid, ['\\Seen', '\\Flagged'], { uid: true });
+            skipped++;
+            continue;
+          }
+          const userUid = await resolveUidByEmail(fromEmail);
+          if (!userUid) {
+            console.log(`No TaskQ user for ${fromEmail}, rejecting`);
+            await client.messageFlagsAdd(uid, ['\\Seen', '\\Flagged'], { uid: true });
+            skipped++;
+            continue;
+          }
+          const wsId = await pickWorkspaceForUser(userUid, parsed.subject);
+          if (!wsId) {
+            console.log(`No workspace for uid ${userUid}`);
+            await client.messageFlagsAdd(uid, ['\\Seen', '\\Flagged'], { uid: true });
+            skipped++;
+            continue;
+          }
+          const vevents = extractIcsEvents(parsed.attachments);
+          if (vevents.length) {
+            for (const ve of vevents) await createEventFromIcs(userUid, wsId, ve, fromEmail);
+            console.log(`Created ${vevents.length} event(s) for ${fromEmail} in ${wsId}`);
+          } else {
+            const bodyText = parsed.text || (parsed.html ? parsed.html.replace(/<[^>]+>/g, ' ') : '');
+            const taskKey = await createTaskFromEmail(userUid, wsId, parsed.subject, bodyText, fromEmail);
+            const fileMeta = await uploadAttachmentsToStorage(parsed.attachments, wsId, taskKey);
+            if (fileMeta.length) {
+              await db.ref(`workspaces/${wsId}/tasks/${taskKey}/files`).set(fileMeta);
+            }
+            console.log(`Created task in ${wsId} for ${fromEmail} (files: ${fileMeta.length})`);
+          }
+          await client.messageFlagsAdd(uid, ['\\Seen'], { uid: true });
+          processed++;
+        } catch (e) {
+          console.error(`Error processing uid ${uid}:`, e);
+          errors++;
+        }
+      }
+    } finally {
+      lock.release();
+      await client.logout();
+    }
+    console.log(`pollInbox done: processed=${processed} skipped=${skipped} errors=${errors}`);
   }
 );
