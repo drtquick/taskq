@@ -224,8 +224,21 @@ async function buildAndSendReport(smtpPassword) {
   const recipients = (emailCfg.recipients || []).filter(r => r && r.includes('@'));
   if (!recipients.length) recipients.push(DEFAULT_RECIPIENT);
 
-  const wsSnap     = await db.ref('workspaces').once('value');
+  const [wsSnap, usersSnap] = await Promise.all([
+    db.ref('workspaces').once('value'),
+    db.ref('users').once('value'),
+  ]);
   const workspaces = wsSnap.val() || {};
+  const users = usersSnap.val() || {};
+
+  // Build wsId -> name map from users/{uid}/workspaces/{wsId}/name
+  const wsNameById = {};
+  Object.values(users).forEach(userData => {
+    const userWs = userData?.workspaces || {};
+    Object.entries(userWs).forEach(([wsId, entry]) => {
+      if (entry?.name && !wsNameById[wsId]) wsNameById[wsId] = entry.name;
+    });
+  });
 
   const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0);
   const todayStart   = todayMidnight.getTime();
@@ -236,7 +249,7 @@ async function buildAndSendReport(smtpPassword) {
   let allEvents = [];
 
   Object.entries(workspaces).forEach(([wsId, wsData]) => {
-    const wsName = wsData.settings?.subtitle || wsId;
+    const wsName = wsNameById[wsId] || wsData.settings?.subtitle || wsId;
     const wsTasks = Object.entries(wsData.tasks || {})
       .map(([k, v]) => ({ ...v, _key: k, _wsId: wsId, _wsName: wsName }));
     const wsEvents = Object.entries(wsData.events || {})
