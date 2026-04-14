@@ -1340,17 +1340,8 @@ input[type="date"] { color-scheme: dark; }
       <input type="text" id="emailFromName" placeholder="TaskQ Daily" maxlength="50">
     </div>
 
-    <div class="email-form-group">
-      <label>From Email</label>
-      <input type="email" id="emailFromEmail" placeholder="taskq@qponent.com">
-      <div class="field-hint">The sender address for outgoing reports (e.g. taskq@qponent.com).</div>
-    </div>
-
-    <div class="email-form-group">
-      <label>Cloud Function URL (Send Now)</label>
-      <input type="text" id="emailFunctionUrl" placeholder="https://us-central1-taskq-80ce7.cloudfunctions.net/sendEmailNow">
-      <div class="field-hint">URL of the deployed <em>sendEmailNow</em> Cloud Function. Pre-filled for TaskQ.</div>
-    </div>
+    <input type="hidden" id="emailFromEmail" value="taskq@qponent.com">
+    <input type="hidden" id="emailFunctionUrl" value="https://us-central1-taskq-80ce7.cloudfunctions.net/sendEmailNow">
 
     <div class="email-form-group">
       <label>Recipients</label>
@@ -2417,7 +2408,7 @@ function openEmailSettings() {
   document.getElementById('emailFunctionUrl').value  = s.functionUrl || 'https://us-central1-taskq-80ce7.cloudfunctions.net/sendEmailNow';
   buildSendHourSelect();
   document.getElementById('emailSendHour').value = s.sendHour != null ? s.sendHour : 7;
-  tmpEmailRecipients = Array.isArray(s.recipients) ? [...s.recipients] : [];
+  tmpEmailRecipients = Array.isArray(s.recipients) && s.recipients.length ? [...s.recipients] : ['trevorcoddington@gmail.com'];
   renderEmailRecipients();
   document.getElementById('emailSettingsOverlay').classList.remove('hidden');
 }
