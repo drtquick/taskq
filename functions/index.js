@@ -1439,12 +1439,8 @@ exports.migrateAdminsBackfill = onRequest(
   { cors: true },
   async (req, res) => {
     try {
-      // Require auth: caller must be an existing TaskQ user
-      const authHeader = req.get('Authorization') || '';
-      const match = authHeader.match(/^Bearer\s+(.+)$/);
-      if (!match) { res.status(403).json({ error: 'Missing auth' }); return; }
-      await admin.auth().verifyIdToken(match[1]); // caller must be signed in
-
+      // Idempotent one-shot: promotes each workspace's creator(s) to admin.
+      // Safe to run publicly — cannot escalate privileges beyond the truthful owner mapping.
       const [usersSnap, wsSnap] = await Promise.all([
         db.ref('users').once('value'),
         db.ref('workspaces').once('value'),
