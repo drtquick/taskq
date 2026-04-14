@@ -632,10 +632,31 @@ function parseNaturalDate(str, refDate) {
 }
 
 // Case-insensitive match against a list; returns the canonical value if found.
+// Handles both strings and TaskQ category objects { id, label, ... }.
 function matchIgnoreCase(want, list) {
   if (!want || !Array.isArray(list)) return null;
   const w = String(want).trim().toLowerCase();
-  return list.find(x => String(x).trim().toLowerCase() === w) || null;
+  for (const x of list) {
+    if (x == null) continue;
+    if (typeof x === 'string') {
+      if (x.trim().toLowerCase() === w) return x;
+    } else if (typeof x === 'object') {
+      // Category objects: check id and label; return id (what TaskQ stores on tasks)
+      if (String(x.id || '').toLowerCase() === w) return x.id;
+      if (String(x.label || '').toLowerCase() === w) return x.id;
+    }
+  }
+  return null;
+}
+
+// First string value from a list of strings or {id,label,...} objects.
+function firstStringValue(list) {
+  if (!Array.isArray(list)) return null;
+  for (const x of list) {
+    if (typeof x === 'string' && x.trim()) return x;
+    if (x && typeof x === 'object' && typeof x.id === 'string') return x.id;
+  }
+  return null;
 }
 
 // Send an acknowledgment reply, threaded to the original message.
@@ -745,7 +766,7 @@ async function createEventFromIcs(uid, wsId, vevent, fromEmail, fields) {
   const assigneeList = settings.assignees || [];
   const category = matchIgnoreCase(fields.category, catList) || 'Appointments';
   const assignees = (fields.assignees || [])
-    .map(a => matchIgnoreCase(a, assigneeList) || a)
+    .map(a => matchIgnoreCase(a, assigneeList) || (typeof a === 'string' ? a : null))
     .filter(Boolean);
   const data = {
     title: (vevent.summary || '(No title)').toString(),
@@ -777,7 +798,7 @@ async function createEventFromFields(uid, wsId, title, description, fields, from
   const assigneeList = settings.assignees || [];
   const category = matchIgnoreCase(fields.category, catList) || 'Appointments';
   const assignees = (fields.assignees || [])
-    .map(a => matchIgnoreCase(a, assigneeList) || a)
+    .map(a => matchIgnoreCase(a, assigneeList) || (typeof a === 'string' ? a : null))
     .filter(Boolean);
   const endAt = startAt + 3600000;
   const data = {
@@ -810,10 +831,10 @@ async function createTaskFromEmail(uid, wsId, cleanName, bodyText, fromEmail, fi
   const settings = settingsSnap.val() || {};
   const catList = settings.categories || [];
   const assigneeList = settings.assignees || [];
-  const category = matchIgnoreCase(fields.category, catList) || catList[0] || 'General';
+  const category = matchIgnoreCase(fields.category, catList) || firstStringValue(catList) || 'General';
   const dueAt = parseNaturalDate(fields.due);
   const assignees = (fields.assignees || [])
-    .map(a => matchIgnoreCase(a, assigneeList) || a)
+    .map(a => matchIgnoreCase(a, assigneeList) || (typeof a === 'string' ? a : null))
     .filter(Boolean);
   const taskData = {
     id: 'T-' + String(num).padStart(3, '0'),
@@ -1021,5 +1042,71 @@ exports.pollInbox = onSchedule(
       await client.logout();
     }
     console.log(`pollInbox done: processed=${processed} skipped=${skipped} errors=${errors}`);
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Daily Database Backup — writes a full snapshot of the Realtime Database
+// to Cloud Storage each morning. Retains 30 days of rolling backups.
+// Storage path: gs://<default-bucket>/db-backups/YYYY-MM-DD.json
+// ─────────────────────────────────────────────────────────────────────────────
+
+exports.dailyBackup = onSchedule(
+  {
+    schedule: '0 4 * * *',
+    timeZone: 'America/Chicago',
+    timeoutSeconds: 540,
+    memory: '512MiB'
+  },
+  async () => {
+    const snap = await db.ref('/').once('value');
+    const data = snap.val() || {};
+    const json = JSON.stringify(data);
+    const bucket = admin.storage().bucket();
+    const now = new Date();
+    const stamp = now.toISOString().slice(0, 10);
+    const path = `db-backups/${stamp}.json`;
+    const file = bucket.file(path);
+    await file.save(Buffer.from(json, 'utf8'), {
+      metadata: { contentType: 'application/json' }
+    });
+    console.log(`Saved DB backup: ${path} (${json.length} bytes)`);
+
+    // Retention: prune backups older than 30 days
+    const [files] = await bucket.getFiles({ prefix: 'db-backups/' });
+    const cutoff = Date.now() - 30 * 86400000;
+    let pruned = 0;
+    for (const f of files) {
+      const m = f.name.match(/db-backups\/(\d{4}-\d{2}-\d{2})\.json$/);
+      if (!m) continue;
+      const ts = Date.parse(m[1] + 'T00:00:00Z');
+      if (!isNaN(ts) && ts < cutoff) {
+        await f.delete().catch(() => {});
+        pruned++;
+      }
+    }
+    console.log(`Pruned ${pruned} backup(s) older than 30 days.`);
+  }
+);
+
+// Manually-triggered backup endpoint, in case you need an on-demand snapshot.
+exports.backupNow = onRequest(
+  { cors: true },
+  async (req, res) => {
+    try {
+      const snap = await db.ref('/').once('value');
+      const data = snap.val() || {};
+      const json = JSON.stringify(data);
+      const bucket = admin.storage().bucket();
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const path = `db-backups/manual-${stamp}.json`;
+      await bucket.file(path).save(Buffer.from(json, 'utf8'), {
+        metadata: { contentType: 'application/json' }
+      });
+      res.json({ success: true, path, size: json.length });
+    } catch (err) {
+      console.error('backupNow error:', err);
+      res.status(500).json({ error: err.message });
+    }
   }
 );
