@@ -20,6 +20,9 @@ const nodemailer       = require('nodemailer');
 const { ImapFlow }     = require('imapflow');
 const { simpleParser } = require('mailparser');
 const ical             = require('node-ical');
+const chrono           = require('chrono-node');
+
+const DEFAULT_TZ = 'America/Chicago';
 
 admin.initializeApp();
 const db = admin.database();
@@ -488,6 +491,155 @@ function cleanSubjectForTitle(subject) {
     .trim();
 }
 
+// Parse structured tags from subject line. Returns { cleanSubject, fields }.
+// Supported: [WS:name] [A:a,b] [@a] [DUE:...] [D:...] [C:cat] [!] [URGENT] [*] [HIGH] [EVENT]
+function parseSubjectTags(subject) {
+  const raw = subject || '';
+  const fields = {
+    ws: null,
+    assignees: [],
+    due: null,
+    category: null,
+    urgent: false,
+    highPriority: false,
+    forceEvent: false,
+  };
+  let s = raw;
+  const addAssignees = (str) => {
+    String(str).split(',').map(x => x.trim()).filter(Boolean).forEach(a => {
+      if (!fields.assignees.includes(a)) fields.assignees.push(a);
+    });
+  };
+  const eatFirst = (re) => {
+    const m = s.match(re);
+    if (m) { s = s.replace(m[0], ' '); return m; }
+    return null;
+  };
+  // Bracketed tags — run each matcher until no more matches
+  const patterns = [
+    { re: /\[WS:([^\]]+)\]/i, on: (m) => { fields.ws = m[1].trim(); } },
+    { re: /\[A:([^\]]+)\]/i,  on: (m) => { addAssignees(m[1]); } },
+    { re: /\[@([^\]]+)\]/i,   on: (m) => { addAssignees(m[1]); } },
+    { re: /\[DUE:([^\]]+)\]/i, on: (m) => { fields.due = m[1].trim(); } },
+    { re: /\[D:([^\]]+)\]/i,   on: (m) => { fields.due = m[1].trim(); } },
+    { re: /\[C:([^\]]+)\]/i,   on: (m) => { fields.category = m[1].trim(); } },
+    { re: /\[URGENT\]/i,  on: () => { fields.urgent = true; } },
+    { re: /\[!\]/,         on: () => { fields.urgent = true; } },
+    { re: /\[HIGH\]/i,    on: () => { fields.highPriority = true; } },
+    { re: /\[\*\]/,        on: () => { fields.highPriority = true; } },
+    { re: /\[EVENT\]/i,   on: () => { fields.forceEvent = true; } },
+  ];
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const p of patterns) {
+      const m = eatFirst(p.re);
+      if (m) { p.on(m); changed = true; }
+    }
+  }
+  const cleanSubject = s
+    .replace(/^\s*(Re:|Fwd?:)\s*/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim() || '(No subject)';
+  return { cleanSubject, fields };
+}
+
+// Parse body header block: keyword lines before first blank / separator.
+// Returns { fields, bodyRest }.
+function parseBodyHeader(bodyText) {
+  const fields = {
+    assignees: [],
+    due: null,
+    category: null,
+    urgent: null,
+    highPriority: null,
+    forceEvent: false,
+    ws: null,
+  };
+  const rawBody = String(bodyText || '');
+  const lines = rawBody.split(/\r?\n/);
+  const keywordRe = /^\s*(assignee|assignees|assigned to|due|due date|category|cat|urgent|priority|high priority|workspace|ws|event)\s*:\s*(.+)$/i;
+  const separatorRe = /^\s*(---+|===+|\*\*\*+)\s*$/;
+  let headerEnd = -1;
+  let seenAnyKeyword = false;
+  for (let i = 0; i < lines.length; i++) {
+    const ln = lines[i];
+    if (separatorRe.test(ln)) { headerEnd = i; break; }
+    if (ln.trim() === '') {
+      if (seenAnyKeyword) { headerEnd = i; break; }
+      continue; // allow leading blank lines
+    }
+    if (!keywordRe.test(ln)) {
+      if (seenAnyKeyword) { headerEnd = i - 1; break; }
+      // No keyword yet, not a keyword line, not blank — there's no header
+      headerEnd = -1;
+      break;
+    }
+    const m = ln.match(keywordRe);
+    seenAnyKeyword = true;
+    const key = m[1].toLowerCase();
+    const val = m[2].trim();
+    if (key === 'assignee' || key === 'assignees' || key === 'assigned to') {
+      val.split(',').map(x => x.trim()).filter(Boolean).forEach(a => {
+        if (!fields.assignees.includes(a)) fields.assignees.push(a);
+      });
+    } else if (key === 'due' || key === 'due date') {
+      fields.due = val;
+    } else if (key === 'category' || key === 'cat') {
+      fields.category = val;
+    } else if (key === 'urgent') {
+      fields.urgent = /^(yes|y|true|1|!)$/i.test(val);
+    } else if (key === 'priority' || key === 'high priority') {
+      fields.highPriority = /^(yes|y|true|1|high|hi|\*)$/i.test(val);
+    } else if (key === 'workspace' || key === 'ws') {
+      fields.ws = val;
+    } else if (key === 'event') {
+      fields.forceEvent = /^(yes|y|true|1)$/i.test(val);
+    }
+  }
+  const bodyRest = (headerEnd >= 0) ? lines.slice(headerEnd + 1).join('\n').replace(/^\s+/, '') : rawBody;
+  return { fields, bodyRest };
+}
+
+// Merge: subject tags win over body header.
+function mergeFields(subjFields, bodyFields) {
+  const assignees = [];
+  (subjFields.assignees || []).forEach(a => { if (!assignees.includes(a)) assignees.push(a); });
+  (bodyFields.assignees || []).forEach(a => { if (!assignees.includes(a)) assignees.push(a); });
+  return {
+    ws:           subjFields.ws            || bodyFields.ws            || null,
+    assignees:    assignees,
+    due:          subjFields.due           || bodyFields.due           || null,
+    category:     subjFields.category      || bodyFields.category      || null,
+    urgent:       subjFields.urgent        || !!bodyFields.urgent      || false,
+    highPriority: subjFields.highPriority  || !!bodyFields.highPriority|| false,
+    forceEvent:   subjFields.forceEvent    || bodyFields.forceEvent    || false,
+  };
+}
+
+function parseNaturalDate(str, refDate) {
+  if (!str) return null;
+  const results = chrono.parse(str, refDate || new Date(), { forwardDate: true });
+  if (!results || !results.length) return null;
+  return results[0].start ? results[0].start.date().getTime() : null;
+}
+
+// Case-insensitive match against a list; returns the canonical value if found.
+function matchIgnoreCase(want, list) {
+  if (!want || !Array.isArray(list)) return null;
+  const w = String(want).trim().toLowerCase();
+  return list.find(x => String(x).trim().toLowerCase() === w) || null;
+}
+
+async function resolveWorkspaceByName(uid, name) {
+  if (!name) return null;
+  const wsSnap = await db.ref(`users/${uid}/workspaces`).once('value');
+  const wsList = wsSnap.val() || {};
+  const want = String(name).trim().toUpperCase();
+  const hit = Object.entries(wsList).find(([, v]) => (v.name || '').toUpperCase() === want);
+  return hit ? hit[0] : null;
+}
+
 async function uploadAttachmentsToStorage(attachments, wsId, taskKey) {
   if (!attachments || !attachments.length) return [];
   const bucket = admin.storage().bucket();
@@ -540,22 +692,31 @@ function extractIcsEvents(attachments, htmlOrText) {
   return events;
 }
 
-async function createEventFromIcs(uid, wsId, vevent, fromEmail) {
+async function createEventFromIcs(uid, wsId, vevent, fromEmail, fields) {
+  fields = fields || {};
   const start = new Date(vevent.start).getTime();
   const end = vevent.end ? new Date(vevent.end).getTime() : start + 3600000;
-  // Detect all-day: if start is at midnight UTC and no time info
   const isAllDay =
     (typeof vevent.start === 'string' && !vevent.start.includes('T')) ||
     (vevent.datetype === 'date');
+  // Resolve category against workspace settings
+  const settingsSnap = await db.ref(`workspaces/${wsId}/settings`).once('value');
+  const settings = settingsSnap.val() || {};
+  const catList = settings.categories || [];
+  const assigneeList = settings.assignees || [];
+  const category = matchIgnoreCase(fields.category, catList) || 'Appointments';
+  const assignees = (fields.assignees || [])
+    .map(a => matchIgnoreCase(a, assigneeList) || a)
+    .filter(Boolean);
   const data = {
     title: (vevent.summary || '(No title)').toString(),
     description: vevent.description ? String(vevent.description) : null,
     allDay: !!isAllDay,
     startAt: start,
     endAt: end,
-    category: 'Appointments',
+    category,
     location: vevent.location ? String(vevent.location) : null,
-    assignees: null,
+    assignees: assignees.length ? assignees : null,
     assignee: null,
     estimatedBudget: null,
     expenseCategory: null,
@@ -568,23 +729,62 @@ async function createEventFromIcs(uid, wsId, vevent, fromEmail) {
   return ref.key;
 }
 
-async function createTaskFromEmail(uid, wsId, subject, bodyText, fromEmail) {
-  const cleanName = cleanSubjectForTitle(subject);
+async function createEventFromFields(uid, wsId, title, description, fields, fromEmail) {
+  const startAt = parseNaturalDate(fields.due);
+  if (!startAt) return null;
+  const settingsSnap = await db.ref(`workspaces/${wsId}/settings`).once('value');
+  const settings = settingsSnap.val() || {};
+  const catList = settings.categories || [];
+  const assigneeList = settings.assignees || [];
+  const category = matchIgnoreCase(fields.category, catList) || 'Appointments';
+  const assignees = (fields.assignees || [])
+    .map(a => matchIgnoreCase(a, assigneeList) || a)
+    .filter(Boolean);
+  const endAt = startAt + 3600000;
+  const data = {
+    title,
+    description: description || null,
+    allDay: false,
+    startAt,
+    endAt,
+    category,
+    location: null,
+    assignees: assignees.length ? assignees : null,
+    assignee: null,
+    estimatedBudget: null,
+    expenseCategory: null,
+    recurrence: null,
+    recurEnd: null,
+    source: 'email',
+    sourceFrom: fromEmail
+  };
+  const ref = await db.ref(`workspaces/${wsId}/events`).push(data);
+  return ref.key;
+}
+
+async function createTaskFromEmail(uid, wsId, cleanName, bodyText, fromEmail, fields) {
+  fields = fields || {};
   const tasksRef = db.ref(`workspaces/${wsId}/tasks`);
   const existingSnap = await tasksRef.once('value');
   const num = (existingSnap.numChildren() || 0) + 1;
   const settingsSnap = await db.ref(`workspaces/${wsId}/settings`).once('value');
   const settings = settingsSnap.val() || {};
-  const category = (settings.categories || [])[0] || 'General';
+  const catList = settings.categories || [];
+  const assigneeList = settings.assignees || [];
+  const category = matchIgnoreCase(fields.category, catList) || catList[0] || 'General';
+  const dueAt = parseNaturalDate(fields.due);
+  const assignees = (fields.assignees || [])
+    .map(a => matchIgnoreCase(a, assigneeList) || a)
+    .filter(Boolean);
   const taskData = {
     id: 'T-' + String(num).padStart(3, '0'),
     name: cleanName,
-    assignees: null,
+    assignees: assignees.length ? assignees : null,
     category,
     createdAt: Date.now(),
-    dueAt: null,
-    urgent: null,
-    highPriority: null,
+    dueAt: dueAt || null,
+    urgent: fields.urgent ? true : null,
+    highPriority: fields.highPriority ? true : null,
     status: 'active',
     doneAt: null,
     description: bodyText ? String(bodyText).slice(0, 2000) : null,
@@ -666,7 +866,18 @@ exports.pollInbox = onSchedule(
             skipped++;
             continue;
           }
-          const wsId = await pickWorkspaceForUser(userUid, parsed.subject);
+          // Parse structured fields from subject and body header
+          const subjParsed = parseSubjectTags(parsed.subject);
+          const rawBody = parsed.text || (parsed.html ? parsed.html.replace(/<[^>]+>/g, ' ') : '');
+          const bodyParsed = parseBodyHeader(rawBody);
+          const fields = mergeFields(subjParsed.fields, bodyParsed.fields);
+          // Workspace: explicit -> resolve by name; else default
+          let wsId = null;
+          if (fields.ws) {
+            wsId = await resolveWorkspaceByName(userUid, fields.ws);
+            if (!wsId) console.log(`Workspace "${fields.ws}" not found, falling back to default`);
+          }
+          if (!wsId) wsId = await pickWorkspaceForUser(userUid, parsed.subject);
           if (!wsId) {
             console.log(`No workspace for uid ${userUid}`);
             await client.messageFlagsAdd(uid, ['\\Seen', '\\Flagged'], { uid: true });
@@ -675,16 +886,18 @@ exports.pollInbox = onSchedule(
           }
           const vevents = extractIcsEvents(parsed.attachments);
           if (vevents.length) {
-            for (const ve of vevents) await createEventFromIcs(userUid, wsId, ve, fromEmail);
+            for (const ve of vevents) await createEventFromIcs(userUid, wsId, ve, fromEmail, fields);
             console.log(`Created ${vevents.length} event(s) for ${fromEmail} in ${wsId}`);
+          } else if (fields.forceEvent && fields.due) {
+            const evKey = await createEventFromFields(userUid, wsId, subjParsed.cleanSubject, bodyParsed.bodyRest, fields, fromEmail);
+            console.log(`Created forced event ${evKey} in ${wsId} for ${fromEmail}`);
           } else {
-            const bodyText = parsed.text || (parsed.html ? parsed.html.replace(/<[^>]+>/g, ' ') : '');
-            const taskKey = await createTaskFromEmail(userUid, wsId, parsed.subject, bodyText, fromEmail);
+            const taskKey = await createTaskFromEmail(userUid, wsId, subjParsed.cleanSubject, bodyParsed.bodyRest, fromEmail, fields);
             const fileMeta = await uploadAttachmentsToStorage(parsed.attachments, wsId, taskKey);
             if (fileMeta.length) {
               await db.ref(`workspaces/${wsId}/tasks/${taskKey}/files`).set(fileMeta);
             }
-            console.log(`Created task in ${wsId} for ${fromEmail} (files: ${fileMeta.length})`);
+            console.log(`Created task in ${wsId} for ${fromEmail} (files: ${fileMeta.length}, due: ${fields.due || 'none'}, assignees: ${fields.assignees.join(',') || 'none'})`);
           }
           await client.messageFlagsAdd(uid, ['\\Seen'], { uid: true });
           processed++;
