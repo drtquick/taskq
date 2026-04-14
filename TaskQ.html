@@ -1342,14 +1342,14 @@ input[type="date"] { color-scheme: dark; }
 
     <div class="email-form-group">
       <label>From Email</label>
-      <input type="email" id="emailFromEmail" placeholder="noreply@yourdomain.com">
-      <div class="field-hint">Must be a verified sender in your SendGrid account.</div>
+      <input type="email" id="emailFromEmail" placeholder="taskq@qponent.com">
+      <div class="field-hint">The sender address for outgoing reports (e.g. taskq@qponent.com).</div>
     </div>
 
     <div class="email-form-group">
       <label>Cloud Function URL (Send Now)</label>
-      <input type="text" id="emailFunctionUrl" placeholder="https://us-central1-yourproject.cloudfunctions.net/sendEmailNow">
-      <div class="field-hint">Paste the URL of your deployed <em>sendEmailNow</em> Firebase Function here to enable the "Send Now" button.</div>
+      <input type="text" id="emailFunctionUrl" placeholder="https://us-central1-taskq-80ce7.cloudfunctions.net/sendEmailNow">
+      <div class="field-hint">URL of the deployed <em>sendEmailNow</em> Cloud Function. Pre-filled for TaskQ.</div>
     </div>
 
     <div class="email-form-group">
@@ -2413,8 +2413,8 @@ function openEmailSettings() {
   const s = emailSettings;
   document.getElementById('emailEnabled').checked    = !!s.enabled;
   document.getElementById('emailFromName').value     = s.fromName    || '';
-  document.getElementById('emailFromEmail').value    = s.fromEmail   || '';
-  document.getElementById('emailFunctionUrl').value  = s.functionUrl || '';
+  document.getElementById('emailFromEmail').value    = s.fromEmail   || 'taskq@qponent.com';
+  document.getElementById('emailFunctionUrl').value  = s.functionUrl || 'https://us-central1-taskq-80ce7.cloudfunctions.net/sendEmailNow';
   buildSendHourSelect();
   document.getElementById('emailSendHour').value = s.sendHour != null ? s.sendHour : 7;
   tmpEmailRecipients = Array.isArray(s.recipients) ? [...s.recipients] : [];
