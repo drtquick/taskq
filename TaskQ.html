@@ -1065,6 +1065,15 @@ input[type="date"] { color-scheme: dark; }
       <label>DAYS</label>
       <button class="btn-extend" onclick="extendDates()">+ APPLY</button>
     </div>
+    <div class="edit-task-form-row">
+      <label>MOVE TO WORKSPACE</label>
+      <select id="etMoveToWs">
+        <option value="">— Keep in current workspace —</option>
+      </select>
+      <div class="field-hint" style="font-size:0.7rem;color:#888;margin-top:4px">
+        If the target workspace doesn't have a matching category, the task's category will be set to the first available one there.
+      </div>
+    </div>
     <div class="edit-task-footer" style="justify-content:space-between">
       <button class="btn-edit-cancel" onclick="copyTask()">⎘ COPY TASK</button>
       <div style="display:flex;gap:8px">
@@ -2530,6 +2539,15 @@ function openEditTask(key) {
   }
   buildExpenseItemList();
 
+  // Populate MOVE TO WORKSPACE dropdown with other workspaces
+  const moveSel = document.getElementById('etMoveToWs');
+  const otherWs = Object.entries(userWsList)
+    .filter(([id]) => id !== currentWsId)
+    .sort(([,a],[,b]) => (a.createdAt || 0) - (b.createdAt || 0));
+  moveSel.innerHTML = '<option value="">— Keep in current workspace —</option>' +
+    otherWs.map(([id, w]) => `<option value="${esc(id)}">${esc(w.name || id)}</option>`).join('');
+  moveSel.value = '';
+
   document.getElementById('editTaskOverlay').classList.remove('hidden');
   setTimeout(() => document.getElementById('etName').focus(), 50);
 }
@@ -2586,7 +2604,7 @@ function saveEditTask() {
   const expCat   = document.getElementById('etExpCat').value || null;
   const budgetVal = parseFloat(document.getElementById('etBudget').value);
 
-  tasksRef.child(editingTaskKey).update({
+  const updates = {
     name,
     assignees: assignees.length ? assignees : null,
     assignee: null,   // clear legacy field
@@ -2601,11 +2619,70 @@ function saveEditTask() {
     expenseCategory: expCat,
     estimatedBudget: !isNaN(budgetVal) && budgetVal > 0 ? budgetVal : null,
     files: etFilesList.length ? etFilesList : null,
-    // Clear old format fields
     expense: null,
     taxDeductible: null
-  });
+  };
+
+  const targetWsId = document.getElementById('etMoveToWs').value;
+  if (targetWsId && targetWsId !== currentWsId) {
+    moveTaskToWorkspace(editingTaskKey, targetWsId, updates);
+    return;
+  }
+
+  tasksRef.child(editingTaskKey).update(updates);
   closeEditTask();
+}
+
+async function moveTaskToWorkspace(fromKey, toWsId, updates) {
+  try {
+    // Read the existing task so we preserve status, doneAt, and anything else
+    const srcSnap = await db.ref(`workspaces/${currentWsId}/tasks/${fromKey}`).once('value');
+    const src = srcSnap.val();
+    if (!src) { alert('Task not found.'); return; }
+
+    // Map category: look up target workspace categories and try to match by id or label
+    const targetSettingsSnap = await db.ref(`workspaces/${toWsId}/settings`).once('value');
+    const targetSettings = targetSettingsSnap.val() || {};
+    const targetCats = targetSettings.categories || [];
+    const wantCat = updates.category;
+    let mappedCat = wantCat;
+    if (wantCat && targetCats.length) {
+      const byId = targetCats.find(c => c && c.id === wantCat);
+      if (byId) {
+        mappedCat = byId.id;
+      } else {
+        const srcCat = cfg.categories.find(c => c.id === wantCat);
+        const wantLabel = srcCat ? String(srcCat.label || '').toLowerCase() : '';
+        const byLabel = wantLabel && targetCats.find(c => String(c.label || '').toLowerCase() === wantLabel);
+        mappedCat = byLabel ? byLabel.id : (targetCats[0].id || wantCat);
+      }
+    }
+
+    // Compute a new T-XXX id in the target workspace
+    const targetTasksSnap = await db.ref(`workspaces/${toWsId}/tasks`).once('value');
+    const existing = targetTasksSnap.val() || {};
+    const nextNum = Object.keys(existing).length + 1;
+    const newId = 'T-' + String(nextNum).padStart(3, '0');
+
+    // Merge: start from src, apply updates, override id + category
+    const moved = { ...src, ...updates, id: newId, category: mappedCat };
+    // Firebase .update() stores nulls, but .set() requires we strip undefined
+    Object.keys(moved).forEach(k => { if (moved[k] === undefined) delete moved[k]; });
+
+    // Write to target, then delete from source (atomic multi-path update)
+    const multi = {};
+    const newKey = db.ref(`workspaces/${toWsId}/tasks`).push().key;
+    multi[`workspaces/${toWsId}/tasks/${newKey}`] = moved;
+    multi[`workspaces/${currentWsId}/tasks/${fromKey}`] = null;
+    await db.ref().update(multi);
+
+    const targetWsName = (userWsList[toWsId] && userWsList[toWsId].name) || toWsId;
+    alert(`Task moved to ${targetWsName}. Attached files (if any) remain at their original Storage path and will still open from the task.`);
+    closeEditTask();
+  } catch (err) {
+    console.error('Move failed:', err);
+    alert('Move failed: ' + (err.message || err));
+  }
 }
 
 function markDoneFromEdit() {
