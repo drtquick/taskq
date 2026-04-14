@@ -1062,7 +1062,7 @@ exports.dailyBackup = onSchedule(
     const snap = await db.ref('/').once('value');
     const data = snap.val() || {};
     const json = JSON.stringify(data);
-    const bucket = admin.storage().bucket();
+    const bucket = admin.storage().bucket('taskq-80ce7-backups');
     const now = new Date();
     const stamp = now.toISOString().slice(0, 10);
     const path = `db-backups/${stamp}.json`;
@@ -1097,7 +1097,7 @@ exports.backupNow = onRequest(
       const snap = await db.ref('/').once('value');
       const data = snap.val() || {};
       const json = JSON.stringify(data);
-      const bucket = admin.storage().bucket();
+      const bucket = admin.storage().bucket('taskq-80ce7-backups');
       const stamp = new Date().toISOString().replace(/[:.]/g, '-');
       const path = `db-backups/manual-${stamp}.json`;
       await bucket.file(path).save(Buffer.from(json, 'utf8'), {
