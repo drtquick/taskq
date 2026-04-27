@@ -147,6 +147,10 @@ input[type="date"] { color-scheme: dark; }
 .btn-done:hover   { border-color: var(--green);  color: var(--green); }
 .btn-edit:hover   { border-color: var(--accent); color: var(--accent); }
 .btn-remove:hover { border-color: var(--red);    color: var(--red); }
+.btn-extend-card  { flex: 1; padding: 5px; font-family: var(--font); font-size: 0.68rem; letter-spacing: 1px; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; background: var(--surface2); color: var(--muted); transition: all 0.2s; }
+.btn-extend-card:hover { border-color: var(--yellow); color: var(--yellow); }
+.btn-progress { flex: 1; padding: 5px; font-family: var(--font); font-size: 0.68rem; letter-spacing: 1px; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; background: var(--surface2); color: var(--muted); transition: all 0.2s; }
+.btn-progress:hover { border-color: var(--blue); color: var(--blue); }
 
 /* TABLE VIEW */
 .table-container { flex: 1; padding: 16px 20px; overflow-x: auto; overflow-y: auto; }
@@ -840,6 +844,16 @@ input[type="date"] { color-scheme: dark; }
       </svg>
       SIGN IN WITH GOOGLE
     </button>
+    <div style="margin:16px 0 8px;color:var(--muted);font-size:0.7rem;letter-spacing:2px">OR</div>
+    <div id="emailSignInForm" style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%">
+      <input type="email" id="emailSignInInput" placeholder="EMAIL ADDRESS" maxlength="100"
+        style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:0.75rem;letter-spacing:1px;text-align:center"
+        onkeydown="if(event.key==='Enter')sendEmailLink()">
+      <button class="auth-btn" onclick="sendEmailLink()" style="background:var(--surface2);border-color:var(--border)">
+        ✉ SIGN IN WITH EMAIL LINK
+      </button>
+    </div>
+    <div id="emailLinkSent" class="hidden" style="color:var(--green);font-size:0.72rem;letter-spacing:1px;margin-top:8px">CHECK YOUR EMAIL FOR THE SIGN-IN LINK</div>
     <div class="auth-error" id="authError">SIGN-IN FAILED — PLEASE TRY AGAIN</div>
     <div class="auth-note">Only authorized users can access this board.</div>
   </div>
@@ -903,13 +917,13 @@ input[type="date"] { color-scheme: dark; }
       <select class="input-category" id="iCategory"></select>
       <button class="btn btn-time" id="btnPastStart" onclick="togglePastStart()" title="Set a past start date/time">📅 PAST START</button>
       <div class="quick-time-wrap" id="pastStartWrap" style="display:none">
-        <input class="input-past" id="iPastStart" type="datetime-local">
+        <input class="input-past" id="iPastStart" type="datetime-local" step="900">
         <button class="btn-quick-time" onclick="setQuickTime('iPastStart','eob')" title="End of Business — 5:00 PM">5PM</button>
         <button class="btn-quick-time" onclick="setQuickTime('iPastStart','eod')" title="End of Day — 11:59 PM">11PM</button>
       </div>
       <button class="btn btn-time" id="btnDueDate" onclick="toggleDueDate()" title="Set a future due date">🗓 DUE DATE</button>
       <div class="quick-time-wrap" id="dueDateWrap" style="display:none">
-        <input class="input-due" id="iDueDate" type="datetime-local">
+        <input class="input-due" id="iDueDate" type="datetime-local" step="900">
         <button class="btn-quick-time" onclick="setQuickTime('iDueDate','eob')" title="End of Business — 5:00 PM">5PM</button>
         <button class="btn-quick-time" onclick="setQuickTime('iDueDate','eod')" title="End of Day — 11:59 PM">11PM</button>
       </div>
@@ -929,6 +943,8 @@ input[type="date"] { color-scheme: dark; }
       <button class="btn btn-report" onclick="openTimeReport()" title="Time log report">⏱ TIME LOG</button>
       <button class="btn btn-report" onclick="openUserReport()" title="Person / assignee report">👤 PERSON</button>
       <button class="btn btn-report" onclick="openEmailSettings()" title="Daily email report settings">📧 EMAIL</button>
+      <button class="btn btn-report" onclick="showCalendarFeedUrl()" title="Subscribe to TaskQ events on your iPhone">📱 CAL FEED</button>
+      <button class="btn btn-report" onclick="openGmailMiner()" title="Import events and tasks from Gmail">📥 GMAIL IMPORT</button>
       <div class="view-toggle">
         <button class="btn-view active" id="btnBoard" onclick="setView('board')">🔲 BOARD</button>
         <button class="btn-view" id="btnTable" onclick="setView('table')">📋 TABLE</button>
@@ -1001,6 +1017,7 @@ input[type="date"] { color-scheme: dark; }
           <input type="text" id="etAssigneeInput" placeholder="Add person..." maxlength="30" list="assigneeList" autocomplete="off"
             onkeydown="if(event.key==='Enter'){event.preventDefault();addEtAssignee();}">
           <button class="btn-add-et-assignee" onclick="addEtAssignee()">+ ADD</button>
+          <button class="btn-add-et-assignee" onclick="selectAllEtAssignees()" title="Add all workspace members">ALL</button>
         </div>
       </div>
     </div>
@@ -1014,7 +1031,7 @@ input[type="date"] { color-scheme: dark; }
     </div>
     <div class="edit-task-form-row" id="etPastStartRow" style="display:none">
       <label>STARTED AT</label>
-      <input type="datetime-local" id="etPastStart">
+      <input type="datetime-local" id="etPastStart" step="900">
     </div>
     <div class="edit-task-toggle-row">
       <input type="checkbox" id="etDueDateOn" onchange="toggleEtDueDate()">
@@ -1022,7 +1039,7 @@ input[type="date"] { color-scheme: dark; }
     </div>
     <div class="edit-task-form-row" id="etDueDateRow" style="display:none">
       <label>DUE DATE</label>
-      <input type="datetime-local" id="etDueDate">
+      <input type="datetime-local" id="etDueDate" step="900">
     </div>
     <div class="edit-task-form-row">
       <label>NOTES (OPTIONAL)</label>
@@ -1064,6 +1081,13 @@ input[type="date"] { color-scheme: dark; }
       <input type="number" id="extendDays" min="1" max="365" placeholder="7" value="7">
       <label>DAYS</label>
       <button class="btn-extend" onclick="extendDates()">+ APPLY</button>
+    </div>
+    <div class="edit-task-form-row">
+      <label>NOTIFY VIA SMS</label>
+      <div id="etSmsNotifyList" style="display:flex;flex-direction:column;gap:4px;margin-top:4px"></div>
+      <div class="field-hint" style="font-size:0.7rem;color:#888;margin-top:4px">
+        Check a member to send them a text message about this task. Only members with a phone number on file are shown.
+      </div>
     </div>
     <div class="edit-task-form-row">
       <label>MOVE TO WORKSPACE</label>
@@ -1271,18 +1295,18 @@ input[type="date"] { color-scheme: dark; }
     <div class="event-time-row" id="evDatetimeRows">
       <div class="event-form-row">
         <label>START</label>
-        <input type="datetime-local" id="evStart" oninput="evStartChanged()">
+        <input type="datetime-local" id="evStart" step="900" oninput="evStartChanged()">
       </div>
       <div class="event-form-row">
         <label>END</label>
-        <input type="datetime-local" id="evEnd">
+        <input type="datetime-local" id="evEnd" step="900">
       </div>
     </div>
     <div id="evAllDayDateRow" style="display:none">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
         <div class="event-form-row" style="margin-bottom:0">
           <label>START DATE</label>
-          <input type="date" id="evDateStart">
+          <input type="date" id="evDateStart" oninput="evDateStartChanged()">
         </div>
         <div class="event-form-row" style="margin-bottom:0">
           <label>END DATE (OPTIONAL)</label>
@@ -1305,6 +1329,7 @@ input[type="date"] { color-scheme: dark; }
         <input type="text" id="evAssigneeInput" placeholder="Add person..." maxlength="30" list="assigneeList" autocomplete="off"
           onkeydown="if(event.key==='Enter'){event.preventDefault();addEvAssignee();}">
         <button class="btn-add-et-assignee" onclick="addEvAssignee()">+ ADD</button>
+        <button class="btn-add-et-assignee" onclick="selectAllEvAssignees()" title="Add all workspace members">ALL</button>
       </div>
     </div>
     <div class="event-form-row">
@@ -1328,6 +1353,13 @@ input[type="date"] { color-scheme: dark; }
     <div id="evRecurEndRow" style="display:none" class="event-form-row">
       <label>REPEAT UNTIL (OPTIONAL)</label>
       <input type="date" id="evRecurEnd">
+    </div>
+    <div class="event-form-row">
+      <label>NOTIFY VIA SMS</label>
+      <div id="evSmsNotifyList" style="display:flex;flex-direction:column;gap:4px;margin-top:4px"></div>
+      <div style="font-size:0.7rem;color:#888;margin-top:4px">
+        Check a member to send them a text message with a tap-to-add calendar link. Only members with a phone number on file are shown.
+      </div>
     </div>
     <div class="event-form-row">
       <label>CATEGORY</label>
@@ -1448,12 +1480,66 @@ input[type="date"] { color-scheme: dark; }
   </div>
 </div>
 
+<!-- GMAIL MINER OVERLAY -->
+<div class="edit-task-overlay hidden" id="gmailMinerOverlay">
+  <div class="edit-task-panel" style="max-width:720px">
+    <div class="edit-task-header">
+      <span>📥 GMAIL IMPORT</span>
+      <button class="edit-task-close" onclick="closeGmailMiner()">✕</button>
+    </div>
+    <div style="padding:20px">
+      <div style="margin-bottom:16px;color:var(--muted);font-size:0.72rem;letter-spacing:1px;line-height:1.6">
+        Scan your Gmail for calendar invitations, event confirmations, and actionable items. Select which ones to import as TaskQ events or tasks.
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
+        <select id="gmailSearchPreset" style="flex:1;min-width:180px;padding:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:0.72rem;border-radius:3px">
+          <option value="calendar">Calendar Invitations</option>
+          <option value="flights">Flight Confirmations</option>
+          <option value="appointments">Appointments & Reservations</option>
+          <option value="action">Action Items & Deadlines</option>
+          <option value="custom">Custom Search...</option>
+        </select>
+        <input type="text" id="gmailCustomQuery" placeholder="Custom Gmail search query..." maxlength="200"
+          style="flex:2;min-width:200px;padding:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:0.72rem;border-radius:3px;display:none">
+        <select id="gmailDateRange" style="padding:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:0.72rem;border-radius:3px">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="180">Last 6 months</option>
+        </select>
+        <button class="btn-edit-save" onclick="scanGmail()" id="gmailScanBtn">SCAN</button>
+      </div>
+      <div id="gmailScanStatus" style="display:none;color:var(--accent);font-size:0.72rem;letter-spacing:1px;margin-bottom:12px"></div>
+      <div id="gmailResults" style="max-height:400px;overflow-y:auto"></div>
+      <div id="gmailImportActions" style="display:none;margin-top:16px;display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn-edit-cancel" onclick="closeGmailMiner()">CLOSE</button>
+        <button class="btn-edit-save" onclick="importSelectedGmail()">IMPORT SELECTED</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 
 <script>
+// ── GOOGLE MAPS PLACES CONFIG ─────────────────────────────────────────────────
+const MAPS_API_KEY = ''; // Set your Google Maps API key here to enable location autocomplete
+if (MAPS_API_KEY) {
+  const mapsScript = document.createElement('script');
+  mapsScript.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_API_KEY}&libraries=places&callback=initPlacesAutocomplete`;
+  mapsScript.async = true;
+  mapsScript.defer = true;
+  document.head.appendChild(mapsScript);
+}
+function initPlacesAutocomplete() {
+  const evLocEl = document.getElementById('evLocation');
+  if (evLocEl && window.google && google.maps && google.maps.places) {
+    new google.maps.places.Autocomplete(evLocEl, { types: ['geocode', 'establishment'] });
+  }
+}
 // ── FIREBASE ──────────────────────────────────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyDPRDdAtEL1LyI4rRG2zmBYu2yZZeLV4CI",
@@ -1469,6 +1555,7 @@ const db             = firebase.database();
 const auth           = firebase.auth();
 const storage        = firebase.storage();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
+googleProvider.addScope('https://www.googleapis.com/auth/gmail.readonly');
 // Dynamic refs — set by switchWorkspace()
 let tasksRef         = null;
 let settingsRef      = null;
@@ -1535,6 +1622,7 @@ let settingsSynced    = false;
 let listenersActive   = false;
 // Workspace state
 let currentUser  = null;
+let gmailAccessToken = null;
 let currentWsId  = null;
 let userWsList   = {};   // { wsId: { name, createdAt } }
 
@@ -1549,7 +1637,9 @@ function saveLocal(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 function toLocalDT(date) {
   const d   = new Date(date);
   const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const mins = Math.round(d.getMinutes() / 15) * 15;
+  const snapped = new Date(d); snapped.setMinutes(mins, 0, 0);
+  return `${snapped.getFullYear()}-${pad(snapped.getMonth()+1)}-${pad(snapped.getDate())}T${pad(snapped.getHours())}:${pad(snapped.getMinutes())}`;
 }
 function toLocalDate(date) {
   const d   = new Date(date);
@@ -1561,9 +1651,42 @@ function pad2(n) { return String(n).padStart(2, '0'); }
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 function signIn() {
   document.getElementById('authError').style.display = 'none';
-  auth.signInWithPopup(googleProvider).catch(() => {
+  auth.signInWithPopup(googleProvider).then(result => {
+    if (result.credential) {
+      gmailAccessToken = result.credential.accessToken;
+    }
+  }).catch(() => {
     document.getElementById('authError').style.display = 'block';
   });
+}
+
+function sendEmailLink() {
+  const email = (document.getElementById('emailSignInInput').value || '').trim();
+  if (!email) return;
+  document.getElementById('authError').style.display = 'none';
+  const actionCodeSettings = {
+    url: window.location.href.split('?')[0],
+    handleCodeInApp: true
+  };
+  auth.sendSignInLinkToEmail(email, actionCodeSettings).then(() => {
+    window.localStorage.setItem('emailForSignIn', email);
+    document.getElementById('emailSignInForm').classList.add('hidden');
+    document.getElementById('emailLinkSent').classList.remove('hidden');
+  }).catch(() => {
+    document.getElementById('authError').style.display = 'block';
+  });
+}
+
+// Complete email link sign-in if redirected back
+if (auth.isSignInWithEmailLink(window.location.href)) {
+  let email = window.localStorage.getItem('emailForSignIn');
+  if (!email) email = window.prompt('Please enter your email for confirmation');
+  if (email) {
+    auth.signInWithEmailLink(email, window.location.href).then(() => {
+      window.localStorage.removeItem('emailForSignIn');
+      window.history.replaceState({}, '', window.location.pathname);
+    }).catch(() => {});
+  }
 }
 
 function signOut() { auth.signOut(); }
@@ -2001,6 +2124,21 @@ function addTask() {
 }
 
 function markDone(key) { tasksRef.child(key).update({ status: 'done', doneAt: Date.now() }); }
+
+function quickExtendDue(key) {
+  const days = prompt('Extend due date by how many days from today?', '7');
+  if (!days || isNaN(days) || Number(days) <= 0) return;
+  const newDue = Date.now() + Number(days) * 86400000;
+  tasksRef.child(key).update({ dueAt: newDue });
+}
+
+function markInProgress(key) {
+  tasksRef.child(key).update({ status: 'in_progress' });
+}
+
+function markPendingFromProgress(key) {
+  tasksRef.child(key).update({ status: 'active' });
+}
 
 function confirmRemove(key, name) {
   pendingRemoveKey  = key;
@@ -2616,8 +2754,20 @@ function openEditTask(key) {
 
   // Populate category select
   const sel = document.getElementById('etCategory');
-  sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
-  sel.value = task.category || cfg.categories[0]?.id || '';
+  const curCat = task.category || cfg.categories[0]?.id || '';
+  sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('') +
+    '<option value="__new__" style="color:var(--accent)">+ NEW CATEGORY</option>';
+  sel.value = curCat;
+  sel.onchange = async function() {
+    if (this.value === '__new__') {
+      const newId = await inlineAddCategory('etCategory', curCat);
+      if (newId) {
+        sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('') +
+          '<option value="__new__" style="color:var(--accent)">+ NEW CATEGORY</option>';
+        sel.value = newId;
+      } else { this.value = curCat; }
+    }
+  };
 
   // Past start
   const hasPastStart = !!task.createdAt;
@@ -2668,6 +2818,9 @@ function openEditTask(key) {
   moveSel.innerHTML = '<option value="">— Keep in current workspace —</option>' +
     otherWs.map(([id, w]) => `<option value="${esc(id)}">${esc(w.name || id)}</option>`).join('');
   moveSel.value = '';
+
+  // Populate SMS notify checkboxes (only members with phone numbers)
+  buildSmsNotifyList('etSmsNotifyList');
 
   document.getElementById('editTaskOverlay').classList.remove('hidden');
   setTimeout(() => document.getElementById('etName').focus(), 50);
@@ -2748,13 +2901,17 @@ function saveEditTask() {
     taxDeductible: null
   };
 
+  const smsUids = getCheckedSmsUids('etSmsNotifyList');
+
   const targetWsId = document.getElementById('etMoveToWs').value;
   if (targetWsId && targetWsId !== currentWsId) {
     moveTaskToWorkspace(editingTaskKey, targetWsId, updates);
+    if (smsUids.length) sendSmsForItem('task', editingTaskKey, smsUids);
     return;
   }
 
   tasksRef.child(editingTaskKey).update(updates);
+  if (smsUids.length) sendSmsForItem('task', editingTaskKey, smsUids);
   closeEditTask();
 }
 
@@ -2856,6 +3013,16 @@ function removeEtAssignee(i) {
   renderEtAssigneeChips();
 }
 
+function selectAllEtAssignees() {
+  const all = cfg.assignees || [];
+  all.forEach(name => {
+    if (!etAssigneesList.map(a=>a.toLowerCase()).includes(name.toLowerCase())) {
+      etAssigneesList.push(name);
+    }
+  });
+  renderEtAssigneeChips();
+}
+
 // ── EVENT ASSIGNEE HELPERS ────────────────────────────────────────────────────
 function renderEvAssigneeChips() {
   const container = document.getElementById('evAssigneesChips');
@@ -2880,6 +3047,16 @@ function addEvAssignee() {
 }
 function removeEvAssignee(i) {
   evAssigneesList.splice(i, 1);
+  renderEvAssigneeChips();
+}
+
+function selectAllEvAssignees() {
+  const all = cfg.assignees || [];
+  all.forEach(name => {
+    if (!evAssigneesList.map(a=>a.toLowerCase()).includes(name.toLowerCase())) {
+      evAssigneesList.push(name);
+    }
+  });
   renderEvAssigneeChips();
 }
 
@@ -2955,8 +3132,46 @@ function buildExpenseCatSelect(selectId, currentVal) {
   if (!sel) return;
   const cats = cfg.expenseCategories || [];
   sel.innerHTML = '<option value="">— NONE —</option>' +
-    cats.map(c => `<option value="${esc(c)}"${c === currentVal ? ' selected' : ''}>${esc(c)}</option>`).join('');
+    cats.map(c => `<option value="${esc(c)}"${c === currentVal ? ' selected' : ''}>${esc(c)}</option>`).join('') +
+    '<option value="__new_exp__" style="color:var(--accent)">+ NEW EXPENSE CATEGORY</option>';
   if (currentVal && cats.includes(currentVal)) sel.value = currentVal;
+  sel.onchange = function() {
+    if (this.value === '__new_exp__') {
+      const name = prompt('New expense category name:');
+      if (name && name.trim()) {
+        const upper = name.trim().toUpperCase();
+        if (!cfg.expenseCategories) cfg.expenseCategories = [];
+        if (!cfg.expenseCategories.includes(upper)) {
+          cfg.expenseCategories.push(upper);
+          settingsRef.update({ expenseCategories: cfg.expenseCategories });
+        }
+        buildExpenseCatSelect(selectId, upper);
+      } else {
+        this.value = currentVal || '';
+      }
+    }
+  };
+}
+
+async function inlineAddCategory(selectId, currentVal) {
+  const name = prompt('New category name:');
+  if (!name || !name.trim()) {
+    const sel = document.getElementById(selectId);
+    if (sel) sel.value = currentVal || cfg.categories[0]?.id || '';
+    return null;
+  }
+  const label = name.trim().toUpperCase();
+  const id = label.toLowerCase().replace(/\s+/g, '-');
+  if (cfg.categories.find(c => c.id === id || c.label.toUpperCase() === label)) {
+    alert('A category with that name already exists.');
+    const sel = document.getElementById(selectId);
+    if (sel) sel.value = currentVal || '';
+    return null;
+  }
+  const newCat = { id, label, color: '#2196f3', green: 3, yellow: 5, orange: 7 };
+  cfg.categories.push(newCat);
+  await settingsRef.update({ categories: cfg.categories });
+  return id;
 }
 
 function buildExpenseCatList() {
@@ -3094,16 +3309,20 @@ function getTaskMeta(t, now) {
     return { colorCls: 'done', statusLbl: 'DONE', timerTxt: fmtDuration(dispSecs), progPct: 100 };
   }
 
+  const isInProgress = t.status === 'in_progress';
+
   // URGENT task — treat as 24h deadline from creation
   if (t.urgent) {
     const urgentDeadline = t.createdAt + 86400000;
     const remaining = (urgentDeadline - now) / 1000;
     if (remaining <= 0) {
       const daysOver = Math.floor(Math.abs(remaining) / 86400);
-      return { colorCls: 'red', statusLbl: '⚡ URGENT OVERDUE' + (daysOver > 0 ? ' (' + daysOver + 'd)' : ''), timerTxt: '−' + fmtDuration(remaining), progPct: 100, isUrgent: true };
+      const uoLbl = isInProgress ? '▶ IN PROGRESS · ⚡ URGENT OVERDUE' : '⚡ URGENT OVERDUE';
+      return { colorCls: 'red', statusLbl: uoLbl + (daysOver > 0 ? ' (' + daysOver + 'd)' : ''), timerTxt: '−' + fmtDuration(remaining), progPct: 100, isUrgent: true, isInProgress };
     }
     const progPct = Math.min(100, ((now - t.createdAt) / 86400000) * 100);
-    return { colorCls: 'orange', statusLbl: '⚡ URGENT', timerTxt: fmtDuration(remaining) + ' LEFT', progPct, isUrgent: true };
+    const uLbl = isInProgress ? '▶ IN PROGRESS · ⚡ URGENT' : '⚡ URGENT';
+    return { colorCls: 'orange', statusLbl: uLbl, timerTxt: fmtDuration(remaining) + ' LEFT', progPct, isUrgent: true, isInProgress };
   }
 
   // Due-date mode: thresholds represent remaining time before deadline
@@ -3118,7 +3337,8 @@ function getTaskMeta(t, now) {
     const timerTxt  = remaining <= 0 ? '−' + fmtDuration(remaining) : fmtDuration(remaining) + ' LEFT';
     const totalSpan = t.dueAt - t.createdAt;
     const progPct   = totalSpan > 0 ? Math.min(100, Math.max(0, ((now - t.createdAt) / totalSpan) * 100)) : 0;
-    return { colorCls, statusLbl, timerTxt, progPct };
+    if (isInProgress) statusLbl = '▶ IN PROGRESS · ' + statusLbl;
+    return { colorCls, statusLbl, timerTxt, progPct, isInProgress };
   }
 
   // Elapsed mode: thresholds represent time since creation
@@ -3128,15 +3348,23 @@ function getTaskMeta(t, now) {
   else if (elapsed >= daysSecs(cat, 'yellow')) { colorCls = 'yellow'; statusLbl = 'URGENT';    }
   else                                         { colorCls = 'blue';   statusLbl = 'ON TRACK';  }
   const progPct = Math.min(100, (elapsed / daysSecs(cat, 'red')) * 100);
-  return { colorCls, statusLbl, timerTxt: fmtDuration(elapsed), progPct };
+  if (isInProgress) statusLbl = '▶ IN PROGRESS · ' + statusLbl;
+  return { colorCls, statusLbl, timerTxt: fmtDuration(elapsed), progPct, isInProgress };
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
 function render() {
   const sel = document.getElementById('iCategory');
   const cur = sel.value;
-  sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+  sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('') +
+    '<option value="__new__" style="color:var(--accent)">+ NEW CATEGORY</option>';
   if (cfg.categories.find(c => c.id === cur)) sel.value = cur;
+  sel.onchange = async function() {
+    if (this.value === '__new__') {
+      const newId = await inlineAddCategory('iCategory', cur);
+      if (newId) { render(); sel.value = newId; } else { this.value = cur || cfg.categories[0]?.id || ''; }
+    }
+  };
   if (viewMode === 'table') renderTable();
   else if (viewMode === 'category') renderCategoryBoard();
   else renderBoard();
@@ -3185,7 +3413,7 @@ function renderBoard() {
   }
 
   container.innerHTML = sorted.map(t => {
-    const { colorCls, statusLbl, timerTxt, progPct } = getTaskMeta(t, now);
+    const { colorCls, statusLbl, timerTxt, progPct, isInProgress } = getTaskMeta(t, now);
     const cat    = catById(t.category);
     const isDone = t.status === 'done';
     const safeKey  = esc(t._key);
@@ -3211,6 +3439,10 @@ function renderBoard() {
     const actionBtn = isDone
       ? `<button class="btn-reopen"  onclick="markPending('${safeKey}')">↩ REOPEN</button>`
       : `<button class="btn-done"    onclick="markDone('${safeKey}')">✓ MARK DONE</button>`;
+    const extendBtn = (!isDone && t.dueAt) ? `<button class="btn-extend-card" onclick="quickExtendDue('${safeKey}')">⏩ EXTEND</button>` : '';
+    const progressBtn = isDone ? ''
+      : isInProgress ? `<button class="btn-progress" onclick="markPendingFromProgress('${safeKey}')" style="border-color:var(--blue);color:var(--blue)">⏸ PAUSE</button>`
+      : `<button class="btn-progress" onclick="markInProgress('${safeKey}')">▶ IN PROGRESS</button>`;
 
     return `
 <div class="card ${colorCls}${isSelected ? ' selected-task' : ''}" draggable="true"
@@ -3230,6 +3462,8 @@ function renderBoard() {
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
   ${notesLine}<div class="card-actions">
     ${actionBtn}
+    ${progressBtn}
+    ${extendBtn}
     <button class="btn-edit"   onclick="openEditTask('${safeKey}')">✎ EDIT</button>
     <button class="btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button>
   </div>
@@ -3295,7 +3529,7 @@ function renderTable() {
   const displayMeta = showDone ? withMeta : withMeta.filter(({ t }) => t.status !== 'done');
 
   const rows = displayMeta.map(({ t, cat, meta }) => {
-    const { colorCls, statusLbl, timerTxt } = meta;
+    const { colorCls, statusLbl, timerTxt, isInProgress } = meta;
     const isDone   = t.status === 'done';
     const safeKey  = esc(t._key);
     const safeName = esc(t.name);
@@ -3306,6 +3540,10 @@ function renderTable() {
     const statusBtn = isDone
       ? `<button class="tbl-btn-reopen" onclick="markPending('${safeKey}')">↩ REOPEN</button>`
       : `<button class="tbl-btn-done"   onclick="markDone('${safeKey}')">✓ DONE</button>`;
+    const tblProgressBtn = isDone ? ''
+      : isInProgress ? `<button class="tbl-btn-edit" onclick="markPendingFromProgress('${safeKey}')" title="Pause">⏸</button>`
+      : `<button class="tbl-btn-edit" onclick="markInProgress('${safeKey}')" title="In Progress">▶</button>`;
+    const tblExtendBtn = (!isDone && t.dueAt) ? `<button class="tbl-btn-edit" onclick="quickExtendDue('${safeKey}')" title="Extend due date">⏩</button>` : '';
     const timeCell = t.timeSpent != null ? fmtHours(t.timeSpent) : '—';
     const expTbl = getTaskExpense(t);
     const expCell = expTbl ? `$${expTbl.total.toFixed(2)}${expTbl.taxDed > 0 ? ' ✓' : ''}` : '—';
@@ -3320,7 +3558,7 @@ function renderTable() {
   <td class="td-muted">${t.dueAt ? fmtDate(t.dueAt) : '—'}</td>
   <td class="td-muted">${timeCell}</td>
   <td class="td-muted">${expCell}</td>
-  <td><div class="tbl-actions">${statusBtn}<button class="tbl-btn-edit" onclick="openEditTask('${safeKey}')">✎ EDIT</button><button class="tbl-btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button></div></td>
+  <td><div class="tbl-actions">${statusBtn}${tblProgressBtn}${tblExtendBtn}<button class="tbl-btn-edit" onclick="openEditTask('${safeKey}')">✎ EDIT</button><button class="tbl-btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button></div></td>
 </tr>`;
   }).join('');
 
@@ -3350,7 +3588,7 @@ function renderCategoryBoard() {
   const cols = getOrderedCategories().map(cat => {
     const catTasks = displayTasks.filter(t => t.category === cat.id);
     const cards = catTasks.map(t => {
-      const { colorCls, statusLbl, timerTxt, progPct } = getTaskMeta(t, now);
+      const { colorCls, statusLbl, timerTxt, progPct, isInProgress } = getTaskMeta(t, now);
       const isDone = t.status === 'done';
       const hiPriLine = t.highPriority ? `<div class="card-hipri">★ HIGH PRIORITY</div>` : '';
       const startedLine = `<div class="card-started">STARTED ${fmtDate(t.createdAt)}</div>`;
@@ -3367,6 +3605,10 @@ function renderCategoryBoard() {
       const actionBtn = isDone
         ? `<button class="btn-reopen" onclick="markPending('${safeKey}')">↩ REOPEN</button>`
         : `<button class="btn-done"   onclick="markDone('${safeKey}')">✓ MARK DONE</button>`;
+      const extendBtn2 = (!isDone && t.dueAt) ? `<button class="btn-extend-card" onclick="quickExtendDue('${safeKey}')">⏩ EXTEND</button>` : '';
+      const progressBtn2 = isDone ? ''
+        : isInProgress ? `<button class="btn-progress" onclick="markPendingFromProgress('${safeKey}')" style="border-color:var(--blue);color:var(--blue)">⏸ PAUSE</button>`
+        : `<button class="btn-progress" onclick="markInProgress('${safeKey}')">▶ IN PROGRESS</button>`;
       return `<div class="card ${colorCls}" draggable="true"
   ondragstart="catDragStart('${safeKey}',event)"
   ondragover="event.preventDefault()"
@@ -3380,6 +3622,8 @@ function renderCategoryBoard() {
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
   ${notesLine}<div class="card-actions">
     ${actionBtn}
+    ${progressBtn2}
+    ${extendBtn2}
     <button class="btn-edit" onclick="openEditTask('${safeKey}')">✎ EDIT</button>
     <button class="btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button>
   </div>
@@ -3523,16 +3767,37 @@ function renderMembersList() {
     const roleBadge = m.role === 'admin'
       ? '<span style="font-size:0.6rem;color:var(--green);letter-spacing:2px;">ADMIN</span>'
       : '<span style="font-size:0.6rem;color:var(--muted);letter-spacing:2px;">MEMBER</span>';
-    return `<div style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:4px">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:0.82rem">${esc(m.email || uid)}</div>
-        <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">${roleBadge}</div>
+    const phoneVal = m.phone || '';
+    return `<div style="padding:10px;border:1px solid var(--border);border-radius:4px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.82rem">${esc(m.email || uid)}</div>
+          <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">${roleBadge}</div>
+        </div>
+        <button class="btn-add-item" onclick="openReportConfig('${esc(uid)}')">📧 REPORT</button>
+        <button class="btn-add-item" onclick="toggleRole('${esc(uid)}')">${m.role === 'admin' ? 'DEMOTE' : 'PROMOTE'}</button>
+        <button class="btn-delete-ws" onclick="removeMember('${esc(uid)}')" style="padding:6px 12px">✕ REMOVE</button>
       </div>
-      <button class="btn-add-item" onclick="openReportConfig('${esc(uid)}')">📧 REPORT</button>
-      <button class="btn-add-item" onclick="toggleRole('${esc(uid)}')">${m.role === 'admin' ? 'DEMOTE' : 'PROMOTE'}</button>
-      <button class="btn-delete-ws" onclick="removeMember('${esc(uid)}')" style="padding:6px 12px">✕ REMOVE</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <label style="font-size:0.63rem;color:var(--muted);letter-spacing:1px;white-space:nowrap">PHONE</label>
+        <input type="tel" id="phone_${esc(uid)}" value="${esc(phoneVal)}" placeholder="+15551234567"
+          style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;font-size:0.78rem;border-radius:4px;font-family:var(--font)">
+        <button class="btn-add-item" onclick="saveMemberPhone('${esc(uid)}')">SAVE</button>
+      </div>
     </div>`;
   }).join('');
+}
+
+async function saveMemberPhone(uid) {
+  const input = document.getElementById('phone_' + uid);
+  if (!input) return;
+  const phone = input.value.trim();
+  try {
+    await callAdminApi('setMemberPhone', { wsId: currentWsId, uid, phone: phone || null });
+    input.style.borderColor = 'var(--green)';
+    setTimeout(() => { input.style.borderColor = ''; }, 1500);
+    await loadMembersAndLocks();
+  } catch (e) { alert('Failed to save phone: ' + e.message); }
 }
 
 async function inviteMember() {
@@ -3614,6 +3879,69 @@ async function saveReportConfig() {
   } catch (e) { alert('Failed: ' + e.message); }
 }
 
+// ── SMS NOTIFICATION HELPERS ──────────────────────────────────────────────────
+
+function buildSmsNotifyList(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const entries = Object.entries(currentWsMembers || {}).filter(([, m]) => m.phone);
+  if (!entries.length) {
+    container.innerHTML = '<span style="font-size:0.72rem;color:var(--muted)">No members have phone numbers on file. Add them in the Members panel.</span>';
+    return;
+  }
+  container.innerHTML = entries.map(([uid, m]) => {
+    const displayName = m.email || uid;
+    return `<label style="display:flex;align-items:center;gap:8px;font-size:0.78rem;cursor:pointer;">
+      <input type="checkbox" class="sms-notify-chk" value="${esc(uid)}">
+      ${esc(displayName)} <span style="color:var(--muted);font-size:0.65rem">${esc(m.phone)}</span>
+    </label>`;
+  }).join('');
+}
+
+function getCheckedSmsUids(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return [];
+  return Array.from(container.querySelectorAll('.sms-notify-chk:checked')).map(el => el.value);
+}
+
+async function sendSmsForItem(itemType, itemKey, notifyUids) {
+  if (!notifyUids || !notifyUids.length) return;
+  try {
+    await callAdminApi('sendSmsNotification', {
+      wsId: currentWsId,
+      itemType,
+      itemKey,
+      notifyUids
+    });
+  } catch (e) {
+    console.warn('SMS send failed:', e.message);
+    alert('Task/event saved but SMS notification failed: ' + e.message);
+  }
+}
+
+async function getCalendarFeedUrl() {
+  try {
+    const token = await firebase.auth().currentUser.getIdToken();
+    const res = await fetch(CF_BASE + '/getCalendarFeedUrl', {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Unknown error');
+    return data.url;
+  } catch (e) {
+    alert('Failed to get calendar feed URL: ' + e.message);
+    return null;
+  }
+}
+
+async function showCalendarFeedUrl() {
+  const url = await getCalendarFeedUrl();
+  if (!url) return;
+  const msg = 'Copy this URL and subscribe in your iPhone Calendar app:\n\nSettings > Calendar > Accounts > Add Account > Other > Add Subscribed Calendar\n\nPaste this URL:\n\n' + url;
+  prompt(msg, url);
+}
+
 function buildAssigneeList() {
   document.getElementById('assigneeListSettings').innerHTML = tmpAssignees.map((a, i) => `
 <div class="assignee-row">
@@ -3683,7 +4011,25 @@ function evStartChanged() {
   if (!sv) return;
   const start = new Date(sv);
   if (isNaN(start.getTime())) return;
-  document.getElementById('evEnd').value = toLocalDT(new Date(start.getTime() + 3600000));
+  const endEl = document.getElementById('evEnd');
+  const oldEnd = endEl.value ? new Date(endEl.value) : null;
+  const oldStart = endEl._prevStart ? new Date(endEl._prevStart) : null;
+  let duration = 3600000; // default 1 hour
+  if (oldEnd && oldStart && !isNaN(oldEnd.getTime()) && !isNaN(oldStart.getTime())) {
+    const prevDur = oldEnd.getTime() - oldStart.getTime();
+    if (prevDur > 0) duration = prevDur;
+  }
+  endEl.value = toLocalDT(new Date(start.getTime() + duration));
+  endEl._prevStart = sv;
+}
+
+function evDateStartChanged() {
+  const sv = document.getElementById('evDateStart').value;
+  if (!sv) return;
+  const endEl = document.getElementById('evDateEnd');
+  if (!endEl.value || endEl.value < sv) {
+    endEl.value = sv;
+  }
 }
 
 // Attach mouse scroll wheel to event date/time fields
@@ -3818,6 +4164,11 @@ function getEventInstances(dayStart) {
 function getEventsForDay(dayStart) {
   return getEventInstances(dayStart);
 }
+function evAssigneeLabel(ev) {
+  if (ev.assignees && ev.assignees.length) return ev.assignees.join(', ');
+  if (ev.assignee && ev.assignee !== '—') return ev.assignee;
+  return '';
+}
 
 // ── DUE DATE HELPERS ─────────────────────────────────────────────────────────
 function getTasksDueOnDay(dayStart) {
@@ -3854,8 +4205,10 @@ function renderMonthView() {
       const color = catById(ev.category).color;
       const timeStr = ev.allDay ? 'ALL DAY' : fmtTime(ev.startAt);
       const recurIcon = ev.recurrence && ev.recurrence !== 'none' ? ' 🔁' : '';
+      const assignee = evAssigneeLabel(ev);
+      const assigneeHtml = assignee ? ` <span style="opacity:0.7;font-size:0.6rem">[${esc(assignee)}]</span>` : '';
       return `<div class="cal-event-chip" style="background:${color}33;color:${color};border-left:2px solid ${color}"
-        onclick="openEditEvent('${esc(ev._key)}',event)" title="${esc(ev.title)}">${timeStr} ${esc(ev.title)}${recurIcon}</div>`;
+        onclick="openEditEvent('${esc(ev._key)}',event)" title="${esc(ev.title)}${assignee ? ' — ' + assignee : ''}">${timeStr} ${esc(ev.title)}${assigneeHtml}${recurIcon}</div>`;
     }).join('');
     const moreHtml = more > 0 ? `<div class="cal-event-more">+${more} more</div>` : '';
 
@@ -3910,8 +4263,10 @@ function renderWeekView() {
     const chips = allDayEvts.map(ev => {
       const color = catById(ev.category).color;
       const recurIcon = ev.recurrence && ev.recurrence !== 'none' ? ' 🔁' : '';
+      const assignee = evAssigneeLabel(ev);
+      const assigneeHtml = assignee ? ` <span style="opacity:0.7;font-size:0.6rem">[${esc(assignee)}]</span>` : '';
       return `<div class="cal-allday-chip" style="background:${color}44;color:${color}"
-        onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}${recurIcon}</div>`;
+        onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}${assigneeHtml}${recurIcon}</div>`;
     }).join('');
     // Task due dates in all-day row
     const dueTasks = getTasksDueOnDay(dayStart);
@@ -3982,8 +4337,10 @@ function renderDayView() {
   const allDayEvts = events.filter(e => e.allDay && e.startAt < dayEnd2 && (e.endAt || e.startAt + 86400000) > dayStart);
   const allDayChips = allDayEvts.map(ev => {
     const color = catById(ev.category).color;
+    const assignee = evAssigneeLabel(ev);
+    const assigneeHtml = assignee ? ` <span style="opacity:0.7;font-size:0.6rem">[${esc(assignee)}]</span>` : '';
     return `<div class="cal-allday-chip" style="background:${color}44;color:${color};display:inline-block;margin-right:4px;margin-bottom:2px;padding:2px 8px;border-radius:3px;font-size:0.7rem;cursor:pointer"
-      onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}</div>`;
+      onclick="openEditEvent('${esc(ev._key)}',event)">${esc(ev.title)}${assigneeHtml}</div>`;
   }).join('');
   // Task due date chips in day view all-day bar
   const dueTasks = getTasksDueOnDay(dayStart);
@@ -4047,8 +4404,8 @@ function packAndRenderBlocks(evts, dayStart, hourH) {
     const timeStr = fmtTime(ev.startAt);
     return `<div class="cal-event-block"
       style="top:${topPx}px;height:${htPx}px;left:${leftPct}%;width:${widthPct}%;background:${color}44;color:${color};border-left:3px solid ${color}"
-      onclick="openEditEvent('${esc(ev._key)}',event)" title="${esc(ev.title)}">
-      <strong>${esc(ev.title)}</strong><br>${timeStr}
+      onclick="openEditEvent('${esc(ev._key)}',event)" title="${esc(ev.title)}${evAssigneeLabel(ev) ? ' — ' + evAssigneeLabel(ev) : ''}">
+      <strong>${esc(ev.title)}</strong>${evAssigneeLabel(ev) ? '<br><span style="opacity:0.7;font-size:0.65rem">' + esc(evAssigneeLabel(ev)) + '</span>' : ''}<br>${timeStr}
     </div>`;
   }).join('');
 }
@@ -4058,9 +4415,15 @@ function buildEventCategorySelect(currentCatId) {
   const sel = document.getElementById('evCategory');
   sel.innerHTML = cfg.categories.map(c =>
     `<option value="${c.id}" style="color:${c.color}">${c.label}</option>`
-  ).join('');
+  ).join('') + '<option value="__new__" style="color:var(--accent)">+ NEW CATEGORY</option>';
   const defaultId = currentCatId || cfg.categories[0]?.id || '';
   if (cfg.categories.find(c => c.id === defaultId)) sel.value = defaultId;
+  sel.onchange = async function() {
+    if (this.value === '__new__') {
+      const newId = await inlineAddCategory('evCategory', defaultId);
+      if (newId) { buildEventCategorySelect(newId); } else { this.value = defaultId; }
+    }
+  };
 }
 
 function toggleEventAllDay() {
@@ -4110,6 +4473,7 @@ function openAddEvent(prefillDateISO, prefillHour) {
   }
 
   buildEventCategorySelect();
+  buildSmsNotifyList('evSmsNotifyList');
   document.getElementById('eventOverlay').classList.remove('hidden');
   setTimeout(() => document.getElementById('evTitle').focus(), 50);
 }
@@ -4161,6 +4525,7 @@ function openEditEvent(key, e) {
   toggleEventRecurrence();
 
   buildEventCategorySelect(ev.category);
+  buildSmsNotifyList('evSmsNotifyList');
   document.getElementById('eventOverlay').classList.remove('hidden');
 }
 
@@ -4218,10 +4583,14 @@ function saveEvent() {
     recurEnd:        recurEnd
   };
 
+  const smsUids = getCheckedSmsUids('evSmsNotifyList');
+
   if (editingEventKey) {
     eventsRef.child(editingEventKey).update(data);
+    if (smsUids.length) sendSmsForItem('event', editingEventKey, smsUids);
   } else {
-    eventsRef.push(data);
+    const newRef = eventsRef.push(data);
+    if (smsUids.length) sendSmsForItem('event', newRef.key, smsUids);
   }
 
   closeEventModal();
@@ -4292,6 +4661,209 @@ document.addEventListener('click', function(e) {
   const switcher = document.getElementById('wsSwitcher');
   if (switcher && !switcher.contains(e.target)) closeWsDropdown();
 });
+
+// ── GMAIL MINER ──────────────────────────────────────────────────────────────
+let gmailMinedItems = [];
+
+document.getElementById('gmailSearchPreset').addEventListener('change', function() {
+  document.getElementById('gmailCustomQuery').style.display = this.value === 'custom' ? 'block' : 'none';
+});
+
+function openGmailMiner() {
+  if (!gmailAccessToken) {
+    // Need to re-auth with Gmail scope
+    auth.signInWithPopup(googleProvider).then(result => {
+      if (result.credential) gmailAccessToken = result.credential.accessToken;
+      if (gmailAccessToken) doOpenGmailMiner();
+      else alert('Gmail access was not granted. Please sign in with Google and allow Gmail access.');
+    }).catch(() => alert('Sign-in failed. Gmail import requires Google sign-in with Gmail access.'));
+    return;
+  }
+  doOpenGmailMiner();
+}
+
+function doOpenGmailMiner() {
+  document.getElementById('gmailMinerOverlay').classList.remove('hidden');
+  document.getElementById('gmailResults').innerHTML = '';
+  document.getElementById('gmailScanStatus').style.display = 'none';
+  document.getElementById('gmailImportActions').style.display = 'none';
+  gmailMinedItems = [];
+}
+
+function closeGmailMiner() {
+  document.getElementById('gmailMinerOverlay').classList.add('hidden');
+}
+
+function getGmailQuery() {
+  const preset = document.getElementById('gmailSearchPreset').value;
+  const days = parseInt(document.getElementById('gmailDateRange').value) || 30;
+  const afterDate = new Date(Date.now() - days * 86400000);
+  const afterStr = `${afterDate.getFullYear()}/${afterDate.getMonth()+1}/${afterDate.getDate()}`;
+  const baseAfter = ` after:${afterStr}`;
+
+  switch (preset) {
+    case 'calendar':
+      return `(filename:ics OR subject:"invitation" OR subject:"invite" OR from:calendar-notification@google.com)${baseAfter}`;
+    case 'flights':
+      return `(subject:"flight confirmation" OR subject:"booking confirmation" OR subject:"itinerary" OR subject:"e-ticket")${baseAfter}`;
+    case 'appointments':
+      return `(subject:"appointment" OR subject:"reservation" OR subject:"booking" OR subject:"confirmed" OR subject:"reminder")${baseAfter}`;
+    case 'action':
+      return `(subject:"action required" OR subject:"action needed" OR subject:"deadline" OR subject:"due" OR subject:"todo" OR subject:"to-do" OR subject:"please complete")${baseAfter}`;
+    case 'custom':
+      return (document.getElementById('gmailCustomQuery').value || 'is:important') + baseAfter;
+    default:
+      return `subject:invitation${baseAfter}`;
+  }
+}
+
+async function scanGmail() {
+  const statusEl = document.getElementById('gmailScanStatus');
+  const resultsEl = document.getElementById('gmailResults');
+  const scanBtn = document.getElementById('gmailScanBtn');
+
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'SCANNING GMAIL...';
+  resultsEl.innerHTML = '';
+  scanBtn.disabled = true;
+  gmailMinedItems = [];
+
+  try {
+    const q = encodeURIComponent(getGmailQuery());
+    const listRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${q}&maxResults=25`, {
+      headers: { 'Authorization': `Bearer ${gmailAccessToken}` }
+    });
+
+    if (listRes.status === 401 || listRes.status === 403) {
+      gmailAccessToken = null;
+      statusEl.textContent = 'Gmail access expired. Click SCAN again to re-authenticate.';
+      scanBtn.disabled = false;
+      return;
+    }
+
+    const listData = await listRes.json();
+    const messages = listData.messages || [];
+
+    if (messages.length === 0) {
+      statusEl.textContent = 'NO MATCHING EMAILS FOUND.';
+      scanBtn.disabled = false;
+      return;
+    }
+
+    statusEl.textContent = `FOUND ${messages.length} EMAIL(S). LOADING DETAILS...`;
+
+    // Fetch message details (batch 5 at a time)
+    const items = [];
+    for (let i = 0; i < messages.length; i += 5) {
+      const batch = messages.slice(i, i + 5);
+      const details = await Promise.all(batch.map(m =>
+        fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`, {
+          headers: { 'Authorization': `Bearer ${gmailAccessToken}` }
+        }).then(r => r.json())
+      ));
+
+      for (const msg of details) {
+        const headers = msg.payload?.headers || [];
+        const subject = (headers.find(h => h.name === 'Subject') || {}).value || '(No subject)';
+        const from    = (headers.find(h => h.name === 'From') || {}).value || '';
+        const dateStr = (headers.find(h => h.name === 'Date') || {}).value || '';
+        const msgDate = dateStr ? new Date(dateStr) : null;
+
+        items.push({
+          id: msg.id,
+          subject,
+          from: from.replace(/<[^>]+>/g, '').trim(),
+          date: msgDate,
+          snippet: msg.snippet || '',
+          importAs: 'event', // default
+          checked: false
+        });
+      }
+    }
+
+    gmailMinedItems = items;
+    renderGmailResults();
+    statusEl.textContent = `${items.length} ITEM(S) READY FOR REVIEW.`;
+    document.getElementById('gmailImportActions').style.display = 'flex';
+  } catch (e) {
+    statusEl.textContent = 'ERROR SCANNING GMAIL: ' + e.message;
+  }
+  scanBtn.disabled = false;
+}
+
+function renderGmailResults() {
+  const el = document.getElementById('gmailResults');
+  if (!gmailMinedItems.length) { el.innerHTML = ''; return; }
+
+  el.innerHTML = gmailMinedItems.map((item, i) => {
+    const dateStr = item.date ? fmtDate(item.date.getTime()) : '—';
+    const snipShort = item.snippet.length > 100 ? item.snippet.slice(0, 100) + '...' : item.snippet;
+    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px;border-bottom:1px solid var(--border);${item.checked ? 'background:var(--surface2)' : ''}">
+      <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="gmailMinedItems[${i}].checked=this.checked;renderGmailResults()" style="margin-top:4px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.78rem;color:var(--text);letter-spacing:0.5px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(item.subject)}</div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">${esc(item.from)} · ${dateStr}</div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;line-height:1.4">${esc(snipShort)}</div>
+      </div>
+      <select onchange="gmailMinedItems[${i}].importAs=this.value" style="padding:4px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:0.65rem;border-radius:3px">
+        <option value="event" ${item.importAs==='event'?'selected':''}>EVENT</option>
+        <option value="task" ${item.importAs==='task'?'selected':''}>TASK</option>
+        <option value="skip" ${item.importAs==='skip'?'selected':''}>SKIP</option>
+      </select>
+    </div>`;
+  }).join('');
+}
+
+function toggleAllGmailItems(checked) {
+  gmailMinedItems.forEach(item => item.checked = checked);
+  renderGmailResults();
+}
+
+function importSelectedGmail() {
+  const selected = gmailMinedItems.filter(item => item.checked && item.importAs !== 'skip');
+  if (!selected.length) { alert('No items selected for import.'); return; }
+  if (!currentWsId) { alert('No workspace selected.'); return; }
+
+  let imported = 0;
+  selected.forEach(item => {
+    if (item.importAs === 'event') {
+      const startAt = item.date ? item.date.getTime() : Date.now();
+      const evData = {
+        title:    item.subject,
+        startAt:  startAt,
+        endAt:    startAt + 3600000,
+        allDay:   false,
+        notes:    `Imported from Gmail: ${item.from}\n${item.snippet}`,
+        location: null,
+        category: null,
+        color:    EVENT_COLORS[0],
+        assignees: null,
+        recur:    null,
+        createdAt: Date.now()
+      };
+      eventsRef.push(evData);
+      imported++;
+    } else if (item.importAs === 'task') {
+      const cats = cfg.categories || [];
+      const defCat = cats[0] ? cats[0].id : 'other';
+      const taskData = {
+        name:       item.subject,
+        assignee:   '—',
+        category:   defCat,
+        status:     'active',
+        createdAt:  Date.now(),
+        dueAt:      item.date ? item.date.getTime() + 7 * 86400000 : null,
+        notes:      `Imported from Gmail: ${item.from}\n${item.snippet}`,
+        id:         'GM-' + Date.now().toString(36).toUpperCase()
+      };
+      tasksRef.push(taskData);
+      imported++;
+    }
+  });
+
+  alert(`Imported ${imported} item(s) into TaskQ.`);
+  closeGmailMiner();
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 attachScrollHandlers();

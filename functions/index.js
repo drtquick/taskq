@@ -22,13 +22,17 @@ const { simpleParser } = require('mailparser');
 const ical             = require('node-ical');
 const chrono           = require('chrono-node');
 const { authenticate } = require('mailauth');
+const twilio           = require('twilio');
 
 const DEFAULT_TZ = 'America/Chicago';
 
 admin.initializeApp();
 const db = admin.database();
 
-const SMTP_PASSWORD = defineSecret('SMTP_PASSWORD');
+const SMTP_PASSWORD       = defineSecret('SMTP_PASSWORD');
+const TWILIO_ACCOUNT_SID  = defineSecret('TWILIO_ACCOUNT_SID');
+const TWILIO_AUTH_TOKEN   = defineSecret('TWILIO_AUTH_TOKEN');
+const TWILIO_PHONE_NUMBER = defineSecret('TWILIO_PHONE_NUMBER');
 
 // SMTP config for MXRoute
 const SMTP_HOST = 'chocobo.mxrouting.net';
@@ -1429,6 +1433,322 @@ exports.setMemberReportConfig = onRequest(
     } catch (err) {
       console.error('setMemberReportConfig error:', err);
       res.status(err.message.includes('admin') || err.message.includes('token') || err.message.includes('Authorization') ? 403 : 500).json({ error: err.message });
+    }
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SMS Notifications via Twilio
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getTwilioClient() {
+  return twilio(TWILIO_ACCOUNT_SID.value(), TWILIO_AUTH_TOKEN.value());
+}
+
+async function sendSms(toPhone, messageBody) {
+  const client = getTwilioClient();
+  const from = TWILIO_PHONE_NUMBER.value();
+  try {
+    const msg = await client.messages.create({
+      body: messageBody,
+      from,
+      to: toPhone
+    });
+    console.log(`SMS sent to ${toPhone}: sid=${msg.sid}`);
+    return msg.sid;
+  } catch (err) {
+    console.error(`SMS failed to ${toPhone}:`, err.message);
+    return null;
+  }
+}
+
+// Build an .ics file string for a single event (used in SMS links)
+function buildIcsEvent(title, startTs, endTs, description, location, uid) {
+  const pad = (n) => String(n).padStart(2, '0');
+  const toIcsDate = (ts) => {
+    const d = new Date(ts);
+    return d.getUTCFullYear() +
+      pad(d.getUTCMonth() + 1) +
+      pad(d.getUTCDate()) + 'T' +
+      pad(d.getUTCHours()) +
+      pad(d.getUTCMinutes()) +
+      pad(d.getUTCSeconds()) + 'Z';
+  };
+  const icsUid = uid || `${Date.now()}-${Math.random().toString(36).slice(2)}@taskq`;
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//TaskQ//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${icsUid}`,
+    `DTSTART:${toIcsDate(startTs)}`,
+    `DTEND:${toIcsDate(endTs || startTs + 3600000)}`,
+    `SUMMARY:${(title || '').replace(/[\r\n]/g, ' ')}`,
+  ];
+  if (description) lines.push(`DESCRIPTION:${String(description).replace(/[\r\n]/g, '\\n').slice(0, 500)}`);
+  if (location) lines.push(`LOCATION:${String(location).replace(/[\r\n]/g, ' ')}`);
+  lines.push(
+    `DTSTAMP:${toIcsDate(Date.now())}`,
+    'BEGIN:VALARM',
+    'TRIGGER:-PT30M',
+    'ACTION:DISPLAY',
+    `DESCRIPTION:Reminder: ${title}`,
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  );
+  return lines.join('\r\n');
+}
+
+// Admin endpoint: update a member's phone number
+exports.setMemberPhone = onRequest(
+  { cors: true },
+  async (req, res) => {
+    try {
+      if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+      const body = getBody(req);
+      const { wsId, uid, phone } = body;
+      if (!wsId || !uid) { res.status(400).json({ error: 'wsId and uid required' }); return; }
+      await assertAdmin(req, wsId);
+      const memberSnap = await db.ref(`workspaces/${wsId}/members/${uid}`).once('value');
+      if (!memberSnap.exists()) { res.status(404).json({ error: 'User is not a member' }); return; }
+      const clean = phone ? String(phone).replace(/[^\d+]/g, '') : null;
+      await db.ref(`workspaces/${wsId}/members/${uid}/phone`).set(clean);
+      res.json({ success: true, phone: clean });
+    } catch (err) {
+      console.error('setMemberPhone error:', err);
+      res.status(err.message.includes('admin') || err.message.includes('token') || err.message.includes('Authorization') ? 403 : 500).json({ error: err.message });
+    }
+  }
+);
+
+// Send SMS notifications for a task or event to specified members.
+// Called by the client after saving a task/event with smsNotify list.
+exports.sendSmsNotification = onRequest(
+  { cors: true, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER] },
+  async (req, res) => {
+    try {
+      if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+      const body = getBody(req);
+      const { wsId, itemType, itemKey, notifyUids } = body;
+      if (!wsId || !itemType || !itemKey || !Array.isArray(notifyUids) || !notifyUids.length) {
+        res.status(400).json({ error: 'wsId, itemType (task|event), itemKey, notifyUids[] required' });
+        return;
+      }
+      // Verify caller is authenticated
+      const authHeader = req.get('Authorization') || '';
+      const match = authHeader.match(/^Bearer\s+(.+)$/);
+      if (!match) { res.status(401).json({ error: 'Missing Authorization header' }); return; }
+      try { await admin.auth().verifyIdToken(match[1]); } catch {
+        res.status(403).json({ error: 'Invalid auth token' }); return;
+      }
+
+      // Read the item
+      const itemPath = itemType === 'event'
+        ? `workspaces/${wsId}/events/${itemKey}`
+        : `workspaces/${wsId}/tasks/${itemKey}`;
+      const itemSnap = await db.ref(itemPath).once('value');
+      const item = itemSnap.val();
+      if (!item) { res.status(404).json({ error: 'Item not found' }); return; }
+
+      // Read workspace name
+      const membersSnap = await db.ref(`workspaces/${wsId}/members`).once('value');
+      const members = membersSnap.val() || {};
+
+      // Build the .ics download URL for events
+      let icsUrl = null;
+      if (itemType === 'event' && item.startAt) {
+        // Serve via calendarEvent endpoint
+        icsUrl = `https://us-central1-taskq-80ce7.cloudfunctions.net/calendarEvent?wsId=${wsId}&key=${itemKey}`;
+      }
+
+      const sent = [];
+      const failed = [];
+      for (const uid of notifyUids) {
+        const m = members[uid];
+        if (!m || !m.phone) { failed.push({ uid, reason: 'no phone' }); continue; }
+        let msg = '';
+        if (itemType === 'event') {
+          const startStr = item.startAt ? fmtDateTime(item.startAt, item.allDay) : 'TBD';
+          msg = `TaskQ: ${item.title || '(No title)'}\n${startStr}`;
+          if (item.location) msg += `\n${item.location}`;
+          if (icsUrl) msg += `\n\nTap to add to calendar:\n${icsUrl}`;
+        } else {
+          msg = `TaskQ: ${item.name || '(No title)'}`;
+          if (item.dueAt) msg += `\nDue: ${fmtDateTime(item.dueAt, false)}`;
+          if (item.urgent) msg += '\n*** URGENT ***';
+        }
+        const sid = await sendSms(m.phone, msg);
+        if (sid) sent.push({ uid, sid }); else failed.push({ uid, reason: 'send failed' });
+      }
+      res.json({ success: true, sent: sent.length, failed: failed.length, details: { sent, failed } });
+    } catch (err) {
+      console.error('sendSmsNotification error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// Serve a single event as a downloadable .ics file (for SMS tap-to-add links)
+exports.calendarEvent = onRequest(
+  { cors: true },
+  async (req, res) => {
+    try {
+      const { wsId, key } = req.query;
+      if (!wsId || !key) { res.status(400).send('wsId and key required'); return; }
+      const snap = await db.ref(`workspaces/${wsId}/events/${key}`).once('value');
+      const ev = snap.val();
+      if (!ev) { res.status(404).send('Event not found'); return; }
+      const ics = buildIcsEvent(
+        ev.title,
+        ev.startAt,
+        ev.endAt || ev.startAt + 3600000,
+        ev.description,
+        ev.location,
+        `${key}@taskq-80ce7`
+      );
+      res.set('Content-Type', 'text/calendar; charset=utf-8');
+      res.set('Content-Disposition', `attachment; filename="${(ev.title || 'event').replace(/[^a-zA-Z0-9 ]/g, '')}.ics"`);
+      res.send(ics);
+    } catch (err) {
+      console.error('calendarEvent error:', err);
+      res.status(500).send('Internal error');
+    }
+  }
+);
+
+// Serve a full .ics calendar feed for a user (for iPhone calendar subscription).
+// URL: /calendarFeed?uid=XYZ&token=SECRET
+// The token is stored at users/{uid}/calFeedToken and generated on first request.
+exports.calendarFeed = onRequest(
+  { cors: true },
+  async (req, res) => {
+    try {
+      const { uid, token } = req.query;
+      if (!uid || !token) { res.status(400).send('uid and token required'); return; }
+      // Verify token
+      const tokenSnap = await db.ref(`users/${uid}/calFeedToken`).once('value');
+      if (!tokenSnap.exists() || tokenSnap.val() !== token) {
+        res.status(403).send('Invalid or expired token');
+        return;
+      }
+      // Gather all events from all workspaces the user belongs to
+      const wsSnap = await db.ref(`users/${uid}/workspaces`).once('value');
+      const userWs = wsSnap.val() || {};
+      const wsIds = Object.keys(userWs);
+      const pad = (n) => String(n).padStart(2, '0');
+      const toIcsDate = (ts) => {
+        const d = new Date(ts);
+        return d.getUTCFullYear() +
+          pad(d.getUTCMonth() + 1) +
+          pad(d.getUTCDate()) + 'T' +
+          pad(d.getUTCHours()) +
+          pad(d.getUTCMinutes()) +
+          pad(d.getUTCSeconds()) + 'Z';
+      };
+      const toIcsDateOnly = (ts) => {
+        const d = new Date(ts);
+        return d.getUTCFullYear() +
+          pad(d.getUTCMonth() + 1) +
+          pad(d.getUTCDate());
+      };
+
+      const vevents = [];
+      for (const wsId of wsIds) {
+        const evSnap = await db.ref(`workspaces/${wsId}/events`).once('value');
+        const wsEvents = evSnap.val() || {};
+        const wsName = userWs[wsId]?.name || wsId;
+        for (const [key, ev] of Object.entries(wsEvents)) {
+          if (!ev.startAt) continue;
+          const lines = [];
+          lines.push('BEGIN:VEVENT');
+          lines.push(`UID:${key}@taskq-80ce7`);
+          if (ev.allDay) {
+            lines.push(`DTSTART;VALUE=DATE:${toIcsDateOnly(ev.startAt)}`);
+            if (ev.endAt) lines.push(`DTEND;VALUE=DATE:${toIcsDateOnly(ev.endAt)}`);
+          } else {
+            lines.push(`DTSTART:${toIcsDate(ev.startAt)}`);
+            lines.push(`DTEND:${toIcsDate(ev.endAt || ev.startAt + 3600000)}`);
+          }
+          lines.push(`SUMMARY:${String(ev.title || '').replace(/[\r\n]/g, ' ')} [${wsName}]`);
+          if (ev.description) lines.push(`DESCRIPTION:${String(ev.description).replace(/[\r\n]/g, '\\n').slice(0, 500)}`);
+          if (ev.location) lines.push(`LOCATION:${String(ev.location).replace(/[\r\n]/g, ' ')}`);
+          lines.push(`DTSTAMP:${toIcsDate(Date.now())}`);
+          // Add a 30-minute reminder
+          lines.push('BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', `DESCRIPTION:${ev.title || 'TaskQ Event'}`, 'END:VALARM');
+          lines.push('END:VEVENT');
+          vevents.push(lines.join('\r\n'));
+        }
+        // Also include tasks with due dates as VTODO or VEVENT
+        const taskSnap = await db.ref(`workspaces/${wsId}/tasks`).once('value');
+        const wsTasks = taskSnap.val() || {};
+        for (const [key, t] of Object.entries(wsTasks)) {
+          if (!t.dueAt || t.status === 'done') continue;
+          const lines = [];
+          lines.push('BEGIN:VEVENT');
+          lines.push(`UID:task-${key}@taskq-80ce7`);
+          lines.push(`DTSTART:${toIcsDate(t.dueAt)}`);
+          lines.push(`DTEND:${toIcsDate(t.dueAt + 1800000)}`); // 30-min block
+          const prefix = t.urgent ? 'URGENT: ' : t.highPriority ? 'HIGH: ' : '';
+          lines.push(`SUMMARY:${prefix}${String(t.name || '').replace(/[\r\n]/g, ' ')} [${wsName}]`);
+          if (t.description) lines.push(`DESCRIPTION:${String(t.description).replace(/[\r\n]/g, '\\n').slice(0, 500)}`);
+          lines.push(`DTSTAMP:${toIcsDate(Date.now())}`);
+          lines.push('BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', `DESCRIPTION:${t.name || 'TaskQ Task'}`, 'END:VALARM');
+          lines.push('END:VEVENT');
+          vevents.push(lines.join('\r\n'));
+        }
+      }
+
+      const ical = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//TaskQ//Calendar Feed//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        'X-WR-CALNAME:TaskQ',
+        'X-WR-TIMEZONE:America/Chicago',
+        ...vevents,
+        'END:VCALENDAR'
+      ].join('\r\n');
+
+      res.set('Content-Type', 'text/calendar; charset=utf-8');
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.send(ical);
+    } catch (err) {
+      console.error('calendarFeed error:', err);
+      res.status(500).send('Internal error');
+    }
+  }
+);
+
+// Generate or retrieve a calendar feed token for a user
+exports.getCalendarFeedUrl = onRequest(
+  { cors: true },
+  async (req, res) => {
+    try {
+      const authHeader = req.get('Authorization') || '';
+      const match = authHeader.match(/^Bearer\s+(.+)$/);
+      if (!match) { res.status(401).json({ error: 'Missing Authorization header' }); return; }
+      let decoded;
+      try { decoded = await admin.auth().verifyIdToken(match[1]); } catch {
+        res.status(403).json({ error: 'Invalid auth token' }); return;
+      }
+      const uid = decoded.uid;
+      let tokenSnap = await db.ref(`users/${uid}/calFeedToken`).once('value');
+      let token = tokenSnap.val();
+      if (!token) {
+        // Generate a random token
+        const crypto = require('crypto');
+        token = crypto.randomBytes(24).toString('hex');
+        await db.ref(`users/${uid}/calFeedToken`).set(token);
+      }
+      const url = `https://us-central1-taskq-80ce7.cloudfunctions.net/calendarFeed?uid=${uid}&token=${token}`;
+      res.json({ success: true, url });
+    } catch (err) {
+      console.error('getCalendarFeedUrl error:', err);
+      res.status(500).json({ error: err.message });
     }
   }
 );

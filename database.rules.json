@@ -1,0 +1,32 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "workspaces": {
+      "$wsId": {
+        ".read": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())",
+        ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())",
+        "members": {
+          "$memberId": {
+            ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid + '/role').val() === 'owner' || !root.child('workspaces/' + $wsId + '/members').exists())"
+          }
+        },
+        "locks": {
+          ".write": "auth != null && root.child('workspaces/' + $wsId + '/members/' + auth.uid + '/role').val() === 'owner'"
+        }
+      }
+    },
+    "emailSettings": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "backups": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}
