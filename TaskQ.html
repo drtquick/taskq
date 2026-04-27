@@ -1649,12 +1649,20 @@ function toLocalDate(date) {
 function pad2(n) { return String(n).padStart(2, '0'); }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
+function extractGoogleToken(result) {
+  // Firebase compat SDK: try credentialFromResult first, fall back to result.credential
+  const cred = firebase.auth.GoogleAuthProvider.credentialFromResult
+    ? firebase.auth.GoogleAuthProvider.credentialFromResult(result)
+    : result.credential;
+  if (cred && cred.accessToken) {
+    gmailAccessToken = cred.accessToken;
+  }
+}
+
 function signIn() {
   document.getElementById('authError').style.display = 'none';
   auth.signInWithPopup(googleProvider).then(result => {
-    if (result.credential) {
-      gmailAccessToken = result.credential.accessToken;
-    }
+    extractGoogleToken(result);
   }).catch(() => {
     document.getElementById('authError').style.display = 'block';
   });
@@ -4669,14 +4677,19 @@ document.getElementById('gmailSearchPreset').addEventListener('change', function
   document.getElementById('gmailCustomQuery').style.display = this.value === 'custom' ? 'block' : 'none';
 });
 
+function refreshGmailToken() {
+  return auth.signInWithPopup(googleProvider).then(result => {
+    extractGoogleToken(result);
+    return !!gmailAccessToken;
+  });
+}
+
 function openGmailMiner() {
   if (!gmailAccessToken) {
-    // Need to re-auth with Gmail scope
-    auth.signInWithPopup(googleProvider).then(result => {
-      if (result.credential) gmailAccessToken = result.credential.accessToken;
-      if (gmailAccessToken) doOpenGmailMiner();
-      else alert('Gmail access was not granted. Please sign in with Google and allow Gmail access.');
-    }).catch(() => alert('Sign-in failed. Gmail import requires Google sign-in with Gmail access.'));
+    refreshGmailToken().then(ok => {
+      if (ok) doOpenGmailMiner();
+      else alert('Gmail access was not granted. Please sign in with Google and allow Gmail read access.');
+    }).catch(() => alert('Sign-in failed. Gmail import requires Google sign-in.'));
     return;
   }
   doOpenGmailMiner();
@@ -4735,8 +4748,13 @@ async function scanGmail() {
     });
 
     if (listRes.status === 401 || listRes.status === 403) {
+      statusEl.textContent = 'RE-AUTHENTICATING WITH GMAIL...';
       gmailAccessToken = null;
-      statusEl.textContent = 'Gmail access expired. Click SCAN again to re-authenticate.';
+      try {
+        const ok = await refreshGmailToken();
+        if (ok) { scanBtn.disabled = false; return scanGmail(); }
+      } catch(e) {}
+      statusEl.textContent = 'Gmail access denied. Please sign out, sign back in, and grant Gmail access.';
       scanBtn.disabled = false;
       return;
     }
