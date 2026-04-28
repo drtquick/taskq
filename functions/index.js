@@ -1561,7 +1561,7 @@ exports.sendSmsNotification = onRequest(
       let icsUrl = null;
       if (itemType === 'event' && item.startAt) {
         // Serve via calendarEvent endpoint
-        icsUrl = `https://us-central1-taskq-80ce7.cloudfunctions.net/calendarEvent?wsId=${wsId}&key=${itemKey}`;
+        icsUrl = `https://api.taskq.qponent.com/calendarEvent?wsId=${wsId}&key=${itemKey}`;
       }
 
       const sent = [];
@@ -1744,7 +1744,7 @@ exports.getCalendarFeedUrl = onRequest(
         token = crypto.randomBytes(24).toString('hex');
         await db.ref(`users/${uid}/calFeedToken`).set(token);
       }
-      const url = `https://us-central1-taskq-80ce7.cloudfunctions.net/calendarFeed?uid=${uid}&token=${token}`;
+      const url = `https://api.taskq.qponent.com/calendarFeed?uid=${uid}&token=${token}`;
       res.json({ success: true, url });
     } catch (err) {
       console.error('getCalendarFeedUrl error:', err);

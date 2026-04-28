@@ -953,7 +953,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.3</span>
+    <span class="beta-badge">β v2.4</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
     <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
@@ -1527,7 +1527,7 @@ input[type="date"] { color-scheme: dark; }
     </div>
 
     <input type="hidden" id="emailFromEmail" value="taskq@qponent.com">
-    <input type="hidden" id="emailFunctionUrl" value="https://us-central1-taskq-80ce7.cloudfunctions.net/sendEmailNow">
+    <input type="hidden" id="emailFunctionUrl" value="https://api.taskq.qponent.com/sendEmailNow">
 
     <div class="email-form-group">
       <label>Recipients</label>
@@ -2769,7 +2769,7 @@ function openEmailSettings() {
   document.getElementById('emailEnabled').checked    = !!s.enabled;
   document.getElementById('emailFromName').value     = s.fromName    || '';
   document.getElementById('emailFromEmail').value    = s.fromEmail   || 'taskq@qponent.com';
-  document.getElementById('emailFunctionUrl').value  = s.functionUrl || 'https://us-central1-taskq-80ce7.cloudfunctions.net/sendEmailNow';
+  document.getElementById('emailFunctionUrl').value  = s.functionUrl || 'https://api.taskq.qponent.com/sendEmailNow';
   buildSendHourSelect();
   document.getElementById('emailSendHour').value = s.sendHour != null ? s.sendHour : 7;
   tmpEmailRecipients = Array.isArray(s.recipients) && s.recipients.length ? [...s.recipients] : ['trevorcoddington@gmail.com'];
@@ -3784,7 +3784,7 @@ function openSettings() {
 function closeSettings() { document.getElementById('overlay').classList.add('hidden'); }
 
 // ── ADMIN / MEMBERS ───────────────────────────────────────────────────────────
-const CF_BASE = 'https://us-central1-taskq-80ce7.cloudfunctions.net';
+const CF_BASE = 'https://api.taskq.qponent.com';
 let currentWsMembers = {};   // cached workspaces/{wsId}/members
 let currentWsLocks   = { assignees:false, categories:false, subtitle:false, urgentFlag:false };
 

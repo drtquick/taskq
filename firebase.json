@@ -2,6 +2,26 @@
   "database": {
     "rules": "database.rules.json"
   },
+  "hosting": {
+    "public": "public",
+    "ignore": ["firebase.json", "**/node_modules/**"],
+    "rewrites": [
+      { "source": "/sendEmailNow", "function": "sendEmailNow" },
+      { "source": "/inboundEmail", "function": "inboundEmail" },
+      { "source": "/inviteUserToWorkspace", "function": "inviteUserToWorkspace" },
+      { "source": "/removeUserFromWorkspace", "function": "removeUserFromWorkspace" },
+      { "source": "/setUserRole", "function": "setUserRole" },
+      { "source": "/setWorkspaceLocks", "function": "setWorkspaceLocks" },
+      { "source": "/setMemberReportConfig", "function": "setMemberReportConfig" },
+      { "source": "/setMemberPhone", "function": "setMemberPhone" },
+      { "source": "/sendSmsNotification", "function": "sendSmsNotification" },
+      { "source": "/calendarEvent", "function": "calendarEvent" },
+      { "source": "/calendarFeed", "function": "calendarFeed" },
+      { "source": "/getCalendarFeedUrl", "function": "getCalendarFeedUrl" },
+      { "source": "/migrateAdminsBackfill", "function": "migrateAdminsBackfill" },
+      { "source": "/backupNow", "function": "backupNow" }
+    ]
+  },
   "functions": [
     {
       "source": "functions",
