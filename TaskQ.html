@@ -12,6 +12,65 @@
   --blue: #2196f3; --green: #00c853; --yellow: #ffd600; --orange: #ff6d00; --red: #d50000;
   --font: 'Courier New', Courier, monospace;
 }
+[data-theme="kds"] {
+  --bg: #1e293b; --surface: #f8fafc; --surface2: #e2e8f0; --border: #cbd5e1;
+  --text: #1e293b; --muted: #64748b; --accent: #0ea5e9;
+  --blue: #0ea5e9; --green: #22c55e; --yellow: #eab308; --orange: #f97316; --red: #ef4444;
+}
+[data-theme="kds"] body { background: var(--bg); }
+[data-theme="kds"] .auth-screen { background: var(--bg); }
+[data-theme="kds"] .auth-btn { background: var(--accent); color: #fff; }
+[data-theme="kds"] .auth-btn:hover { background: #0284c7; }
+[data-theme="kds"] .header { background: #0f172a; border-bottom-color: var(--accent); }
+[data-theme="kds"] .logo { color: var(--accent); }
+[data-theme="kds"] .status-bar { background: #0f172a; border-bottom-color: #334155; }
+[data-theme="kds"] .page-nav { background: #0f172a; border-bottom-color: #334155; }
+[data-theme="kds"] .page-tab { color: #94a3b8; }
+[data-theme="kds"] .page-tab.active { color: #fff; border-bottom-color: var(--accent); }
+[data-theme="kds"] .controls { background: #1e293b; border-bottom-color: #334155; }
+[data-theme="kds"] .card { background: var(--surface); border-color: var(--border); color: var(--text); }
+[data-theme="kds"] .card .card-name { color: #0f172a; }
+[data-theme="kds"] .card .card-started,
+[data-theme="kds"] .card .card-due,
+[data-theme="kds"] .card .card-thresh,
+[data-theme="kds"] .card .card-id { color: var(--muted); }
+[data-theme="kds"] .card-actions button { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+[data-theme="kds"] .card-actions button:hover { border-color: var(--accent); color: var(--accent); }
+[data-theme="kds"] .btn-done:hover { border-color: var(--green) !important; color: var(--green) !important; }
+[data-theme="kds"] .btn-reopen:hover { border-color: var(--blue) !important; color: var(--blue) !important; }
+[data-theme="kds"] .btn-remove:hover { border-color: var(--red) !important; color: var(--red) !important; }
+[data-theme="kds"] .cat-col-header { background: #0f172a; color: #e2e8f0; }
+[data-theme="kds"] .cat-col { background: #334155; }
+[data-theme="kds"] .task-table { background: var(--surface); color: var(--text); }
+[data-theme="kds"] .task-table th { background: #0f172a; color: #e2e8f0; border-color: #334155; }
+[data-theme="kds"] .task-table td { border-color: var(--border); }
+[data-theme="kds"] .task-table tr:hover { background: #e2e8f0; }
+[data-theme="kds"] input, [data-theme="kds"] select, [data-theme="kds"] textarea { background: #f1f5f9; color: #1e293b; border-color: #cbd5e1; }
+[data-theme="kds"] .btn { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+[data-theme="kds"] .btn:hover { border-color: var(--accent); color: var(--accent); }
+[data-theme="kds"] .btn-report { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+[data-theme="kds"] .btn-report:hover { border-color: var(--accent); color: var(--accent); }
+[data-theme="kds"] .btn-view { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+[data-theme="kds"] .btn-view.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+[data-theme="kds"] .edit-task-panel, [data-theme="kds"] .event-panel { background: #f8fafc; color: #1e293b; }
+[data-theme="kds"] .edit-task-header { background: #0f172a; color: #e2e8f0; }
+[data-theme="kds"] .datetime { color: #e2e8f0; }
+[data-theme="kds"] .user-name { color: #94a3b8; }
+[data-theme="kds"] .btn-signout { color: #94a3b8; border-color: #475569; }
+[data-theme="kds"] .btn-signout:hover { color: var(--accent); border-color: var(--accent); }
+[data-theme="kds"] .settings-btn { background: #334155; border-color: #475569; color: #e2e8f0; }
+[data-theme="kds"] .settings-btn:hover { background: var(--accent); }
+[data-theme="kds"] .beta-badge { color: var(--accent); border-color: var(--accent); }
+[data-theme="kds"] .legend-item { color: #94a3b8; }
+[data-theme="kds"] .cal-header { background: #0f172a; color: #e2e8f0; }
+[data-theme="kds"] .cal-day-header { background: #0f172a; color: #94a3b8; border-color: #334155; }
+[data-theme="kds"] .cal-day { background: var(--surface); border-color: var(--border); color: var(--text); }
+[data-theme="kds"] .cal-day.other-month { background: #e2e8f0; color: #94a3b8; }
+[data-theme="kds"] .cal-day.today { border-color: var(--accent); }
+[data-theme="kds"] .ws-dropdown { background: #0f172a; border-color: #334155; }
+[data-theme="kds"] .ws-item { color: #e2e8f0; }
+[data-theme="kds"] .ws-item:hover { background: #1e293b; }
+[data-theme="kds"] .progress-fill { opacity: 0.9; }
 body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display: flex; flex-direction: column; }
 
 /* AUTH SCREEN */
@@ -890,6 +949,7 @@ input[type="date"] { color-scheme: dark; }
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
     <span class="beta-badge">β v2.0</span>
+    <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
     <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
   </div>
 </header>
@@ -1632,6 +1692,29 @@ function loadLocal(key, fallback) {
   catch { return JSON.parse(JSON.stringify(fallback)); }
 }
 function saveLocal(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+// ── THEME TOGGLE ─────────────────────────────────────────────────────────────
+function applyTheme(theme) {
+  if (theme === 'kds') {
+    document.documentElement.setAttribute('data-theme', 'kds');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.textContent = theme === 'kds' ? '🎨 KDS' : '🎨 DARK';
+  localStorage.setItem('taskq-theme', theme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'kds' ? 'dark' : 'kds');
+}
+
+// Apply saved theme on load
+(function() {
+  const saved = localStorage.getItem('taskq-theme');
+  if (saved === 'kds') applyTheme('kds');
+})();
 
 // ── DATETIME HELPERS ──────────────────────────────────────────────────────────
 function toLocalDT(date) {
