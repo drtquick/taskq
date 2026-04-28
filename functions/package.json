@@ -2,7 +2,7 @@
   "name": "taskq-functions",
   "description": "Cloud Functions for TaskQ",
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "main": "index.js",
   "dependencies": {

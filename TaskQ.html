@@ -113,6 +113,43 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .settings-btn:hover { background: var(--accent); }
 .beta-badge { font-size: 0.6rem; color: var(--accent); border: 1px solid var(--accent); padding: 2px 7px; border-radius: 10px; letter-spacing: 1px; opacity: 0.7; }
 
+/* SLIDE-OUT SIDEBAR */
+.sidebar-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 400; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+.sidebar-backdrop.open { opacity: 1; pointer-events: auto; }
+.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 320px; background: var(--surface); border-right: 2px solid var(--accent); z-index: 401; transform: translateX(-100%); transition: transform 0.25s ease; overflow-y: auto; display: flex; flex-direction: column; }
+.sidebar.open { transform: translateX(0); }
+.sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--border); background: #111; flex-shrink: 0; }
+.sidebar-title { font-size: 0.85rem; font-weight: 700; letter-spacing: 3px; color: var(--accent); }
+.sidebar-close { background: none; border: none; color: var(--muted); font-size: 1.3rem; cursor: pointer; padding: 4px 8px; transition: color 0.2s; }
+.sidebar-close:hover { color: var(--accent); }
+.sidebar-section { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.sidebar-section-title { font-size: 0.62rem; letter-spacing: 3px; color: var(--accent); margin-bottom: 12px; font-weight: 700; }
+.sidebar-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; margin: 2px 0; border-radius: 4px; cursor: pointer; font-size: 0.75rem; letter-spacing: 1px; color: var(--text); background: none; border: none; font-family: var(--font); width: 100%; text-align: left; transition: background 0.15s; }
+.sidebar-item:hover { background: var(--surface2); }
+.sidebar-item.active { background: var(--surface2); color: var(--accent); }
+.sidebar-item-icon { font-size: 1rem; width: 22px; text-align: center; flex-shrink: 0; }
+.sidebar-toggle { display: flex; align-items: center; justify-content: space-between; padding: 9px 10px; margin: 2px 0; border-radius: 4px; font-size: 0.75rem; letter-spacing: 1px; color: var(--text); }
+.sidebar-toggle label { display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1; }
+.sidebar-toggle-switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+.sidebar-toggle-switch input { opacity: 0; width: 0; height: 0; }
+.sidebar-toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 10px; cursor: pointer; transition: background 0.2s; }
+.sidebar-toggle-slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px; background: var(--text); border-radius: 50%; transition: transform 0.2s; }
+.sidebar-toggle-switch input:checked + .sidebar-toggle-slider { background: var(--accent); }
+.sidebar-toggle-switch input:checked + .sidebar-toggle-slider::before { transform: translateX(16px); }
+.sidebar-input-row { display: flex; gap: 8px; align-items: center; margin: 6px 10px; }
+.sidebar-input-row input[type="tel"] { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--font); padding: 7px 10px; font-size: 0.78rem; border-radius: 4px; outline: none; letter-spacing: 1px; }
+.sidebar-input-row input[type="tel"]:focus { border-color: var(--accent); }
+.sidebar-input-row button { background: var(--surface2); border: 1px solid var(--border); color: var(--text); cursor: pointer; padding: 7px 12px; font-family: var(--font); font-size: 0.68rem; letter-spacing: 1px; border-radius: 4px; transition: all 0.2s; }
+.sidebar-input-row button:hover { border-color: var(--accent); color: var(--accent); }
+.sidebar-divider { height: 1px; background: var(--border); margin: 4px 10px; }
+.sidebar-hint { font-size: 0.6rem; color: var(--muted); letter-spacing: 1px; padding: 2px 10px 4px; line-height: 1.5; }
+.btn-menu { background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer; padding: 6px 10px; font-size: 1.1rem; border-radius: 4px; transition: all 0.2s; line-height: 1; }
+.btn-menu:hover { border-color: var(--accent); color: var(--accent); }
+[data-theme="kds"] .sidebar { background: var(--surface); border-right-color: var(--accent); }
+[data-theme="kds"] .sidebar-header { background: #0f172a; }
+[data-theme="kds"] .sidebar-item:hover { background: var(--surface2); }
+[data-theme="kds"] .sidebar-toggle-slider { background: #cbd5e1; }
+
 /* STATUS BAR */
 .status-bar { background: #0a0a0a; border-bottom: 1px solid var(--border); padding: 4px 20px; font-size: 0.65rem; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
@@ -613,7 +650,7 @@ input[type="date"] { color-scheme: dark; }
   /* Hide chrome */
   .no-print, .auth-screen, .header, .status-bar, .page-nav, .controls, .cal-toolbar,
   .confirm-overlay, .edit-task-overlay, .overlay, .event-overlay,
-  .card-actions, .tbl-actions, .cal-view-toggle { display: none !important; }
+  .card-actions, .tbl-actions, .cal-view-toggle, .sidebar, .sidebar-backdrop { display: none !important; }
   /* Show correct page as block */
   .tasks-page, .cal-page { display: block !important; overflow: visible !important; }
   /* Board */
@@ -676,7 +713,8 @@ input[type="date"] { color-scheme: dark; }
   .user-name { display: none; }
   .beta-badge { display: none; }
   .btn-signout { padding: 5px 8px; font-size: 0.6rem; letter-spacing: 0; }
-  .settings-btn { padding: 6px 10px; font-size: 0.9rem; }
+  .btn-menu { padding: 5px 8px; font-size: 0.95rem; }
+  .sidebar { width: 280px; }
 
   /* ── STATUS BAR ── */
   .status-bar { padding: 3px 12px; font-size: 0.58rem; }
@@ -953,11 +991,95 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.5</span>
+    <span class="beta-badge">β v2.6</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
-    <button class="settings-btn" onclick="openSettings()">⚙ SETTINGS</button>
+    <button class="btn-menu" onclick="openSidebar()" title="Open menu">☰</button>
   </div>
 </header>
+
+<!-- SLIDE-OUT SIDEBAR -->
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-title">MENU</span>
+    <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+  </div>
+
+  <!-- USER SETTINGS -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">USER SETTINGS</div>
+    <div class="sidebar-toggle">
+      <label><span class="sidebar-item-icon">📱</span> SMS NOTIFICATIONS</label>
+      <div class="sidebar-toggle-switch">
+        <input type="checkbox" id="smsEnabledToggle" onchange="toggleSmsEnabled(this.checked)">
+        <span class="sidebar-toggle-slider"></span>
+      </div>
+    </div>
+    <div class="sidebar-input-row" id="smsPhoneRow">
+      <input type="tel" id="smsPhoneInput" placeholder="+1 760 809 4275" maxlength="20">
+      <button onclick="saveSmsPhone()">SAVE</button>
+    </div>
+    <div class="sidebar-hint">Your phone number for task/event SMS alerts.</div>
+    <button class="sidebar-item" onclick="closeSidebar(); openSettings()">
+      <span class="sidebar-item-icon">⚙</span> WORKSPACE SETTINGS
+    </button>
+  </div>
+
+  <!-- DISPLAY SETTINGS -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">DISPLAY SETTINGS</div>
+    <div class="sidebar-toggle">
+      <label><span class="sidebar-item-icon">📝</span> SHOW NOTES</label>
+      <div class="sidebar-toggle-switch">
+        <input type="checkbox" id="sidebarNotesToggle" onchange="toggleCardNotes()">
+        <span class="sidebar-toggle-slider"></span>
+      </div>
+    </div>
+    <div class="sidebar-toggle">
+      <label><span class="sidebar-item-icon">👁</span> SHOW DONE</label>
+      <div class="sidebar-toggle-switch">
+        <input type="checkbox" id="sidebarShowDoneToggle" onchange="toggleShowDone()">
+        <span class="sidebar-toggle-slider"></span>
+      </div>
+    </div>
+    <button class="sidebar-item" onclick="toggleBulkMode(); closeSidebar()">
+      <span class="sidebar-item-icon">☑</span> BULK SELECT
+    </button>
+    <button class="sidebar-item" onclick="window.print(); closeSidebar()">
+      <span class="sidebar-item-icon">🖨</span> PRINT
+    </button>
+    <div class="sidebar-divider"></div>
+    <div style="display:flex;gap:4px;padding:6px 10px;">
+      <button class="btn-view active" id="sbBtnBoard" onclick="setView('board')">🔲 BOARD</button>
+      <button class="btn-view" id="sbBtnTable" onclick="setView('table')">📋 TABLE</button>
+      <button class="btn-view" id="sbBtnCategory" onclick="setView('category')">🏷 CATEGORY</button>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">NOTIFICATIONS &amp; REPORTS</div>
+    <button class="sidebar-item" onclick="closeSidebar(); openEmailSettings()">
+      <span class="sidebar-item-icon">📧</span> EMAIL REPORTS
+    </button>
+    <button class="sidebar-item" onclick="closeSidebar(); openGmailMiner()">
+      <span class="sidebar-item-icon">📥</span> GMAIL IMPORT
+    </button>
+    <button class="sidebar-item" onclick="closeSidebar(); showCalendarFeedUrl()">
+      <span class="sidebar-item-icon">📱</span> CALENDAR FEED
+    </button>
+    <div class="sidebar-divider"></div>
+    <button class="sidebar-item" onclick="closeSidebar(); openExpenseReport()">
+      <span class="sidebar-item-icon">💰</span> EXPENSE REPORT
+    </button>
+    <button class="sidebar-item" onclick="closeSidebar(); openTimeReport()">
+      <span class="sidebar-item-icon">⏱</span> TIME LOG
+    </button>
+    <button class="sidebar-item" onclick="closeSidebar(); openUserReport()">
+      <span class="sidebar-item-icon">👤</span> PERSON REPORT
+    </button>
+  </div>
+</aside>
 
 <div class="status-bar no-print">
   <div class="status-dot" id="statusDot"></div>
@@ -998,18 +1120,8 @@ input[type="date"] { color-scheme: dark; }
       <button class="btn btn-clear" onclick="clearForm()" title="Clear the task creation form">CLEAR</button>
       <div class="task-count" id="taskCount">0 ACTIVE · 0 DONE</div>
     </div>
-    <!-- ROW 2: view controls -->
+    <!-- ROW 2: view toggle only (other controls moved to sidebar) -->
     <div class="controls-row2">
-      <button class="btn btn-print no-print" onclick="window.print()" title="Print current view">🖨 PRINT</button>
-      <button class="btn btn-notes-toggle" id="btnNotesToggle" onclick="toggleCardNotes()" title="Show/hide notes on cards">📝 NOTES</button>
-      <button class="btn btn-show-done" id="btnShowDone" onclick="toggleShowDone()" title="Show/hide completed tasks">👁 SHOW DONE</button>
-      <button class="btn btn-bulk-toggle" id="btnBulk" onclick="toggleBulkMode()" title="Select multiple tasks for bulk actions">☑ BULK</button>
-      <button class="btn btn-report" onclick="openExpenseReport()" title="Expense report">💰 EXPENSES</button>
-      <button class="btn btn-report" onclick="openTimeReport()" title="Time log report">⏱ TIME LOG</button>
-      <button class="btn btn-report" onclick="openUserReport()" title="Person / assignee report">👤 PERSON</button>
-      <button class="btn btn-report" onclick="openEmailSettings()" title="Daily email report settings">📧 EMAIL</button>
-      <button class="btn btn-report" onclick="showCalendarFeedUrl()" title="Subscribe to TaskQ events on your iPhone">📱 CAL FEED</button>
-      <button class="btn btn-report" onclick="openGmailMiner()" title="Import events and tasks from Gmail">📥 GMAIL IMPORT</button>
       <div class="view-toggle">
         <button class="btn-view active" id="btnBoard" onclick="setView('board')">🔲 BOARD</button>
         <button class="btn-view" id="btnTable" onclick="setView('table')">📋 TABLE</button>
@@ -1721,6 +1833,64 @@ function toggleTheme() {
   if (saved === 'kds') applyTheme('kds');
 })();
 
+// ── SIDEBAR ──────────────────────────────────────────────────────────────────
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarBackdrop').classList.add('open');
+  syncSidebarToggles();
+  loadSmsSettings();
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('open');
+}
+function syncSidebarToggles() {
+  const notesOn = document.body.classList.contains('show-card-notes');
+  document.getElementById('sidebarNotesToggle').checked = notesOn;
+  document.getElementById('sidebarShowDoneToggle').checked = !!showDone;
+  // Sync view buttons
+  const view = viewMode || 'board';
+  document.querySelectorAll('#sidebar .btn-view').forEach(b => b.classList.remove('active'));
+  const sbBtn = document.getElementById('sbBtn' + view.charAt(0).toUpperCase() + view.slice(1));
+  if (sbBtn) sbBtn.classList.add('active');
+}
+
+// ── SMS SETTINGS ─────────────────────────────────────────────────────────────
+let smsSettings = { enabled: false, phone: '' };
+async function loadSmsSettings() {
+  const user = auth.currentUser;
+  if (!user || !currentWsId) return;
+  try {
+    const snap = await db.ref(`workspaces/${currentWsId}/members/${user.uid}`).once('value');
+    const m = snap.val() || {};
+    smsSettings.phone = m.phone || '';
+    smsSettings.enabled = !!m.smsEnabled;
+    document.getElementById('smsPhoneInput').value = smsSettings.phone;
+    document.getElementById('smsEnabledToggle').checked = smsSettings.enabled;
+  } catch (e) { console.error('loadSmsSettings:', e); }
+}
+async function saveSmsPhone() {
+  const user = auth.currentUser;
+  if (!user || !currentWsId) return;
+  let phone = document.getElementById('smsPhoneInput').value.trim();
+  if (phone && !phone.startsWith('+')) phone = '+1' + phone.replace(/\D/g, '');
+  try {
+    await callAdminApi('setMemberPhone', { wsId: currentWsId, uid: user.uid, phone: phone || null });
+    smsSettings.phone = phone;
+    const btn = document.querySelector('#smsPhoneRow button');
+    btn.textContent = 'SAVED ✓';
+    setTimeout(() => btn.textContent = 'SAVE', 1500);
+  } catch (e) { alert('Failed to save phone: ' + e.message); }
+}
+async function toggleSmsEnabled(on) {
+  const user = auth.currentUser;
+  if (!user || !currentWsId) return;
+  try {
+    await db.ref(`workspaces/${currentWsId}/members/${user.uid}/smsEnabled`).set(on);
+    smsSettings.enabled = on;
+  } catch (e) { alert('Failed to toggle SMS: ' + e.message); }
+}
+
 // ── DATETIME HELPERS ──────────────────────────────────────────────────────────
 function toLocalDT(date) {
   const d   = new Date(date);
@@ -2158,6 +2328,13 @@ function setView(mode) {
   document.getElementById('btnBoard').classList.toggle('active', mode === 'board');
   document.getElementById('btnTable').classList.toggle('active', mode === 'table');
   document.getElementById('btnCategory').classList.toggle('active', mode === 'category');
+  // Sync sidebar view buttons
+  const sb = document.getElementById('sbBtnBoard');
+  if (sb) {
+    document.getElementById('sbBtnBoard').classList.toggle('active', mode === 'board');
+    document.getElementById('sbBtnTable').classList.toggle('active', mode === 'table');
+    document.getElementById('sbBtnCategory').classList.toggle('active', mode === 'category');
+  }
   render();
 }
 
