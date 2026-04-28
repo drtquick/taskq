@@ -197,19 +197,19 @@ input[type="date"] { color-scheme: dark; }
 .progress-fill { height: 100%; border-radius: 2px; transition: width 60s linear, background-color 0.5s; }
 .card-notes { font-size: 0.72rem; color: var(--muted); line-height: 1.45; margin-bottom: 8px; white-space: pre-wrap; word-break: break-word; border-left: 2px solid var(--border); padding-left: 8px; }
 .card-time-spent { font-size: 0.6rem; color: var(--muted); letter-spacing: 1px; margin-bottom: 3px; }
-.card-actions { display: flex; gap: 8px; }
-.btn-done, .btn-edit, .btn-remove {
-  flex: 1; padding: 5px; font-family: var(--font); font-size: 0.68rem; letter-spacing: 1px;
+.card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn-done, .btn-edit, .btn-remove, .btn-extend-card, .btn-progress, .btn-reopen {
+  flex: 1 1 auto; min-width: 0; padding: 5px 4px; font-family: var(--font); font-size: 0.62rem; letter-spacing: 0.5px;
   border: 1px solid var(--border); border-radius: 3px; cursor: pointer;
   background: var(--surface2); color: var(--muted); transition: all 0.2s;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;
 }
 .btn-done:hover   { border-color: var(--green);  color: var(--green); }
 .btn-edit:hover   { border-color: var(--accent); color: var(--accent); }
 .btn-remove:hover { border-color: var(--red);    color: var(--red); }
-.btn-extend-card  { flex: 1; padding: 5px; font-family: var(--font); font-size: 0.68rem; letter-spacing: 1px; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; background: var(--surface2); color: var(--muted); transition: all 0.2s; }
 .btn-extend-card:hover { border-color: var(--yellow); color: var(--yellow); }
-.btn-progress { flex: 1; padding: 5px; font-family: var(--font); font-size: 0.68rem; letter-spacing: 1px; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; background: var(--surface2); color: var(--muted); transition: all 0.2s; }
 .btn-progress:hover { border-color: var(--blue); color: var(--blue); }
+.btn-reopen:hover { border-color: var(--accent); color: var(--accent); }
 
 /* TABLE VIEW */
 .table-container { flex: 1; padding: 16px 20px; overflow-x: auto; overflow-y: auto; }
@@ -558,7 +558,7 @@ input[type="date"] { color-scheme: dark; }
 .tbl-checkbox { width: 15px; height: 15px; cursor: pointer; accent-color: var(--yellow); }
 
 /* REOPEN BUTTON */
-.btn-reopen { flex: 1; padding: 5px; font-family: var(--font); font-size: 0.68rem; letter-spacing: 1px; border: 1px solid var(--green); border-radius: 3px; cursor: pointer; background: var(--surface2); color: var(--green); transition: all 0.2s; }
+.btn-reopen { border-color: var(--green); color: var(--green); }
 .btn-reopen:hover { background: var(--green); color: #000; }
 .tbl-btn-reopen { padding: 4px 8px; font-family: var(--font); font-size: 0.63rem; letter-spacing: 1px; border: 1px solid var(--green); border-radius: 3px; cursor: pointer; background: var(--surface2); color: var(--green); transition: all 0.2s; }
 .tbl-btn-reopen:hover { background: var(--green); color: #000; }
@@ -759,7 +759,7 @@ input[type="date"] { color-scheme: dark; }
   .card { padding: 12px; }
 
   /* ── MIN TOUCH TARGETS ── */
-  .btn-done, .btn-edit, .btn-remove { min-height: 36px; padding: 6px 5px; }
+  .btn-done, .btn-edit, .btn-remove, .btn-extend-card, .btn-progress, .btn-reopen { min-height: 36px; padding: 6px 4px; font-size: 0.58rem; }
   .tbl-btn-done, .tbl-btn-edit, .tbl-btn-remove { min-height: 36px; padding: 5px 9px; }
   .btn-cal-nav, .btn-cal-today, .btn-cal-view, .btn-add-event { min-height: 36px; }
   .ws-item { padding: 10px 14px; min-height: 40px; }
