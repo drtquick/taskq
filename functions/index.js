@@ -1,3 +1,4 @@
+// v2.4 - api.taskq.qponent.com routing
 /**
  * TaskQ — Firebase Cloud Functions v1.7
  * Daily email report via MXRoute SMTP (nodemailer)
