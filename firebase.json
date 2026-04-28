@@ -15,6 +15,7 @@
       { "source": "/setMemberReportConfig", "function": "setMemberReportConfig" },
       { "source": "/setMemberPhone", "function": "setMemberPhone" },
       { "source": "/sendSmsNotification", "function": "sendSmsNotification" },
+      { "source": "/sendTestSms", "function": "sendTestSms" },
       { "source": "/calendarEvent", "function": "calendarEvent" },
       { "source": "/calendarFeed", "function": "calendarFeed" },
       { "source": "/getCalendarFeedUrl", "function": "getCalendarFeedUrl" },
