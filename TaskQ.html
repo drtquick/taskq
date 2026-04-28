@@ -992,7 +992,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.6</span>
+    <span class="beta-badge">β v2.8</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
   </div>
 </header>
@@ -1020,6 +1020,9 @@ input[type="date"] { color-scheme: dark; }
       <button onclick="saveSmsPhone()">SAVE</button>
     </div>
     <div class="sidebar-hint">Your phone number for task/event SMS alerts.</div>
+    <button class="sidebar-item" onclick="sendTestSms()" id="testSmsBtn" style="font-size:0.7rem;padding:6px 12px;margin-top:4px">
+      <span class="sidebar-item-icon">🧪</span> SEND TEST SMS
+    </button>
     <button class="sidebar-item" onclick="closeSidebar(); openSettings()">
       <span class="sidebar-item-icon">⚙</span> WORKSPACE SETTINGS
     </button>
@@ -1891,6 +1894,26 @@ async function toggleSmsEnabled(on) {
   } catch (e) { alert('Failed to toggle SMS: ' + e.message); }
 }
 
+async function sendTestSms() {
+  const user = auth.currentUser;
+  if (!user || !currentWsId) { alert('Please sign in first.'); return; }
+  const phone = document.getElementById('smsPhoneInput').value.trim();
+  if (!phone) { alert('Please enter a phone number first and click SAVE.'); return; }
+  const btn = document.getElementById('testSmsBtn');
+  const origText = btn.innerHTML;
+  btn.innerHTML = '<span class="sidebar-item-icon">⏳</span> SENDING...';
+  btn.disabled = true;
+  try {
+    const result = await callAdminApi('sendTestSms', { wsId: currentWsId });
+    btn.innerHTML = '<span class="sidebar-item-icon">✅</span> SENT!';
+    setTimeout(() => { btn.innerHTML = origText; btn.disabled = false; }, 3000);
+  } catch (e) {
+    alert('Test SMS failed: ' + e.message);
+    btn.innerHTML = origText;
+    btn.disabled = false;
+  }
+}
+
 // ── DATETIME HELPERS ──────────────────────────────────────────────────────────
 function toLocalDT(date) {
   const d   = new Date(date);
@@ -1908,12 +1931,32 @@ function pad2(n) { return String(n).padStart(2, '0'); }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 function extractGoogleToken(result) {
-  // Firebase compat SDK: try credentialFromResult first, fall back to result.credential
-  const cred = firebase.auth.GoogleAuthProvider.credentialFromResult
-    ? firebase.auth.GoogleAuthProvider.credentialFromResult(result)
-    : result.credential;
-  if (cred && cred.accessToken) {
-    gmailAccessToken = cred.accessToken;
+  // Firebase compat SDK v10+: credential comes from credentialFromResult or result.credential
+  let token = null;
+  // Try the static method (compat SDK v10+)
+  try {
+    const cred = firebase.auth.GoogleAuthProvider.credentialFromResult(result);
+    if (cred && cred.accessToken) token = cred.accessToken;
+  } catch (e) { /* not available in older compat SDK */ }
+  // Fallback: result.credential (older compat SDK)
+  if (!token && result.credential && result.credential.accessToken) {
+    token = result.credential.accessToken;
+  }
+  // Fallback: check additionalUserInfo / user.stsTokenManager
+  if (!token && result.user) {
+    try {
+      const oauthCred = result.user.getIdToken ? null : null; // placeholder
+      // Some compat versions put it in _tokenResponse
+      if (result._tokenResponse && result._tokenResponse.oauthAccessToken) {
+        token = result._tokenResponse.oauthAccessToken;
+      }
+    } catch (e) {}
+  }
+  if (token) {
+    gmailAccessToken = token;
+    console.log('Gmail access token captured');
+  } else {
+    console.warn('Could not extract Google OAuth access token from sign-in result');
   }
 }
 
@@ -4960,9 +5003,17 @@ document.getElementById('gmailSearchPreset').addEventListener('change', function
 });
 
 function refreshGmailToken() {
+  // Force consent prompt to ensure we get an OAuth access token with gmail.readonly scope
+  googleProvider.setCustomParameters({ prompt: 'consent' });
   return auth.signInWithPopup(googleProvider).then(result => {
     extractGoogleToken(result);
+    // Reset custom params so normal sign-in doesn't force consent every time
+    googleProvider.setCustomParameters({});
     return !!gmailAccessToken;
+  }).catch(err => {
+    googleProvider.setCustomParameters({});
+    console.error('refreshGmailToken failed:', err);
+    throw err;
   });
 }
 

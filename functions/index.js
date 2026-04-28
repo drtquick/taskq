@@ -1592,6 +1592,43 @@ exports.sendSmsNotification = onRequest(
   }
 );
 
+// Send a test SMS to the authenticated user's phone number
+exports.sendTestSms = onRequest(
+  { cors: true, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER] },
+  async (req, res) => {
+    try {
+      if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+      const authHeader = req.get('Authorization') || '';
+      const match = authHeader.match(/^Bearer\s+(.+)$/);
+      if (!match) { res.status(401).json({ error: 'Missing Authorization header' }); return; }
+      let decoded;
+      try { decoded = await admin.auth().verifyIdToken(match[1]); } catch {
+        res.status(403).json({ error: 'Invalid auth token' }); return;
+      }
+      const body = getBody(req);
+      const { wsId } = body;
+      if (!wsId) { res.status(400).json({ error: 'wsId required' }); return; }
+      // Look up the caller's phone number from workspace members
+      const memberSnap = await db.ref(`workspaces/${wsId}/members/${decoded.uid}`).once('value');
+      const member = memberSnap.val();
+      if (!member || !member.phone) {
+        res.status(400).json({ error: 'No phone number on file. Save your phone number first.' });
+        return;
+      }
+      const msg = `TaskQ Test: SMS notifications are working! This message was sent at ${new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}.`;
+      const sid = await sendSms(member.phone, msg);
+      if (sid) {
+        res.json({ success: true, sid });
+      } else {
+        res.status(500).json({ error: 'SMS delivery failed. Check Twilio configuration.' });
+      }
+    } catch (err) {
+      console.error('sendTestSms error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
 // Serve a single event as a downloadable .ics file (for SMS tap-to-add links)
 exports.calendarEvent = onRequest(
   { cors: true },
