@@ -962,6 +962,7 @@ input[type="date"] { color-scheme: dark; }
 </div>
 
 <header class="header no-print">
+  <button class="btn-menu" onclick="openSidebar()" title="Open menu">☰</button>
   <div>
     <div class="logo">TASKQ</div>
     <div class="logo-sub" id="logoSub">CODDINGTON FAMILY TASKS</div>
@@ -993,7 +994,6 @@ input[type="date"] { color-scheme: dark; }
     </div>
     <span class="beta-badge">β v2.6</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
-    <button class="btn-menu" onclick="openSidebar()" title="Open menu">☰</button>
   </div>
 </header>
 
@@ -1010,10 +1010,10 @@ input[type="date"] { color-scheme: dark; }
     <div class="sidebar-section-title">USER SETTINGS</div>
     <div class="sidebar-toggle">
       <label><span class="sidebar-item-icon">📱</span> SMS NOTIFICATIONS</label>
-      <div class="sidebar-toggle-switch">
+      <label class="sidebar-toggle-switch">
         <input type="checkbox" id="smsEnabledToggle" onchange="toggleSmsEnabled(this.checked)">
         <span class="sidebar-toggle-slider"></span>
-      </div>
+      </label>
     </div>
     <div class="sidebar-input-row" id="smsPhoneRow">
       <input type="tel" id="smsPhoneInput" placeholder="+1 760 809 4275" maxlength="20">
@@ -1030,17 +1030,17 @@ input[type="date"] { color-scheme: dark; }
     <div class="sidebar-section-title">DISPLAY SETTINGS</div>
     <div class="sidebar-toggle">
       <label><span class="sidebar-item-icon">📝</span> SHOW NOTES</label>
-      <div class="sidebar-toggle-switch">
-        <input type="checkbox" id="sidebarNotesToggle" onchange="toggleCardNotes()">
+      <label class="sidebar-toggle-switch">
+        <input type="checkbox" id="sidebarNotesToggle" onchange="setCardNotes(this.checked)">
         <span class="sidebar-toggle-slider"></span>
-      </div>
+      </label>
     </div>
     <div class="sidebar-toggle">
       <label><span class="sidebar-item-icon">👁</span> SHOW DONE</label>
-      <div class="sidebar-toggle-switch">
-        <input type="checkbox" id="sidebarShowDoneToggle" onchange="toggleShowDone()">
+      <label class="sidebar-toggle-switch">
+        <input type="checkbox" id="sidebarShowDoneToggle" onchange="setShowDone(this.checked)">
         <span class="sidebar-toggle-slider"></span>
-      </div>
+      </label>
     </div>
     <button class="sidebar-item" onclick="toggleBulkMode(); closeSidebar()">
       <span class="sidebar-item-icon">☑</span> BULK SELECT
@@ -2447,6 +2447,15 @@ function toggleShowDone() {
   }
   render();
 }
+function setShowDone(on) {
+  showDone = on;
+  const btn = document.getElementById('btnShowDone');
+  if (btn) {
+    btn.classList.toggle('done-on', showDone);
+    btn.title = showDone ? 'Currently showing completed tasks' : 'Show/hide completed tasks';
+  }
+  render();
+}
 
 // ── URGENT MODE TOGGLE ────────────────────────────────────────────────────────
 function toggleUrgentMode() {
@@ -3755,6 +3764,14 @@ function toggleCardNotes() {
   showCardNotes = !showCardNotes;
   const btn = document.getElementById('btnNotesToggle');
   if (btn) btn.classList.toggle('notes-on', showCardNotes);
+  document.body.classList.toggle('show-card-notes', showCardNotes);
+  render();
+}
+function setCardNotes(on) {
+  showCardNotes = on;
+  const btn = document.getElementById('btnNotesToggle');
+  if (btn) btn.classList.toggle('notes-on', showCardNotes);
+  document.body.classList.toggle('show-card-notes', showCardNotes);
   render();
 }
 
