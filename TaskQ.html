@@ -971,6 +971,21 @@ input[type="date"] { color-scheme: dark; }
 .btn-add-et-assignee { background: none; border: 1px solid var(--border); color: var(--muted); padding: 4px 10px; font-family: var(--font); font-size: 0.68rem; border-radius: 4px; cursor: pointer; white-space: nowrap; }
 .btn-add-et-assignee:hover { border-color: var(--accent); color: var(--accent); }
 
+/* ── SUBTASKS / CHECKLIST ───────────────────────────────────────── */
+.et-subtasks-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.et-subtask-item { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; }
+.et-subtask-item input[type="checkbox"] { flex-shrink: 0; accent-color: var(--accent); }
+.et-subtask-item .et-subtask-text { flex: 1; font-size: 0.8rem; color: var(--text); word-break: break-word; }
+.et-subtask-item .et-subtask-text.done { text-decoration: line-through; opacity: 0.5; }
+.et-subtask-item button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.8rem; padding: 0 2px; line-height: 1; flex-shrink: 0; }
+.et-subtask-item button:hover { color: var(--red); }
+.et-subtask-add-row { display: flex; gap: 6px; align-items: center; }
+.et-subtask-add-row input { flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 0.82rem; padding: 4px 0; outline: none; }
+.et-subtask-add-row input:focus { border-bottom-color: var(--accent); }
+.card-subtask-bar { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 0.68rem; color: var(--muted); letter-spacing: 0.5px; }
+.card-subtask-bar .subtask-progress { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.card-subtask-bar .subtask-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+
 /* ── FILE ATTACHMENTS ───────────────────────────────────────────── */
 .et-files-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
 .et-file-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem; }
@@ -1108,7 +1123,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.17</span>
+    <span class="beta-badge">β v2.18</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
   </div>
 </header>
@@ -1372,6 +1387,15 @@ input[type="date"] { color-scheme: dark; }
     <div class="edit-task-form-row">
       <label>NOTES (OPTIONAL)</label>
       <textarea id="etNotes" maxlength="1000" placeholder="Optional notes..."></textarea>
+    </div>
+    <div class="edit-task-form-row">
+      <label>SUBTASKS / CHECKLIST</label>
+      <div id="etSubtasksList" class="et-subtasks-list"></div>
+      <div class="et-subtask-add-row">
+        <input type="text" id="etSubtaskInput" placeholder="Add subtask..." maxlength="120"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();addEtSubtask();}">
+        <button class="btn-add-et-assignee" onclick="addEtSubtask()">+ ADD</button>
+      </div>
     </div>
     <div class="edit-task-form-row">
       <label>TIME SPENT (HOURS — OPTIONAL)</label>
@@ -2879,6 +2903,8 @@ function copyTask() {
     expenseItems:     src.expenseItems ? JSON.parse(JSON.stringify(src.expenseItems)) : null,
     expenseCategory:  src.expenseCategory || null,
     estimatedBudget:  src.estimatedBudget || null,
+    subtasks:         src.subtasks ? src.subtasks.map(s => ({ text: s.text, done: false })) : null,
+    recurrence:       src.recurrence ? JSON.parse(JSON.stringify(src.recurrence)) : null,
     status:           'active',
     doneAt:           null
   });
@@ -3446,6 +3472,9 @@ function openEditTask(key) {
   // Recurrence
   populateRecurrenceForm(task.recurrence || null);
 
+  // Subtasks
+  populateSubtasksForm(task.subtasks || null);
+
   // Notes
   document.getElementById('etNotes').value = task.notes || '';
 
@@ -3591,9 +3620,65 @@ function spawnRecurringTask(task) {
     status: 'active',
     doneAt: null,
     notes: task.notes || null,
-    recurrence: recur
+    recurrence: recur,
+    subtasks: task.subtasks ? task.subtasks.map(s => ({ text: s.text, done: false })) : null
   };
   tasksRef.push(newTask);
+}
+
+// ── SUBTASKS / CHECKLIST ─────────────────────────────────────────
+let tmpSubtasks = [];
+
+function renderEtSubtasks() {
+  const el = document.getElementById('etSubtasksList');
+  if (!tmpSubtasks.length) { el.innerHTML = '<div style="font-size:0.72rem;color:var(--muted);padding:4px 0">No subtasks yet</div>'; return; }
+  el.innerHTML = tmpSubtasks.map((st, i) => `
+    <div class="et-subtask-item">
+      <input type="checkbox" ${st.done ? 'checked' : ''} onchange="toggleEtSubtask(${i}, this.checked)">
+      <span class="et-subtask-text${st.done ? ' done' : ''}">${esc(st.text)}</span>
+      <button onclick="removeEtSubtask(${i})" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+function addEtSubtask() {
+  const inp = document.getElementById('etSubtaskInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  tmpSubtasks.push({ text, done: false });
+  inp.value = '';
+  renderEtSubtasks();
+  inp.focus();
+}
+
+function toggleEtSubtask(idx, checked) {
+  if (tmpSubtasks[idx]) tmpSubtasks[idx].done = checked;
+  renderEtSubtasks();
+}
+
+function removeEtSubtask(idx) {
+  tmpSubtasks.splice(idx, 1);
+  renderEtSubtasks();
+}
+
+function populateSubtasksForm(subtasks) {
+  tmpSubtasks = subtasks ? JSON.parse(JSON.stringify(subtasks)) : [];
+  renderEtSubtasks();
+}
+
+function getSubtasksFromForm() {
+  return tmpSubtasks.length ? tmpSubtasks : null;
+}
+
+function renderSubtaskBar(t) {
+  if (!t.subtasks || !t.subtasks.length) return '';
+  const total = t.subtasks.length;
+  const done = t.subtasks.filter(s => s.done).length;
+  const pct = Math.round((done / total) * 100);
+  return `<div class="card-subtask-bar">
+    <span>☑ ${done}/${total}</span>
+    <div class="subtask-progress"><div class="subtask-fill" style="width:${pct}%"></div></div>
+  </div>`;
 }
 
 function saveEditTask() {
@@ -3652,7 +3737,8 @@ function saveEditTask() {
     files: etFilesList.length ? etFilesList : null,
     expense: null,
     taxDeductible: null,
-    recurrence: getRecurrenceFromForm()
+    recurrence: getRecurrenceFromForm(),
+    subtasks: getSubtasksFromForm()
   };
 
   const smsUids = getCheckedSmsUids('etSmsNotifyList');
@@ -4217,6 +4303,7 @@ function renderBoard() {
   ${renderAvStack(taskAssigneesArr(t), 4)}
   ${startedLine}${dueLine}${threshLine}${timeLine}${expLine}${filesLine}
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
+  ${renderSubtaskBar(t)}
   ${notesLine}<div class="card-actions">
     ${actionBtn}
     ${progressBtn}
@@ -4389,6 +4476,7 @@ function renderCategoryBoard() {
   ${hiPriLine}
   ${startedLine}${dueLine}${timeLine}${expLine}${filesLine}
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
+  ${renderSubtaskBar(t)}
   ${notesLine}<div class="card-actions">
     ${actionBtn}
     ${progressBtn2}
