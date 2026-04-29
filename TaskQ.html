@@ -631,6 +631,11 @@ input[type="date"] { color-scheme: dark; }
 .btn-notes-toggle:hover { border-color: var(--accent); color: var(--accent); }
 .btn-notes-toggle.notes-on { border-color: var(--accent); color: var(--accent); background: rgba(255,107,0,0.1); }
 
+/* EXPORT BUTTONS */
+.export-btns { display: flex; gap: 4px; margin-left: auto; }
+.btn-export { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 4px 10px; font-family: var(--font); font-size: 0.62rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+.btn-export:hover { border-color: var(--accent); color: var(--accent); }
+
 /* SHOW DONE / BULK / REPORT BUTTONS */
 .btn-show-done  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
 .btn-show-done:hover  { border-color: var(--green); color: var(--green); }
@@ -1138,7 +1143,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.20</span>
+    <span class="beta-badge">β v2.21</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
   </div>
 </header>
@@ -1284,6 +1289,11 @@ input[type="date"] { color-scheme: dark; }
         <button class="btn-view active" id="btnBoard" onclick="setView('board')">🔲 BOARD</button>
         <button class="btn-view" id="btnTable" onclick="setView('table')">📋 TABLE</button>
         <button class="btn-view" id="btnCategory" onclick="setView('category')">🏷 CATEGORY</button>
+      </div>
+      <div class="export-btns">
+        <button class="btn-export" onclick="exportTasksCSV()" title="Export tasks to CSV">📥 CSV</button>
+        <button class="btn-export" onclick="exportExpensesCSV()" title="Export expenses to CSV">💰 EXPENSES</button>
+        <button class="btn-export" onclick="window.print()" title="Print / Save as PDF">🖨 PDF</button>
       </div>
     </div>
   </div>
@@ -6041,6 +6051,80 @@ function setBottomTab(page) {
   if (page === 'settings') { toggleSidebar(); return; }
   setPage(page);
   document.querySelectorAll('.bottom-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === page));
+}
+
+// ── DATA EXPORT ──────────────────────────────────────────────────────────────
+function csvEscape(val) {
+  if (val == null) return '';
+  const s = String(val);
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function downloadCSV(filename, headers, rows) {
+  const csv = [headers.map(csvEscape).join(','), ...rows.map(r => r.map(csvEscape).join(','))].join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportTasksCSV() {
+  const headers = ['ID', 'Task', 'Status', 'Assignees', 'Category', 'Created', 'Due Date', 'Completed', 'Time Spent (hrs)', 'Urgent', 'High Priority', 'Notes', 'Subtasks Done', 'Subtasks Total', 'Recurring'];
+  const rows = tasks.map(t => {
+    const cat = cfg.categories.find(c => c.id === t.category);
+    const stDone = t.subtasks ? t.subtasks.filter(s => s.done).length : 0;
+    const stTotal = t.subtasks ? t.subtasks.length : 0;
+    return [
+      t.id || '',
+      t.name,
+      t.status,
+      (t.assignees || []).join('; '),
+      cat ? cat.label : t.category,
+      t.createdAt ? new Date(t.createdAt).toLocaleString() : '',
+      t.dueAt ? new Date(t.dueAt).toLocaleString() : '',
+      t.doneAt ? new Date(t.doneAt).toLocaleString() : '',
+      t.timeSpent != null ? t.timeSpent : '',
+      t.urgent ? 'Yes' : '',
+      t.highPriority ? 'Yes' : '',
+      t.notes || '',
+      stTotal > 0 ? stDone : '',
+      stTotal > 0 ? stTotal : '',
+      t.recurrence ? 'Yes' : ''
+    ];
+  });
+  const wsName = (userWsList[currentWsId] && userWsList[currentWsId].name) || 'TaskQ';
+  downloadCSV(`${wsName}_Tasks_${new Date().toISOString().slice(0,10)}.csv`, headers, rows);
+  logActivity('📥', `{user} exported tasks to CSV`);
+}
+
+function exportExpensesCSV() {
+  const headers = ['Task ID', 'Task', 'Category', 'Expense Description', 'Amount', 'Tax Deductible', 'Expense Category', 'Estimated Budget'];
+  const rows = [];
+  tasks.forEach(t => {
+    const cat = cfg.categories.find(c => c.id === t.category);
+    const catLabel = cat ? cat.label : t.category;
+    if (t.expenseItems && t.expenseItems.length) {
+      t.expenseItems.forEach(ei => {
+        rows.push([
+          t.id || '', t.name, catLabel,
+          ei.desc || '', ei.amount, ei.taxDed ? 'Yes' : 'No',
+          t.expenseCategory || '', t.estimatedBudget || ''
+        ]);
+      });
+    } else if (t.expense && Number(t.expense) > 0) {
+      rows.push([
+        t.id || '', t.name, catLabel,
+        '', t.expense, t.taxDeductible ? 'Yes' : 'No',
+        t.expenseCategory || '', t.estimatedBudget || ''
+      ]);
+    }
+  });
+  if (!rows.length) { alert('No expense data to export.'); return; }
+  const wsName = (userWsList[currentWsId] && userWsList[currentWsId].name) || 'TaskQ';
+  downloadCSV(`${wsName}_Expenses_${new Date().toISOString().slice(0,10)}.csv`, headers, rows);
+  logActivity('💰', `{user} exported expenses to CSV`);
 }
 
 // ── ACTIVITY FEED ────────────────────────────────────────────────────────────
