@@ -2,8 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TaskQ — Coddington Family Tasks</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TaskQ — Family Task Manager</title>
+<meta name="description" content="Real-time shared task and calendar management for families and small groups">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TaskQ">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="TaskQ">
+<meta name="msapplication-TileColor" content="#ff6b00">
+<link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -88,7 +98,11 @@
 [data-theme="kds"] .ws-item { color: #e2e8f0; }
 [data-theme="kds"] .ws-item:hover { background: #1e293b; }
 [data-theme="kds"] .progress-fill { opacity: 0.9; }
-body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display: flex; flex-direction: column; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display: flex; flex-direction: column;
+  padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+@media all and (display-mode: standalone) {
+  body { padding-bottom: env(safe-area-inset-bottom); }
+}
 
 /* AUTH SCREEN */
 .auth-screen { position: fixed; inset: 0; background: var(--bg); z-index: 500; display: flex; align-items: center; justify-content: center; }
@@ -1073,7 +1087,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.13</span>
+    <span class="beta-badge">β v2.14</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
   </div>
 </header>
@@ -5724,6 +5738,17 @@ function importSelectedGmail() {
 attachScrollHandlers();
 loadCatColOrder();
 render();
+
+// ── SERVICE WORKER REGISTRATION ──────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      console.log('SW registered, scope:', reg.scope);
+      // Check for updates periodically
+      setInterval(() => reg.update(), 60 * 60 * 1000); // hourly
+    }).catch(err => console.log('SW registration failed:', err));
+  });
+}
 </script>
 </body>
 </html>
