@@ -207,6 +207,21 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); min-
 .cal-page { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 .cal-page.hidden { display: none; }
 
+/* ACTIVITY PAGE */
+.activity-page { display: flex; flex-direction: column; flex: 1; overflow: hidden; padding: 16px; }
+.activity-page.hidden { display: none; }
+.activity-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.activity-title { font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; color: var(--muted); }
+.btn-clear-activity { background: none; border: 1px solid var(--border); color: var(--muted); padding: 4px 10px; font-family: var(--font); font-size: 0.6rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; }
+.btn-clear-activity:hover { border-color: var(--red); color: var(--red); }
+.activity-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.activity-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+.activity-icon { font-size: 1rem; flex-shrink: 0; width: 24px; text-align: center; }
+.activity-content { flex: 1; min-width: 0; }
+.activity-text { font-size: 0.8rem; color: var(--text); line-height: 1.4; }
+.activity-text strong { color: var(--accent); font-weight: 600; }
+.activity-time { font-size: 0.65rem; color: var(--muted); margin-top: 2px; letter-spacing: 0.5px; }
+
 /* CONTROLS */
 .controls { background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .controls-row1 { padding: 10px 20px 6px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -1123,7 +1138,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.18</span>
+    <span class="beta-badge">β v2.19</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
   </div>
 </header>
@@ -1224,6 +1239,7 @@ input[type="date"] { color-scheme: dark; }
 <nav class="page-nav no-print">
   <button class="page-tab active" id="tabTasks" onclick="setPage('tasks')">🔲 TASKS</button>
   <button class="page-tab" id="tabCalendar" onclick="setPage('calendar')">📅 CALENDAR</button>
+  <button class="page-tab" id="tabActivity" onclick="setPage('activity')">📋 ACTIVITY</button>
 </nav>
 
 <datalist id="assigneeList"></datalist>
@@ -1295,6 +1311,16 @@ input[type="date"] { color-scheme: dark; }
     <button class="btn-add-event no-print" onclick="window.print()" title="Print calendar">🖨 PRINT</button>
   </div>
   <div class="cal-main" id="calMain"></div>
+</div>
+
+<div class="activity-page hidden" id="activityPage">
+  <div class="activity-header">
+    <span class="activity-title">ACTIVITY FEED</span>
+    <button class="btn-clear-activity" onclick="clearActivityFeed()" title="Clear all activity">CLEAR</button>
+  </div>
+  <div class="activity-list" id="activityList">
+    <div class="empty-state">NO ACTIVITY YET</div>
+  </div>
 </div>
 
 <!-- CONFIRM REMOVE DIALOG (tasks) -->
@@ -2388,6 +2414,8 @@ function attachDataListeners() {
     currentWsLocks = Object.assign({ assignees:false, categories:false, subtitle:false, urgentFlag:false }, snap.val() || {});
   });
 
+  initActivityFeed();
+
   settingsRef.on('value', snapshot => {
     const cloudCfg = snapshot.val();
     if (cloudCfg && cloudCfg.categories && cloudCfg.categories.length) {
@@ -2425,6 +2453,8 @@ function detachDataListeners() {
   if (tasksRef)    tasksRef.off();
   if (settingsRef) settingsRef.off();
   if (eventsRef)   eventsRef.off();
+  if (activityRef) { activityRef.off(); activityRef = null; }
+  activityItems = [];
   if (currentWsId) {
     db.ref(`workspaces/${currentWsId}/members`).off();
     db.ref(`workspaces/${currentWsId}/locks`).off();
@@ -2655,11 +2685,14 @@ function setPage(page) {
   currentPage = page;
   document.getElementById('tasksPage').classList.toggle('hidden', page !== 'tasks');
   document.getElementById('calPage').classList.toggle('hidden', page !== 'calendar');
+  document.getElementById('activityPage').classList.toggle('hidden', page !== 'activity');
   document.getElementById('tabTasks').classList.toggle('active', page === 'tasks');
   document.getElementById('tabCalendar').classList.toggle('active', page === 'calendar');
+  document.getElementById('tabActivity').classList.toggle('active', page === 'activity');
   // Sync bottom tab bar
   document.querySelectorAll('.bottom-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === page));
   if (page === 'calendar') renderCalendar();
+  if (page === 'activity') renderActivityFeed();
 }
 
 // ── TIME TOGGLES ──────────────────────────────────────────────────────────────
@@ -2787,6 +2820,8 @@ function addTask() {
     status: 'active', doneAt: null
   });
 
+  logActivity('➕', `{user} created task "${name}"`);
+
   // Reset toggle modes after adding
   if (urgentMode) { urgentMode = false; document.getElementById('btnUrgent').classList.remove('urgent-on'); }
   if (hiPriMode)  { hiPriMode = false;  document.getElementById('btnHiPri').classList.remove('hipri-on'); }
@@ -2800,6 +2835,7 @@ function markDone(key) {
     spawnRecurringTask(task);
   }
   tasksRef.child(key).update({ status: 'done', doneAt: Date.now() });
+  if (task) logActivity('✅', `{user} completed "${task.name}"`);
 }
 
 function quickExtendDue(key) {
@@ -2810,7 +2846,9 @@ function quickExtendDue(key) {
 }
 
 function markInProgress(key) {
+  const task = tasks.find(t => t._key === key);
   tasksRef.child(key).update({ status: 'in_progress' });
+  if (task) logActivity('▶️', `{user} started "${task.name}"`);
 }
 
 function markPendingFromProgress(key) {
@@ -2822,7 +2860,10 @@ function confirmRemove(key, name) {
   pendingRemoveName = name;
   document.getElementById('confirmName').textContent = name;
   document.getElementById('confirmOkBtn').onclick = () => {
-    if (pendingRemoveKey) tasksRef.child(pendingRemoveKey).remove();
+    if (pendingRemoveKey) {
+      logActivity('🗑️', `{user} removed "${pendingRemoveName}"`);
+      tasksRef.child(pendingRemoveKey).remove();
+    }
     closeConfirm();
   };
   document.getElementById('confirmOverlay').classList.remove('hidden');
@@ -3751,6 +3792,7 @@ function saveEditTask() {
   }
 
   tasksRef.child(editingTaskKey).update(updates);
+  logActivity('✏️', `{user} edited "${name}"`);
   if (smsUids.length) sendSmsForItem('task', editingTaskKey, smsUids);
   closeEditTask();
 }
@@ -5679,9 +5721,11 @@ function saveEvent() {
 
   if (editingEventKey) {
     eventsRef.child(editingEventKey).update(data);
+    logActivity('📅', `{user} edited event "${data.title}"`);
     if (smsUids.length) sendSmsForItem('event', editingEventKey, smsUids);
   } else {
     const newRef = eventsRef.push(data);
+    logActivity('📅', `{user} added event "${data.title}"`);
     if (smsUids.length) sendSmsForItem('event', newRef.key, smsUids);
   }
 
@@ -5987,6 +6031,70 @@ function setBottomTab(page) {
   document.querySelectorAll('.bottom-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === page));
 }
 
+// ── ACTIVITY FEED ────────────────────────────────────────────────────────────
+let activityRef = null;
+let activityItems = [];
+
+function initActivityFeed() {
+  if (!currentWsId) return;
+  if (activityRef) activityRef.off();
+  activityRef = firebase.database().ref(`workspaces/${currentWsId}/activity`);
+  activityRef.orderByChild('ts').limitToLast(200).on('value', snap => {
+    activityItems = [];
+    snap.forEach(child => { activityItems.push({ _key: child.key, ...child.val() }); });
+    activityItems.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    if (currentPage === 'activity') renderActivityFeed();
+  });
+}
+
+function logActivity(icon, text) {
+  if (!activityRef) return;
+  const user = firebase.auth().currentUser;
+  const displayName = user ? (user.displayName || user.email || 'Someone') : 'Someone';
+  activityRef.push({
+    icon,
+    text: text.replace('{user}', displayName),
+    ts: Date.now(),
+    uid: user ? user.uid : null
+  });
+}
+
+function renderActivityFeed() {
+  const el = document.getElementById('activityList');
+  if (!activityItems.length) {
+    el.innerHTML = '<div class="empty-state">NO ACTIVITY YET</div>';
+    return;
+  }
+  el.innerHTML = activityItems.map(a => {
+    const ago = fmtTimeAgo(a.ts);
+    return `<div class="activity-item">
+      <div class="activity-icon">${a.icon || '📋'}</div>
+      <div class="activity-content">
+        <div class="activity-text">${esc(a.text)}</div>
+        <div class="activity-time">${ago}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function fmtTimeAgo(ts) {
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'JUST NOW';
+  if (mins < 60) return mins + ' MIN AGO';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + ' HR AGO';
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return days + 'D AGO';
+  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function clearActivityFeed() {
+  if (!activityRef) return;
+  if (!confirm('Clear all activity history?')) return;
+  activityRef.remove();
+}
+
 // ── SERVICE WORKER REGISTRATION ──────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -6010,7 +6118,7 @@ if ('serviceWorker' in navigator) {
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="8" y1="18" x2="8" y2="18.01"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
       CALENDAR
     </button>
-    <button class="bottom-tab" data-tab="activity" onclick="setBottomTab('activity')" disabled style="opacity:0.35">
+    <button class="bottom-tab" data-tab="activity" onclick="setBottomTab('activity')">
       <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       ACTIVITY
     </button>
