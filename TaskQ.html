@@ -631,6 +631,19 @@ input[type="date"] { color-scheme: dark; }
 .btn-notes-toggle:hover { border-color: var(--accent); color: var(--accent); }
 .btn-notes-toggle.notes-on { border-color: var(--accent); color: var(--accent); background: rgba(255,107,0,0.1); }
 
+/* ONBOARDING WALKTHROUGH */
+.onboard-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9998; }
+.onboard-tooltip { position: fixed; z-index: 10000; background: var(--surface); border: 2px solid var(--accent); border-radius: 10px; padding: 16px 20px; max-width: 320px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.onboard-title { font-size: 0.85rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+.onboard-text { font-size: 0.78rem; color: var(--text); line-height: 1.5; margin-bottom: 12px; }
+.onboard-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.onboard-step { font-size: 0.65rem; color: var(--muted); letter-spacing: 1px; }
+.onboard-btn { background: var(--accent); color: #fff; border: none; padding: 6px 16px; font-family: var(--font); font-size: 0.7rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; }
+.onboard-btn:hover { opacity: 0.9; }
+.onboard-skip { background: none; border: none; color: var(--muted); font-family: var(--font); font-size: 0.65rem; cursor: pointer; letter-spacing: 1px; }
+.onboard-skip:hover { color: var(--text); }
+.onboard-highlight { position: relative; z-index: 9999; box-shadow: 0 0 0 4px var(--accent), 0 0 20px rgba(255,107,0,0.3); border-radius: 6px; }
+
 /* EXPORT BUTTONS */
 .export-btns { display: flex; gap: 4px; margin-left: auto; }
 .btn-export { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); padding: 4px 10px; font-family: var(--font); font-size: 0.62rem; letter-spacing: 1px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
@@ -1143,7 +1156,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.21</span>
+    <span class="beta-badge">β v2.22</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
   </div>
 </header>
@@ -1184,6 +1197,9 @@ input[type="date"] { color-scheme: dark; }
     <div class="sidebar-hint" id="pushStatusHint">Enable browser notifications for due tasks and updates.</div>
     <button class="sidebar-item" onclick="closeSidebar(); openSettings()">
       <span class="sidebar-item-icon">⚙</span> WORKSPACE SETTINGS
+    </button>
+    <button class="sidebar-item" onclick="closeSidebar(); setTimeout(resetOnboarding, 300)">
+      <span class="sidebar-item-icon">🎓</span> REPLAY TOUR
     </button>
   </div>
 
@@ -2466,6 +2482,9 @@ function attachDataListeners() {
   });
 
   listenersActive = true;
+
+  // Start onboarding for first-time users (slight delay to let UI render)
+  setTimeout(() => { if (shouldShowOnboarding()) startOnboarding(); }, 1500);
 }
 
 function detachDataListeners() {
@@ -6189,6 +6208,85 @@ function clearActivityFeed() {
   if (!activityRef) return;
   if (!confirm('Clear all activity history?')) return;
   activityRef.remove();
+}
+
+// ── ONBOARDING WALKTHROUGH ───────────────────────────────────────────────────
+const ONBOARD_STEPS = [
+  { target: '#iTask', title: 'CREATE TASKS', text: 'Type a task name here and press Enter or click "+ ADD TASK" to create your first task. You can set assignees, due dates, and priorities.' },
+  { target: '.view-toggle', title: 'VIEW MODES', text: 'Switch between Board, Table, and Category views to see your tasks the way you prefer.' },
+  { target: '.export-btns', title: 'EXPORT DATA', text: 'Export your tasks as CSV for spreadsheets, expenses as CSV for accounting, or print/save as PDF.' },
+  { target: '#tabCalendar', title: 'CALENDAR', text: 'Switch to the calendar view to see events and manage your schedule alongside tasks.' },
+  { target: '#tabActivity', title: 'ACTIVITY FEED', text: 'Track all actions across your workspace. See who created, completed, or edited tasks in real time.' },
+  { target: '.hamburger', title: 'SETTINGS', text: 'Open the sidebar for workspace settings, SMS/push notification preferences, theme switching, and more. Welcome to TaskQ!' }
+];
+
+let onboardStep = 0;
+let onboardBackdrop = null;
+let onboardTooltip = null;
+let onboardPrevHighlight = null;
+
+function shouldShowOnboarding() {
+  return !localStorage.getItem('taskq_onboard_done');
+}
+
+function startOnboarding() {
+  onboardStep = 0;
+  onboardBackdrop = document.createElement('div');
+  onboardBackdrop.className = 'onboard-backdrop';
+  onboardBackdrop.onclick = () => {}; // prevent clicks through
+  document.body.appendChild(onboardBackdrop);
+  onboardTooltip = document.createElement('div');
+  onboardTooltip.className = 'onboard-tooltip';
+  document.body.appendChild(onboardTooltip);
+  showOnboardStep();
+}
+
+function showOnboardStep() {
+  if (onboardPrevHighlight) onboardPrevHighlight.classList.remove('onboard-highlight');
+  if (onboardStep >= ONBOARD_STEPS.length) { endOnboarding(); return; }
+  const step = ONBOARD_STEPS[onboardStep];
+  const el = document.querySelector(step.target);
+  if (el) {
+    el.classList.add('onboard-highlight');
+    onboardPrevHighlight = el;
+    const rect = el.getBoundingClientRect();
+    // Position tooltip below the target
+    let top = rect.bottom + 12;
+    let left = Math.max(12, rect.left);
+    // If too low, put above
+    if (top + 180 > window.innerHeight) { top = rect.top - 180; }
+    if (left + 320 > window.innerWidth) { left = window.innerWidth - 332; }
+    onboardTooltip.style.top = top + 'px';
+    onboardTooltip.style.left = left + 'px';
+  }
+  onboardTooltip.innerHTML = `
+    <div class="onboard-title">${step.title}</div>
+    <div class="onboard-text">${step.text}</div>
+    <div class="onboard-footer">
+      <span class="onboard-step">${onboardStep + 1} / ${ONBOARD_STEPS.length}</span>
+      <div style="display:flex;gap:8px">
+        <button class="onboard-skip" onclick="endOnboarding()">SKIP</button>
+        <button class="onboard-btn" onclick="nextOnboardStep()">${onboardStep < ONBOARD_STEPS.length - 1 ? 'NEXT' : 'DONE'}</button>
+      </div>
+    </div>`;
+}
+
+function nextOnboardStep() {
+  onboardStep++;
+  showOnboardStep();
+}
+
+function endOnboarding() {
+  if (onboardPrevHighlight) onboardPrevHighlight.classList.remove('onboard-highlight');
+  if (onboardBackdrop) onboardBackdrop.remove();
+  if (onboardTooltip) onboardTooltip.remove();
+  onboardBackdrop = null; onboardTooltip = null; onboardPrevHighlight = null;
+  localStorage.setItem('taskq_onboard_done', 'true');
+}
+
+function resetOnboarding() {
+  localStorage.removeItem('taskq_onboard_done');
+  startOnboarding();
 }
 
 // ── PUSH / BROWSER NOTIFICATIONS ─────────────────────────────────────────────
