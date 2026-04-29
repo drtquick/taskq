@@ -1138,7 +1138,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.19</span>
+    <span class="beta-badge">β v2.20</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
   </div>
 </header>
@@ -1169,6 +1169,14 @@ input[type="date"] { color-scheme: dark; }
     <button class="sidebar-item" onclick="sendTestSms()" id="testSmsBtn" style="font-size:0.7rem;padding:6px 12px;margin-top:4px">
       <span class="sidebar-item-icon">🧪</span> SEND TEST SMS
     </button>
+    <div class="sidebar-toggle" style="margin-top:8px">
+      <label><span class="sidebar-item-icon">🔔</span> PUSH NOTIFICATIONS</label>
+      <label class="sidebar-toggle-switch">
+        <input type="checkbox" id="pushEnabledToggle" onchange="togglePushNotifications(this.checked)">
+        <span class="sidebar-toggle-slider"></span>
+      </label>
+    </div>
+    <div class="sidebar-hint" id="pushStatusHint">Enable browser notifications for due tasks and updates.</div>
     <button class="sidebar-item" onclick="closeSidebar(); openSettings()">
       <span class="sidebar-item-icon">⚙</span> WORKSPACE SETTINGS
     </button>
@@ -2256,6 +2264,7 @@ function proceedToApp(user) {
   document.getElementById('userName').textContent = displayName;
   setupConnectionListener();
   initWorkspaces(user);
+  initPushNotifications();
 }
 
 async function saveProfile() {
@@ -2835,7 +2844,10 @@ function markDone(key) {
     spawnRecurringTask(task);
   }
   tasksRef.child(key).update({ status: 'done', doneAt: Date.now() });
-  if (task) logActivity('✅', `{user} completed "${task.name}"`);
+  if (task) {
+    logActivity('✅', `{user} completed "${task.name}"`);
+    showNotification('Task Completed', `"${task.name}" has been marked done.`);
+  }
 }
 
 function quickExtendDue(key) {
@@ -6093,6 +6105,86 @@ function clearActivityFeed() {
   if (!activityRef) return;
   if (!confirm('Clear all activity history?')) return;
   activityRef.remove();
+}
+
+// ── PUSH / BROWSER NOTIFICATIONS ─────────────────────────────────────────────
+let pushEnabled = false;
+let dueSoonInterval = null;
+
+function initPushNotifications() {
+  pushEnabled = localStorage.getItem('taskq_push_enabled') === 'true';
+  const toggle = document.getElementById('pushEnabledToggle');
+  if (toggle) toggle.checked = pushEnabled;
+  updatePushHint();
+  if (pushEnabled) startDueSoonChecker();
+}
+
+async function togglePushNotifications(on) {
+  if (on) {
+    if (!('Notification' in window)) {
+      alert('This browser does not support notifications.');
+      document.getElementById('pushEnabledToggle').checked = false;
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      document.getElementById('pushEnabledToggle').checked = false;
+      updatePushHint('Permission denied. Check browser settings.');
+      return;
+    }
+    pushEnabled = true;
+    localStorage.setItem('taskq_push_enabled', 'true');
+    startDueSoonChecker();
+    showNotification('TaskQ', 'Notifications enabled! You will be alerted when tasks are due soon.');
+  } else {
+    pushEnabled = false;
+    localStorage.setItem('taskq_push_enabled', 'false');
+    stopDueSoonChecker();
+  }
+  updatePushHint();
+}
+
+function updatePushHint(msg) {
+  const el = document.getElementById('pushStatusHint');
+  if (!el) return;
+  if (msg) { el.textContent = msg; return; }
+  if (!('Notification' in window)) { el.textContent = 'Not supported in this browser.'; return; }
+  if (pushEnabled) { el.textContent = 'Active. You will receive alerts for due tasks.'; }
+  else { el.textContent = 'Enable browser notifications for due tasks and updates.'; }
+}
+
+function showNotification(title, body) {
+  if (!pushEnabled || Notification.permission !== 'granted') return;
+  try { new Notification(title, { body, icon: 'favicon-192x192.png', badge: 'favicon-192x192.png' }); }
+  catch (e) { console.log('Notification error:', e); }
+}
+
+// Check every 60s for tasks due within 30 minutes
+const notifiedDueSoon = new Set();
+
+function startDueSoonChecker() {
+  stopDueSoonChecker();
+  dueSoonInterval = setInterval(checkDueSoon, 60000);
+  checkDueSoon(); // run immediately
+}
+
+function stopDueSoonChecker() {
+  if (dueSoonInterval) { clearInterval(dueSoonInterval); dueSoonInterval = null; }
+}
+
+function checkDueSoon() {
+  if (!pushEnabled || !tasks.length) return;
+  const now = Date.now();
+  const threshold = 30 * 60000; // 30 minutes
+  tasks.forEach(t => {
+    if (t.status === 'done' || !t.dueAt) return;
+    const timeLeft = t.dueAt - now;
+    if (timeLeft > 0 && timeLeft <= threshold && !notifiedDueSoon.has(t._key)) {
+      notifiedDueSoon.add(t._key);
+      const mins = Math.round(timeLeft / 60000);
+      showNotification('Task Due Soon', `"${t.name}" is due in ${mins} minute${mins !== 1 ? 's' : ''}`);
+    }
+  });
 }
 
 // ── SERVICE WORKER REGISTRATION ──────────────────────────────────────────────
