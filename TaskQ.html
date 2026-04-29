@@ -1049,7 +1049,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.10</span>
+    <span class="beta-badge">β v2.11</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
   </div>
 </header>
@@ -1383,8 +1383,22 @@ input[type="date"] { color-scheme: dark; }
     </div>
 
     <div class="section" id="adminSection" style="display:none">
-      <h3>Members &amp; Permissions <span id="adminBadge" style="font-size:0.55rem;color:var(--green);letter-spacing:2px;margin-left:8px">ADMIN</span></h3>
-      <button class="btn-add-item" onclick="openMembersModal()" style="margin-bottom:12px">👥 MANAGE MEMBERS</button>
+      <h3>Members <span id="adminBadge" style="font-size:0.55rem;color:var(--green);letter-spacing:2px;margin-left:8px">ADMIN</span></h3>
+      <div id="settingsMembersList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px"></div>
+      <div style="border:1px solid var(--border);border-radius:4px;padding:10px;margin-bottom:12px">
+        <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px;display:block;margin-bottom:6px">INVITE A MEMBER</label>
+        <p style="font-size:0.62rem;color:var(--muted);margin:0 0 8px">Enter the email they signed up with. They must have a TaskQ account.</p>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="email" id="settingsInviteEmail" placeholder="user@example.com" style="flex:1;min-width:180px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 12px;font-size:0.78rem;border-radius:4px;font-family:var(--font)">
+          <select id="settingsInviteRole" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 12px;font-size:0.78rem;border-radius:4px;font-family:var(--font)">
+            <option value="member">MEMBER</option>
+            <option value="admin">ADMIN</option>
+          </select>
+          <button class="btn-add-item" onclick="settingsInviteMember()">+ INVITE</button>
+        </div>
+        <div id="settingsInviteStatus" style="font-size:0.68rem;color:var(--muted);margin-top:6px"></div>
+      </div>
+      <h3 style="margin-top:16px">Permissions</h3>
       <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px;display:block;margin-top:4px">LOCKS (ADMIN-ONLY WHEN ON)</label>
       <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
         <label style="display:flex;align-items:center;gap:8px;font-size:0.78rem;"><input type="checkbox" id="lockAssignees"> Lock assignee list</label>
@@ -4284,10 +4298,139 @@ async function refreshAdminSection() {
   const adminSection = document.getElementById('adminSection');
   if (!adminSection) return;
   adminSection.style.display = isCurrentUserAdmin() ? '' : 'none';
+  if (isCurrentUserAdmin()) {
+    renderSettingsMembersList();
+  }
   document.getElementById('lockAssignees').checked  = !!currentWsLocks.assignees;
   document.getElementById('lockCategories').checked = !!currentWsLocks.categories;
   document.getElementById('lockSubtitle').checked   = !!currentWsLocks.subtitle;
   document.getElementById('lockUrgent').checked     = !!currentWsLocks.urgentFlag;
+}
+
+function renderSettingsMembersList() {
+  const list = document.getElementById('settingsMembersList');
+  if (!list) return;
+  const entries = Object.entries(currentWsMembers);
+  if (!entries.length) { list.innerHTML = '<p style="font-size:0.75rem;color:var(--muted)">No members yet.</p>'; return; }
+  const monthNames = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  list.innerHTML = entries.map(([uid, m]) => {
+    const roleBadge = m.role === 'admin'
+      ? '<span style="font-size:0.55rem;color:var(--green);letter-spacing:2px">ADMIN</span>'
+      : '<span style="font-size:0.55rem;color:var(--muted);letter-spacing:2px">MEMBER</span>';
+    const fullName = [m.firstName, m.lastName].filter(Boolean).join(' ');
+    const phoneVal = m.phone || '';
+    const verifiedBadge = m.phoneVerified
+      ? '<span style="font-size:0.5rem;color:var(--green);margin-left:4px">✓ VERIFIED</span>'
+      : (phoneVal ? '<span style="font-size:0.5rem;color:var(--orange);margin-left:4px">UNVERIFIED</span>' : '');
+    return `<div style="padding:10px;border:1px solid var(--border);border-radius:4px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.85rem;font-weight:600">${esc(fullName || m.email || uid)}</div>
+          <div style="font-size:0.68rem;color:var(--muted)">${esc(m.email || uid)}</div>
+          <div style="margin-top:2px">${roleBadge}</div>
+        </div>
+        <button class="btn-add-item" style="font-size:0.6rem;padding:4px 8px" onclick="toggleRole('${esc(uid)}')">${m.role === 'admin' ? 'DEMOTE' : 'PROMOTE'}</button>
+        <button class="btn-add-item" style="font-size:0.6rem;padding:4px 8px" onclick="openReportConfig('${esc(uid)}')">📧</button>
+        <button class="btn-delete-ws" style="font-size:0.6rem;padding:4px 8px" onclick="removeMember('${esc(uid)}')">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div>
+          <label style="font-size:0.55rem;color:var(--muted);letter-spacing:1px">FIRST NAME</label>
+          <input type="text" id="sfn_${esc(uid)}" value="${esc(m.firstName || '')}" placeholder="First"
+            style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 6px;font-size:0.72rem;border-radius:3px;font-family:var(--font);margin-top:2px">
+        </div>
+        <div>
+          <label style="font-size:0.55rem;color:var(--muted);letter-spacing:1px">LAST NAME</label>
+          <input type="text" id="sln_${esc(uid)}" value="${esc(m.lastName || '')}" placeholder="Last"
+            style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 6px;font-size:0.72rem;border-radius:3px;font-family:var(--font);margin-top:2px">
+        </div>
+      </div>
+      <div style="margin-top:4px">
+        <label style="font-size:0.55rem;color:var(--muted);letter-spacing:1px">EMAIL</label>
+        <input type="email" id="sem_${esc(uid)}" value="${esc(m.email || '')}" placeholder="email@example.com"
+          style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 6px;font-size:0.72rem;border-radius:3px;font-family:var(--font);margin-top:2px">
+      </div>
+      <div style="margin-top:4px">
+        <label style="font-size:0.55rem;color:var(--muted);letter-spacing:1px">PHONE${verifiedBadge}</label>
+        <input type="tel" id="sph_${esc(uid)}" value="${esc(phoneVal)}" placeholder="+15551234567"
+          style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 6px;font-size:0.72rem;border-radius:3px;font-family:var(--font);margin-top:2px">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px">
+        <div>
+          <label style="font-size:0.55rem;color:var(--muted);letter-spacing:1px">BIRTHDAY</label>
+          <div style="display:flex;gap:3px;margin-top:2px">
+            <select id="sbm_${esc(uid)}" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px;font-size:0.65rem;border-radius:3px;font-family:var(--font)">
+              <option value="">--</option>
+              ${[1,2,3,4,5,6,7,8,9,10,11,12].map(i => `<option value="${i}"${m.birthMonth===i?' selected':''}>${monthNames[i]}</option>`).join('')}
+            </select>
+            <input type="number" id="sbd_${esc(uid)}" value="${m.birthDay||''}" min="1" max="31" placeholder="DD"
+              style="width:42px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px;font-size:0.65rem;border-radius:3px;font-family:var(--font);text-align:center">
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.55rem;color:var(--muted);letter-spacing:1px">ANNIVERSARY</label>
+          <div style="display:flex;gap:3px;margin-top:2px">
+            <select id="sam_${esc(uid)}" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px;font-size:0.65rem;border-radius:3px;font-family:var(--font)">
+              <option value="">--</option>
+              ${[1,2,3,4,5,6,7,8,9,10,11,12].map(i => `<option value="${i}"${m.annivMonth===i?' selected':''}>${monthNames[i]}</option>`).join('')}
+            </select>
+            <input type="number" id="sad_${esc(uid)}" value="${m.annivDay||''}" min="1" max="31" placeholder="DD"
+              style="width:42px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px;font-size:0.65rem;border-radius:3px;font-family:var(--font);text-align:center">
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:6px">
+        <button class="btn-add-item" style="font-size:0.6rem;padding:4px 10px" onclick="saveSettingsMemberDetails('${esc(uid)}')">💾 SAVE</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function saveSettingsMemberDetails(uid) {
+  const firstName = (document.getElementById('sfn_' + uid)?.value || '').trim();
+  const lastName = (document.getElementById('sln_' + uid)?.value || '').trim();
+  const email = (document.getElementById('sem_' + uid)?.value || '').trim();
+  let phone = (document.getElementById('sph_' + uid)?.value || '').trim();
+  if (phone && !phone.startsWith('+')) phone = '+1' + phone.replace(/\D/g, '');
+  const birthMonth = parseInt(document.getElementById('sbm_' + uid)?.value) || null;
+  const birthDay = parseInt(document.getElementById('sbd_' + uid)?.value) || null;
+  const annivMonth = parseInt(document.getElementById('sam_' + uid)?.value) || null;
+  const annivDay = parseInt(document.getElementById('sad_' + uid)?.value) || null;
+  try {
+    const updates = {};
+    updates[`workspaces/${currentWsId}/members/${uid}/firstName`] = firstName || null;
+    updates[`workspaces/${currentWsId}/members/${uid}/lastName`] = lastName || null;
+    updates[`workspaces/${currentWsId}/members/${uid}/email`] = email || null;
+    updates[`workspaces/${currentWsId}/members/${uid}/phone`] = phone || null;
+    updates[`workspaces/${currentWsId}/members/${uid}/birthMonth`] = birthMonth;
+    updates[`workspaces/${currentWsId}/members/${uid}/birthDay`] = birthDay;
+    updates[`workspaces/${currentWsId}/members/${uid}/annivMonth`] = annivMonth;
+    updates[`workspaces/${currentWsId}/members/${uid}/annivDay`] = annivDay;
+    await db.ref().update(updates);
+    const btn = document.querySelector(`[onclick="saveSettingsMemberDetails('${uid}')"]`);
+    if (btn) { const orig = btn.innerHTML; btn.innerHTML = '✅ SAVED'; setTimeout(() => btn.innerHTML = orig, 1500); }
+    await loadMembersAndLocks();
+    renderSettingsMembersList();
+  } catch (e) { alert('Failed to save: ' + e.message); }
+}
+
+async function settingsInviteMember() {
+  const email = document.getElementById('settingsInviteEmail').value.trim().toLowerCase();
+  const role = document.getElementById('settingsInviteRole').value;
+  const status = document.getElementById('settingsInviteStatus');
+  if (!email || !email.includes('@')) { status.textContent = 'Enter a valid email.'; return; }
+  status.textContent = 'Sending invite...';
+  try {
+    const res = await callAdminApi('inviteUserToWorkspace', { wsId: currentWsId, email, role });
+    status.textContent = '✓ Added ' + (res.email || email) + ' as ' + role + '.';
+    status.style.color = 'var(--green)';
+    document.getElementById('settingsInviteEmail').value = '';
+    await loadMembersAndLocks();
+    renderSettingsMembersList();
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+    status.style.color = 'var(--red)';
+  }
 }
 
 async function saveLocks() {
