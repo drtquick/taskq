@@ -276,6 +276,7 @@ input[type="date"] { color-scheme: dark; }
 .card.done   .card-alert-lbl { color: var(--hdr-done-tx); }
 .card.done   .card-alert-tmr { color: var(--hdr-done-tx2); }
 .card-body { padding: 14px; }
+.card-recur-icon { font-size: 0.7rem; vertical-align: middle; opacity: 0.7; }
 
 .card-header   { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
 .card-id       { font-size: 0.63rem; color: var(--muted); }
@@ -1107,7 +1108,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.16</span>
+    <span class="beta-badge">β v2.17</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
   </div>
 </header>
@@ -1335,6 +1336,38 @@ input[type="date"] { color-scheme: dark; }
     <div class="edit-task-form-row" id="etDueDateRow" style="display:none">
       <label>DUE DATE</label>
       <input type="datetime-local" id="etDueDate" step="900">
+    </div>
+    <div class="edit-task-form-row">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <input type="checkbox" id="etRecurOn" onchange="toggleEtRecur()">
+        <label for="etRecurOn" style="margin:0">RECURRING TASK</label>
+      </div>
+    </div>
+    <div class="edit-task-form-row" id="etRecurRow" style="display:none">
+      <label>REPEAT EVERY</label>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <input type="number" id="etRecurInterval" min="1" max="365" value="1" style="width:60px">
+        <select id="etRecurFreq">
+          <option value="daily">DAY(S)</option>
+          <option value="weekly">WEEK(S)</option>
+          <option value="monthly">MONTH(S)</option>
+          <option value="yearly">YEAR(S)</option>
+        </select>
+      </div>
+      <div style="margin-top:6px">
+        <label style="font-size:0.65rem;color:var(--muted)">ENDS</label>
+        <select id="etRecurEnd" onchange="toggleEtRecurEnd()">
+          <option value="never">NEVER</option>
+          <option value="after">AFTER # OCCURRENCES</option>
+          <option value="on">ON DATE</option>
+        </select>
+      </div>
+      <div id="etRecurEndAfterRow" style="display:none;margin-top:4px">
+        <input type="number" id="etRecurEndAfter" min="1" max="999" value="10" style="width:70px" placeholder="# times">
+      </div>
+      <div id="etRecurEndOnRow" style="display:none;margin-top:4px">
+        <input type="date" id="etRecurEndOn">
+      </div>
     </div>
     <div class="edit-task-form-row">
       <label>NOTES (OPTIONAL)</label>
@@ -2737,7 +2770,13 @@ function addTask() {
   el.focus();
 }
 
-function markDone(key) { tasksRef.child(key).update({ status: 'done', doneAt: Date.now() }); }
+function markDone(key) {
+  const task = tasks.find(t => t._key === key);
+  if (task && task.recurrence) {
+    spawnRecurringTask(task);
+  }
+  tasksRef.child(key).update({ status: 'done', doneAt: Date.now() });
+}
 
 function quickExtendDue(key) {
   const days = prompt('Extend due date by how many days from today?', '7');
@@ -3404,6 +3443,9 @@ function openEditTask(key) {
   document.getElementById('etDueDateRow').style.display = hasDue ? '' : 'none';
   document.getElementById('etDueDate').value = hasDue ? toLocalDT(task.dueAt) : '';
 
+  // Recurrence
+  populateRecurrenceForm(task.recurrence || null);
+
   // Notes
   document.getElementById('etNotes').value = task.notes || '';
 
@@ -3466,6 +3508,94 @@ function toggleEtDueDate() {
   }
 }
 
+function toggleEtRecur() {
+  const on = document.getElementById('etRecurOn').checked;
+  document.getElementById('etRecurRow').style.display = on ? '' : 'none';
+}
+function toggleEtRecurEnd() {
+  const v = document.getElementById('etRecurEnd').value;
+  document.getElementById('etRecurEndAfterRow').style.display = v === 'after' ? '' : 'none';
+  document.getElementById('etRecurEndOnRow').style.display = v === 'on' ? '' : 'none';
+}
+
+function getRecurrenceFromForm() {
+  if (!document.getElementById('etRecurOn').checked) return null;
+  const r = {
+    freq: document.getElementById('etRecurFreq').value,
+    interval: parseInt(document.getElementById('etRecurInterval').value) || 1,
+    endType: document.getElementById('etRecurEnd').value
+  };
+  if (r.endType === 'after') r.endAfter = parseInt(document.getElementById('etRecurEndAfter').value) || 10;
+  if (r.endType === 'on') { const d = document.getElementById('etRecurEndOn').value; if (d) r.endOn = new Date(d).getTime(); }
+  return r;
+}
+
+function populateRecurrenceForm(recur) {
+  const has = !!recur;
+  document.getElementById('etRecurOn').checked = has;
+  document.getElementById('etRecurRow').style.display = has ? '' : 'none';
+  if (has) {
+    document.getElementById('etRecurFreq').value = recur.freq || 'weekly';
+    document.getElementById('etRecurInterval').value = recur.interval || 1;
+    document.getElementById('etRecurEnd').value = recur.endType || 'never';
+    toggleEtRecurEnd();
+    if (recur.endAfter) document.getElementById('etRecurEndAfter').value = recur.endAfter;
+    if (recur.endOn) document.getElementById('etRecurEndOn').value = new Date(recur.endOn).toISOString().slice(0,10);
+  } else {
+    document.getElementById('etRecurFreq').value = 'weekly';
+    document.getElementById('etRecurInterval').value = 1;
+    document.getElementById('etRecurEnd').value = 'never';
+    toggleEtRecurEnd();
+  }
+}
+
+function computeNextDue(baseDue, recur) {
+  const d = new Date(baseDue);
+  const interval = recur.interval || 1;
+  switch (recur.freq) {
+    case 'daily':   d.setDate(d.getDate() + interval); break;
+    case 'weekly':  d.setDate(d.getDate() + (interval * 7)); break;
+    case 'monthly': d.setMonth(d.getMonth() + interval); break;
+    case 'yearly':  d.setFullYear(d.getFullYear() + interval); break;
+  }
+  return d.getTime();
+}
+
+function spawnRecurringTask(task) {
+  if (!task.recurrence || !task.dueAt) return;
+  const recur = JSON.parse(JSON.stringify(task.recurrence));
+  // Check end conditions
+  if (recur.endType === 'after') {
+    const count = (recur.spawnedCount || 0) + 1;
+    if (count >= recur.endAfter) return; // limit reached
+    recur.spawnedCount = count;
+  }
+  const nextDue = computeNextDue(task.dueAt, recur);
+  if (recur.endType === 'on' && recur.endOn) {
+    if (nextDue > recur.endOn) return; // past end date
+  }
+  // Generate unique ID from max existing
+  const maxNum = tasks.reduce((mx, t) => {
+    const m = (t.id || '').match(/T-(\d+)/);
+    return m ? Math.max(mx, parseInt(m[1], 10)) : mx;
+  }, 0);
+  const newTask = {
+    id: 'T-' + String(maxNum + 1).padStart(3, '0'),
+    name: task.name,
+    assignees: task.assignees || null,
+    category: task.category,
+    createdAt: Date.now(),
+    dueAt: nextDue,
+    urgent: task.urgent || null,
+    highPriority: task.highPriority || null,
+    status: 'active',
+    doneAt: null,
+    notes: task.notes || null,
+    recurrence: recur
+  };
+  tasksRef.push(newTask);
+}
+
 function saveEditTask() {
   const name = document.getElementById('etName').value.trim();
   if (!name) { document.getElementById('etName').focus(); alert('Task name cannot be empty.'); return; }
@@ -3521,7 +3651,8 @@ function saveEditTask() {
     estimatedBudget: !isNaN(budgetVal) && budgetVal > 0 ? budgetVal : null,
     files: etFilesList.length ? etFilesList : null,
     expense: null,
-    taxDeductible: null
+    taxDeductible: null,
+    recurrence: getRecurrenceFromForm()
   };
 
   const smsUids = getCheckedSmsUids('etSmsNotifyList');
@@ -4081,7 +4212,7 @@ function renderBoard() {
     ${idBadge}
     <span class="card-category" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span>
   </div>
-  <div class="card-name">${safeName}</div>
+  <div class="card-name">${safeName}${t.recurrence ? ' <span class="card-recur-icon" title="Recurring task">🔁</span>' : ''}</div>
   ${hiPriLine}
   ${renderAvStack(taskAssigneesArr(t), 4)}
   ${startedLine}${dueLine}${threshLine}${timeLine}${expLine}${filesLine}
@@ -4185,7 +4316,7 @@ function renderTable() {
     return `
 <tr class="tr-${colorCls}${isSelected ? ' selected-task' : ''}">
   ${cbCell}
-  <td class="td-task">${safeName}</td>
+  <td class="td-task">${safeName}${t.recurrence ? ' <span class="card-recur-icon" title="Recurring task">🔁</span>' : ''}</td>
   <td class="td-muted">${esc(taskAssigneesArr(t).join(', ') || '—')}</td>
   <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
   <td class="td-status ${colorCls}">${statusLbl}</td>
@@ -4254,7 +4385,7 @@ function renderCategoryBoard() {
   </div>
   <div class="card-body">
   <div class="card-header"><span class="card-id">${esc(t.id)}</span>${renderAvStack(taskAssigneesArr(t), 3)}</div>
-  <div class="card-name">${safeName}</div>
+  <div class="card-name">${safeName}${t.recurrence ? ' <span class="card-recur-icon" title="Recurring task">🔁</span>' : ''}</div>
   ${hiPriLine}
   ${startedLine}${dueLine}${timeLine}${expLine}${filesLine}
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
