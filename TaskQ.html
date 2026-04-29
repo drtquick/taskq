@@ -16,11 +16,23 @@
   --text: #e8e8e8; --muted: #888; --accent: #ff6b00;
   --blue: #2196f3; --green: #00c853; --yellow: #ffd600; --orange: #ff6d00; --red: #d50000;
   --font: 'Courier New', Courier, monospace;
+  --hdr-blue-bg: #0C447C; --hdr-blue-tx: #85B7EB; --hdr-blue-tx2: #B5D4F4;
+  --hdr-green-bg: #1a3a08; --hdr-green-tx: #97C459; --hdr-green-tx2: #C0DD97;
+  --hdr-yellow-bg: #412402; --hdr-yellow-tx: #EF9F27; --hdr-yellow-tx2: #FAC775;
+  --hdr-orange-bg: #4A1B0C; --hdr-orange-tx: #F0997B; --hdr-orange-tx2: #F5C4B3;
+  --hdr-red-bg: #501313; --hdr-red-tx: #F09595; --hdr-red-tx2: #F7C1C1;
+  --hdr-done-bg: #173404; --hdr-done-tx: #97C459; --hdr-done-tx2: #C0DD97;
 }
 [data-theme="kds"] {
   --bg: #1e293b; --surface: #f8fafc; --surface2: #e2e8f0; --border: #cbd5e1;
   --text: #1e293b; --muted: #64748b; --accent: #0ea5e9;
   --blue: #0ea5e9; --green: #22c55e; --yellow: #eab308; --orange: #f97316; --red: #ef4444;
+  --hdr-blue-bg: #E6F1FB; --hdr-blue-tx: #0C447C; --hdr-blue-tx2: #185FA5;
+  --hdr-green-bg: #EAF3DE; --hdr-green-tx: #27500A; --hdr-green-tx2: #3B6D11;
+  --hdr-yellow-bg: #FAEEDA; --hdr-yellow-tx: #633806; --hdr-yellow-tx2: #854F0B;
+  --hdr-orange-bg: #FAECE7; --hdr-orange-tx: #712B13; --hdr-orange-tx2: #993C1D;
+  --hdr-red-bg: #FCEBEB; --hdr-red-tx: #791F1F; --hdr-red-tx2: #A32D2D;
+  --hdr-done-bg: #EAF3DE; --hdr-done-tx: #27500A; --hdr-done-tx2: #3B6D11;
 }
 [data-theme="kds"] body { background: var(--bg); }
 [data-theme="kds"] .auth-screen { background: var(--bg); }
@@ -33,7 +45,7 @@
 [data-theme="kds"] .page-tab { color: #94a3b8; }
 [data-theme="kds"] .page-tab.active { color: #fff; border-bottom-color: var(--accent); }
 [data-theme="kds"] .controls { background: #1e293b; border-bottom-color: #334155; }
-[data-theme="kds"] .card { background: var(--surface); border-color: var(--border); color: var(--text); }
+[data-theme="kds"] .card { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
 [data-theme="kds"] .card .card-name { color: #0f172a; }
 [data-theme="kds"] .card .card-started,
 [data-theme="kds"] .card .card-due,
@@ -211,30 +223,43 @@ input[type="date"] { color-scheme: dark; }
 .empty-state { grid-column: 1/-1; text-align: center; padding: 70px 20px; color: var(--muted); font-size: 0.85rem; letter-spacing: 2px; }
 
 /* CARDS */
-.card { background: var(--surface); border-radius: 6px; padding: 14px; border-left: 4px solid var(--blue); position: relative; transition: border-color 0.5s; }
-.card.green  { border-left-color: var(--green); }
-.card.yellow { border-left-color: var(--yellow); }
-.card.orange { border-left-color: var(--orange); }
-.card.red    { border-left-color: var(--red); animation: pulse-red 1.5s ease-in-out infinite; }
-.card.done   { border-left-color: #2e7d32; opacity: 0.55; }
+.card { background: var(--surface); border-radius: 6px; position: relative; transition: border-color 0.5s; overflow: hidden; border: 1px solid var(--border); }
+.card.red    { animation: pulse-red 1.5s ease-in-out infinite; }
+.card.done   { opacity: 0.55; }
 @keyframes pulse-red { 0%,100% { box-shadow: 0 0 0 0 rgba(213,0,0,0); } 50% { box-shadow: 0 0 14px 4px rgba(213,0,0,0.35); } }
+.card-alert-hdr { padding: 7px 14px; display: flex; justify-content: space-between; align-items: center; }
+.card-alert-lbl { font-size: 0.6rem; font-weight: 700; letter-spacing: 2px; }
+.card-alert-tmr { font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; font-family: var(--font); }
+.card.blue   .card-alert-hdr { background: var(--hdr-blue-bg); }
+.card.blue   .card-alert-lbl { color: var(--hdr-blue-tx); }
+.card.blue   .card-alert-tmr { color: var(--hdr-blue-tx2); }
+.card.green  .card-alert-hdr { background: var(--hdr-green-bg); }
+.card.green  .card-alert-lbl { color: var(--hdr-green-tx); }
+.card.green  .card-alert-tmr { color: var(--hdr-green-tx2); }
+.card.yellow .card-alert-hdr { background: var(--hdr-yellow-bg); }
+.card.yellow .card-alert-lbl { color: var(--hdr-yellow-tx); }
+.card.yellow .card-alert-tmr { color: var(--hdr-yellow-tx2); }
+.card.orange .card-alert-hdr { background: var(--hdr-orange-bg); }
+.card.orange .card-alert-lbl { color: var(--hdr-orange-tx); }
+.card.orange .card-alert-tmr { color: var(--hdr-orange-tx2); }
+.card.red    .card-alert-hdr { background: var(--hdr-red-bg); }
+.card.red    .card-alert-lbl { color: var(--hdr-red-tx); }
+.card.red    .card-alert-tmr { color: var(--hdr-red-tx2); }
+.card.done   .card-alert-hdr { background: var(--hdr-done-bg); }
+.card.done   .card-alert-lbl { color: var(--hdr-done-tx); }
+.card.done   .card-alert-tmr { color: var(--hdr-done-tx2); }
+.card-body { padding: 14px; }
 
 .card-header   { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
 .card-id       { font-size: 0.63rem; color: var(--muted); }
 .card-category { font-size: 0.63rem; padding: 2px 8px; border-radius: 3px; letter-spacing: 1px; font-weight: bold; }
 .card-name     { font-size: 0.92rem; font-weight: bold; margin-bottom: 4px; line-height: 1.3; word-break: break-word; }
 .card-assignee { font-size: 0.72rem; color: var(--muted); margin-bottom: 10px; }
-.card-timer    { font-size: 1.55rem; font-weight: bold; letter-spacing: 2px; margin-bottom: 2px; }
-.card-timer.blue   { color: var(--blue); }
-.card-timer.green  { color: var(--green); }
-.card-timer.yellow { color: var(--yellow); }
-.card-timer.orange { color: var(--orange); }
-.card-timer.red    { color: var(--red); }
-.card-timer.done   { color: #4caf50; }
+.card-timer    { display: none; }
 .card-started { font-size: 0.6rem; color: var(--muted); letter-spacing: 1px; margin-bottom: 3px; }
 .card-due     { font-size: 0.6rem; letter-spacing: 1px; margin-bottom: 3px; }
 .card-thresh  { font-size: 0.6rem; color: var(--muted); letter-spacing: 1px; margin-bottom: 4px; }
-.card-status  { font-size: 0.63rem; letter-spacing: 2px; margin-bottom: 10px; color: var(--muted); }
+.card-status  { display: none; }
 .progress-bar  { height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 10px; overflow: hidden; }
 .progress-fill { height: 100%; border-radius: 2px; transition: width 60s linear, background-color 0.5s; }
 .card-notes { font-size: 0.72rem; color: var(--muted); line-height: 1.45; margin-bottom: 8px; white-space: pre-wrap; word-break: break-word; border-left: 2px solid var(--border); padding-left: 8px; }
@@ -798,8 +823,7 @@ input[type="date"] { color-scheme: dark; }
   .ws-dropdown { min-width: 170px; }
 
   /* ── CARD ADJUSTMENTS ── */
-  .card-timer { font-size: 1.25rem; }
-  .card { padding: 12px; }
+  .card-body { padding: 12px; }
 
   /* ── MIN TOUCH TARGETS ── */
   .btn-done, .btn-edit, .btn-remove, .btn-extend-card, .btn-progress, .btn-reopen { min-height: 36px; padding: 6px 4px; font-size: 0.58rem; }
@@ -1049,7 +1073,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.11</span>
+    <span class="beta-badge">β v2.12</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
   </div>
 </header>
@@ -4012,6 +4036,11 @@ function renderBoard() {
   ondragstart="boardDragStart('${safeKey}',event)"
   ondragover="boardDragOver(event)"
   ondrop="boardDrop('${safeKey}',event)">
+  <div class="card-alert-hdr">
+    <span class="card-alert-lbl">${statusLbl}</span>
+    <span class="card-alert-tmr">${timerTxt}</span>
+  </div>
+  <div class="card-body">
   <div class="card-header">
     ${idBadge}
     <span class="card-category" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span>
@@ -4019,9 +4048,7 @@ function renderBoard() {
   <div class="card-name">${safeName}</div>
   ${hiPriLine}
   ${renderAvStack(taskAssigneesArr(t), 4)}
-  <div class="card-timer ${colorCls}">${timerTxt}</div>
   ${startedLine}${dueLine}${threshLine}${timeLine}${expLine}${filesLine}
-  <div class="card-status">${statusLbl}</div>
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
   ${notesLine}<div class="card-actions">
     ${actionBtn}
@@ -4029,6 +4056,7 @@ function renderBoard() {
     ${extendBtn}
     <button class="btn-edit"   onclick="openEditTask('${safeKey}')">✎ EDIT</button>
     <button class="btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button>
+  </div>
   </div>
 </div>`;
   }).join('');
@@ -4184,12 +4212,15 @@ function renderCategoryBoard() {
   ondragstart="catDragStart('${safeKey}',event)"
   ondragover="event.preventDefault()"
   ondrop="event.preventDefault();catCardDrop('${safeCat}',event)">
+  <div class="card-alert-hdr">
+    <span class="card-alert-lbl">${statusLbl}</span>
+    <span class="card-alert-tmr">${timerTxt}</span>
+  </div>
+  <div class="card-body">
   <div class="card-header"><span class="card-id">${esc(t.id)}</span>${renderAvStack(taskAssigneesArr(t), 3)}</div>
   <div class="card-name">${safeName}</div>
   ${hiPriLine}
-  <div class="card-timer ${colorCls}">${timerTxt}</div>
   ${startedLine}${dueLine}${timeLine}${expLine}${filesLine}
-  <div class="card-status">${statusLbl}</div>
   <div class="progress-bar"><div class="progress-fill" style="width:${progPct}%;background:${FILL[colorCls]}"></div></div>
   ${notesLine}<div class="card-actions">
     ${actionBtn}
@@ -4197,6 +4228,7 @@ function renderCategoryBoard() {
     ${extendBtn2}
     <button class="btn-edit" onclick="openEditTask('${safeKey}')">✎ EDIT</button>
     <button class="btn-remove" onclick="confirmRemove('${safeKey}','${safeName}')">✕ REMOVE</button>
+  </div>
   </div>
 </div>`;
     }).join('');
