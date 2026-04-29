@@ -961,6 +961,63 @@ input[type="date"] { color-scheme: dark; }
   </div>
 </div>
 
+<!-- PROFILE SETUP (shown after first sign-in if profile incomplete) -->
+<div class="auth-screen hidden" id="profileSetupScreen">
+  <div class="auth-box" style="max-width:400px">
+    <div class="auth-logo" style="font-size:1.2rem">COMPLETE YOUR PROFILE</div>
+    <div class="auth-tagline" style="margin-bottom:16px">We need a few details before you get started.</div>
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;text-align:left">
+      <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px">FIRST NAME *</label>
+      <input type="text" id="profileFirstName" placeholder="Trevor" maxlength="50"
+        style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:0.82rem">
+      <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px">LAST NAME *</label>
+      <input type="text" id="profileLastName" placeholder="Coddington" maxlength="50"
+        style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:0.82rem">
+      <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px">PHONE NUMBER *</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="tel" id="profilePhone" placeholder="+1 760 809 4275" maxlength="20"
+          style="flex:1;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:0.82rem">
+        <button class="auth-btn" onclick="sendPhoneVerifyCode()" id="sendCodeBtn"
+          style="background:var(--surface2);border-color:var(--border);padding:10px 14px;white-space:nowrap;font-size:0.7rem">SEND CODE</button>
+      </div>
+      <div id="phoneVerifyRow" style="display:none;gap:8px;align-items:center;margin-top:6px">
+        <input type="text" id="profileVerifyCode" placeholder="ENTER 6-DIGIT CODE" maxlength="6"
+          style="flex:1;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:0.82rem;letter-spacing:4px;text-align:center">
+        <button class="auth-btn" onclick="verifyProfilePhone()" style="background:var(--green);border-color:var(--green);padding:10px 16px;white-space:nowrap">VERIFY</button>
+      </div>
+      <div id="phoneVerifyStatus" style="font-size:0.68rem;color:var(--muted);letter-spacing:1px"></div>
+      <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px">BIRTHDAY (MONTH / DAY)</label>
+      <div style="display:flex;gap:8px">
+        <select id="profileBirthMonth" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:0.82rem;border-radius:4px">
+          <option value="">Month</option>
+          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+        <input type="number" id="profileBirthDay" placeholder="Day" min="1" max="31"
+          style="width:80px;padding:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:0.82rem;border-radius:4px;text-align:center">
+      </div>
+      <label style="font-size:0.63rem;color:var(--muted);letter-spacing:2px">ANNIVERSARY (MONTH / DAY)</label>
+      <div style="display:flex;gap:8px">
+        <select id="profileAnnivMonth" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:0.82rem;border-radius:4px">
+          <option value="">Month</option>
+          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+        <input type="number" id="profileAnnivDay" placeholder="Day" min="1" max="31"
+          style="width:80px;padding:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:0.82rem;border-radius:4px;text-align:center">
+      </div>
+    </div>
+    <div id="profileSetupError" style="color:var(--red);font-size:0.7rem;margin-top:8px;display:none"></div>
+    <button class="auth-btn" onclick="saveProfile()" style="margin-top:16px;background:var(--accent);border-color:var(--accent)">
+      SAVE &amp; CONTINUE
+    </button>
+  </div>
+</div>
+
 <header class="header no-print">
   <button class="btn-menu" onclick="openSidebar()" title="Open menu">☰</button>
   <div>
@@ -992,7 +1049,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.9</span>
+    <span class="beta-badge">β v2.10</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
   </div>
 </header>
@@ -2000,14 +2057,173 @@ if (auth.isSignInWithEmailLink(window.location.href)) {
 
 function signOut() { auth.signOut(); }
 
+// ── USER PROFILE ─────────────────────────────────────────────────────────────
+let userProfile = null;
+
+async function checkProfileAndContinue(user) {
+  // Read profile from users/{uid}/profile
+  const snap = await db.ref(`users/${user.uid}/profile`).once('value');
+  userProfile = snap.val();
+  if (userProfile && userProfile.firstName && userProfile.lastName && userProfile.phone) {
+    // Profile complete, proceed to app
+    proceedToApp(user);
+  } else {
+    // Show profile setup screen
+    document.getElementById('authScreen').classList.add('hidden');
+    const ps = document.getElementById('profileSetupScreen');
+    ps.classList.remove('hidden');
+    // Pre-fill from existing data if available
+    if (userProfile) {
+      if (userProfile.firstName) document.getElementById('profileFirstName').value = userProfile.firstName;
+      if (userProfile.lastName) document.getElementById('profileLastName').value = userProfile.lastName;
+      if (userProfile.phone) document.getElementById('profilePhone').value = userProfile.phone;
+      if (userProfile.birthMonth) document.getElementById('profileBirthMonth').value = userProfile.birthMonth;
+      if (userProfile.birthDay) document.getElementById('profileBirthDay').value = userProfile.birthDay;
+      if (userProfile.annivMonth) document.getElementById('profileAnnivMonth').value = userProfile.annivMonth;
+      if (userProfile.annivDay) document.getElementById('profileAnnivDay').value = userProfile.annivDay;
+    }
+    // Pre-fill name from Google sign-in if available
+    if (!document.getElementById('profileFirstName').value && user.displayName) {
+      const parts = user.displayName.split(' ');
+      document.getElementById('profileFirstName').value = parts[0] || '';
+      document.getElementById('profileLastName').value = parts.slice(1).join(' ') || '';
+    }
+  }
+}
+
+function proceedToApp(user) {
+  document.getElementById('profileSetupScreen').classList.add('hidden');
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('userInfo').style.display = 'flex';
+  const displayName = userProfile
+    ? `${userProfile.firstName || ''} ${userProfile.lastName || ''}`.trim()
+    : (user.displayName || user.email);
+  document.getElementById('userName').textContent = displayName;
+  setupConnectionListener();
+  initWorkspaces(user);
+}
+
+async function saveProfile() {
+  const firstName = document.getElementById('profileFirstName').value.trim();
+  const lastName = document.getElementById('profileLastName').value.trim();
+  let phone = document.getElementById('profilePhone').value.trim();
+  const birthMonth = parseInt(document.getElementById('profileBirthMonth').value) || null;
+  const birthDay = parseInt(document.getElementById('profileBirthDay').value) || null;
+  const annivMonth = parseInt(document.getElementById('profileAnnivMonth').value) || null;
+  const annivDay = parseInt(document.getElementById('profileAnnivDay').value) || null;
+
+  const errEl = document.getElementById('profileSetupError');
+  if (!firstName || !lastName) {
+    errEl.textContent = 'First name and last name are required.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!phone) {
+    errEl.textContent = 'Phone number is required.';
+    errEl.style.display = 'block';
+    return;
+  }
+  // Normalize phone
+  if (!phone.startsWith('+')) phone = '+1' + phone.replace(/\D/g, '');
+  errEl.style.display = 'none';
+
+  const user = auth.currentUser;
+  if (!user) return;
+
+  userProfile = {
+    firstName,
+    lastName,
+    phone,
+    email: user.email || '',
+    phoneVerified: (userProfile && userProfile.phoneVerified) || false,
+    birthMonth,
+    birthDay,
+    annivMonth,
+    annivDay,
+    updatedAt: Date.now()
+  };
+
+  try {
+    await db.ref(`users/${user.uid}/profile`).set(userProfile);
+    // Also propagate profile data to all workspace memberships
+    await propagateProfileToWorkspaces(user.uid, userProfile);
+    proceedToApp(user);
+  } catch (e) {
+    errEl.textContent = 'Failed to save profile: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+async function propagateProfileToWorkspaces(uid, profile) {
+  // Update member records in all workspaces this user belongs to
+  const wsSnap = await db.ref(`users/${uid}/workspaces`).once('value');
+  const workspaces = wsSnap.val();
+  if (!workspaces) return;
+  const updates = {};
+  for (const wsId of Object.keys(workspaces)) {
+    updates[`workspaces/${wsId}/members/${uid}/firstName`] = profile.firstName || null;
+    updates[`workspaces/${wsId}/members/${uid}/lastName`] = profile.lastName || null;
+    updates[`workspaces/${wsId}/members/${uid}/phone`] = profile.phone || null;
+    updates[`workspaces/${wsId}/members/${uid}/email`] = profile.email || null;
+    updates[`workspaces/${wsId}/members/${uid}/phoneVerified`] = profile.phoneVerified || false;
+    updates[`workspaces/${wsId}/members/${uid}/birthMonth`] = profile.birthMonth || null;
+    updates[`workspaces/${wsId}/members/${uid}/birthDay`] = profile.birthDay || null;
+    updates[`workspaces/${wsId}/members/${uid}/annivMonth`] = profile.annivMonth || null;
+    updates[`workspaces/${wsId}/members/${uid}/annivDay`] = profile.annivDay || null;
+  }
+  if (Object.keys(updates).length) await db.ref().update(updates);
+}
+
+async function sendPhoneVerifyCode() {
+  let phone = document.getElementById('profilePhone').value.trim();
+  const statusEl = document.getElementById('phoneVerifyStatus');
+  const btn = document.getElementById('sendCodeBtn');
+  if (!phone) { statusEl.textContent = 'Enter your phone number first.'; return; }
+  if (!phone.startsWith('+')) phone = '+1' + phone.replace(/\D/g, '');
+  btn.textContent = 'SENDING...';
+  btn.disabled = true;
+  try {
+    const result = await callAdminApi('sendPhoneVerification', { phone });
+    statusEl.textContent = 'Verification code sent! Check your texts.';
+    statusEl.style.color = 'var(--green)';
+    document.getElementById('phoneVerifyRow').style.display = 'flex';
+    btn.textContent = 'RESEND';
+    btn.disabled = false;
+  } catch (e) {
+    statusEl.textContent = 'Failed to send code: ' + e.message;
+    statusEl.style.color = 'var(--red)';
+    btn.textContent = 'SEND CODE';
+    btn.disabled = false;
+  }
+}
+
+async function verifyProfilePhone() {
+  const code = document.getElementById('profileVerifyCode').value.trim();
+  const statusEl = document.getElementById('phoneVerifyStatus');
+  if (!code || code.length !== 6) { statusEl.textContent = 'Enter the 6-digit code.'; return; }
+  statusEl.textContent = 'Verifying...';
+  try {
+    const result = await callAdminApi('verifyPhone', {
+      phone: document.getElementById('profilePhone').value.trim(),
+      code
+    });
+    if (result.success) {
+      statusEl.textContent = '✓ Phone verified!';
+      statusEl.style.color = 'var(--green)';
+      if (userProfile) userProfile.phoneVerified = true;
+      document.getElementById('phoneVerifyRow').style.display = 'none';
+    } else {
+      statusEl.textContent = 'Invalid code. Try again.';
+    }
+  } catch (e) {
+    statusEl.textContent = 'Verification failed: ' + e.message;
+  }
+}
+
 auth.onAuthStateChanged(user => {
   if (user) {
     currentUser = user;
-    document.getElementById('authScreen').classList.add('hidden');
-    document.getElementById('userInfo').style.display = 'flex';
-    document.getElementById('userName').textContent = user.displayName || user.email;
-    setupConnectionListener();
-    initWorkspaces(user);
+    checkProfileAndContinue(user);
   } else {
     currentUser = null;
     document.getElementById('authScreen').classList.remove('hidden');
@@ -2173,6 +2389,14 @@ async function doCreateWorkspace(name) {
   const now = Date.now();
   const memberEntry = user ? {
     email: user.email || '',
+    firstName: (userProfile && userProfile.firstName) || '',
+    lastName: (userProfile && userProfile.lastName) || '',
+    phone: (userProfile && userProfile.phone) || '',
+    phoneVerified: (userProfile && userProfile.phoneVerified) || false,
+    birthMonth: (userProfile && userProfile.birthMonth) || null,
+    birthDay: (userProfile && userProfile.birthDay) || null,
+    annivMonth: (userProfile && userProfile.annivMonth) || null,
+    annivDay: (userProfile && userProfile.annivDay) || null,
     role: 'admin',
     addedAt: now,
     addedBy: user.uid,
@@ -4096,41 +4320,113 @@ function renderMembersList() {
   const list = document.getElementById('membersList');
   const entries = Object.entries(currentWsMembers);
   if (!entries.length) { list.innerHTML = '<p style="font-size:0.75rem;color:var(--muted)">No members yet.</p>'; return; }
+  const monthNames = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   list.innerHTML = entries.map(([uid, m]) => {
     const roleBadge = m.role === 'admin'
       ? '<span style="font-size:0.6rem;color:var(--green);letter-spacing:2px;">ADMIN</span>'
       : '<span style="font-size:0.6rem;color:var(--muted);letter-spacing:2px;">MEMBER</span>';
     const phoneVal = m.phone || '';
-    return `<div style="padding:10px;border:1px solid var(--border);border-radius:4px">
+    const verifiedBadge = m.phoneVerified
+      ? '<span style="font-size:0.55rem;color:var(--green);letter-spacing:1px;margin-left:4px">✓ VERIFIED</span>'
+      : (phoneVal ? '<span style="font-size:0.55rem;color:var(--orange);letter-spacing:1px;margin-left:4px">UNVERIFIED</span>' : '');
+    const fullName = [m.firstName, m.lastName].filter(Boolean).join(' ');
+    const bday = m.birthMonth && m.birthDay ? `${monthNames[m.birthMonth]} ${m.birthDay}` : '';
+    const anniv = m.annivMonth && m.annivDay ? `${monthNames[m.annivMonth]} ${m.annivDay}` : '';
+    return `<div style="padding:12px;border:1px solid var(--border);border-radius:4px">
       <div style="display:flex;align-items:center;gap:8px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:0.82rem">${esc(m.email || uid)}</div>
-          <div style="font-size:0.65rem;color:var(--muted);margin-top:2px">${roleBadge}</div>
+          <div style="font-size:0.88rem;font-weight:600">${esc(fullName || m.email || uid)}</div>
+          <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${esc(m.email || uid)}</div>
+          <div style="font-size:0.65rem;margin-top:2px">${roleBadge}</div>
         </div>
-        <button class="btn-add-item" onclick="openReportConfig('${esc(uid)}')">📧 REPORT</button>
+        <button class="btn-add-item" onclick="openReportConfig('${esc(uid)}')">📧</button>
         <button class="btn-add-item" onclick="toggleRole('${esc(uid)}')">${m.role === 'admin' ? 'DEMOTE' : 'PROMOTE'}</button>
-        <button class="btn-delete-ws" onclick="removeMember('${esc(uid)}')" style="padding:6px 12px">✕ REMOVE</button>
+        <button class="btn-delete-ws" onclick="removeMember('${esc(uid)}')" style="padding:6px 12px">✕</button>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
-        <label style="font-size:0.63rem;color:var(--muted);letter-spacing:1px;white-space:nowrap">PHONE</label>
-        <input type="tel" id="phone_${esc(uid)}" value="${esc(phoneVal)}" placeholder="+15551234567"
-          style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;font-size:0.78rem;border-radius:4px;font-family:var(--font)">
-        <button class="btn-add-item" onclick="saveMemberPhone('${esc(uid)}')">SAVE</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">
+        <div>
+          <label style="font-size:0.58rem;color:var(--muted);letter-spacing:1px">FIRST NAME</label>
+          <input type="text" id="fn_${esc(uid)}" value="${esc(m.firstName || '')}" placeholder="First"
+            style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 8px;font-size:0.75rem;border-radius:4px;font-family:var(--font);margin-top:2px">
+        </div>
+        <div>
+          <label style="font-size:0.58rem;color:var(--muted);letter-spacing:1px">LAST NAME</label>
+          <input type="text" id="ln_${esc(uid)}" value="${esc(m.lastName || '')}" placeholder="Last"
+            style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 8px;font-size:0.75rem;border-radius:4px;font-family:var(--font);margin-top:2px">
+        </div>
+      </div>
+      <div style="margin-top:6px">
+        <label style="font-size:0.58rem;color:var(--muted);letter-spacing:1px">PHONE${verifiedBadge}</label>
+        <div style="display:flex;gap:6px;margin-top:2px">
+          <input type="tel" id="phone_${esc(uid)}" value="${esc(phoneVal)}" placeholder="+15551234567"
+            style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 8px;font-size:0.75rem;border-radius:4px;font-family:var(--font)">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+        <div>
+          <label style="font-size:0.58rem;color:var(--muted);letter-spacing:1px">BIRTHDAY</label>
+          <div style="display:flex;gap:4px;margin-top:2px">
+            <select id="bm_${esc(uid)}" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px;font-size:0.7rem;border-radius:4px;font-family:var(--font)">
+              <option value="">--</option>
+              ${[1,2,3,4,5,6,7,8,9,10,11,12].map(i => `<option value="${i}"${m.birthMonth===i?' selected':''}>${monthNames[i]}</option>`).join('')}
+            </select>
+            <input type="number" id="bd_${esc(uid)}" value="${m.birthDay||''}" min="1" max="31" placeholder="DD"
+              style="width:50px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px;font-size:0.7rem;border-radius:4px;font-family:var(--font);text-align:center">
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.58rem;color:var(--muted);letter-spacing:1px">ANNIVERSARY</label>
+          <div style="display:flex;gap:4px;margin-top:2px">
+            <select id="am_${esc(uid)}" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px;font-size:0.7rem;border-radius:4px;font-family:var(--font)">
+              <option value="">--</option>
+              ${[1,2,3,4,5,6,7,8,9,10,11,12].map(i => `<option value="${i}"${m.annivMonth===i?' selected':''}>${monthNames[i]}</option>`).join('')}
+            </select>
+            <input type="number" id="ad_${esc(uid)}" value="${m.annivDay||''}" min="1" max="31" placeholder="DD"
+              style="width:50px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px;font-size:0.7rem;border-radius:4px;font-family:var(--font);text-align:center">
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:8px">
+        <button class="btn-add-item" onclick="saveMemberDetails('${esc(uid)}')">💾 SAVE MEMBER</button>
       </div>
     </div>`;
   }).join('');
 }
 
 async function saveMemberPhone(uid) {
-  const input = document.getElementById('phone_' + uid);
-  if (!input) return;
-  const phone = input.value.trim();
+  // Legacy wrapper - calls saveMemberDetails
+  return saveMemberDetails(uid);
+}
+
+async function saveMemberDetails(uid) {
+  const firstName = (document.getElementById('fn_' + uid)?.value || '').trim();
+  const lastName = (document.getElementById('ln_' + uid)?.value || '').trim();
+  let phone = (document.getElementById('phone_' + uid)?.value || '').trim();
+  if (phone && !phone.startsWith('+')) phone = '+1' + phone.replace(/\D/g, '');
+  const birthMonth = parseInt(document.getElementById('bm_' + uid)?.value) || null;
+  const birthDay = parseInt(document.getElementById('bd_' + uid)?.value) || null;
+  const annivMonth = parseInt(document.getElementById('am_' + uid)?.value) || null;
+  const annivDay = parseInt(document.getElementById('ad_' + uid)?.value) || null;
+
   try {
-    await callAdminApi('setMemberPhone', { wsId: currentWsId, uid, phone: phone || null });
-    input.style.borderColor = 'var(--green)';
-    setTimeout(() => { input.style.borderColor = ''; }, 1500);
+    const updates = {};
+    updates[`workspaces/${currentWsId}/members/${uid}/firstName`] = firstName || null;
+    updates[`workspaces/${currentWsId}/members/${uid}/lastName`] = lastName || null;
+    updates[`workspaces/${currentWsId}/members/${uid}/phone`] = phone || null;
+    updates[`workspaces/${currentWsId}/members/${uid}/birthMonth`] = birthMonth;
+    updates[`workspaces/${currentWsId}/members/${uid}/birthDay`] = birthDay;
+    updates[`workspaces/${currentWsId}/members/${uid}/annivMonth`] = annivMonth;
+    updates[`workspaces/${currentWsId}/members/${uid}/annivDay`] = annivDay;
+    await db.ref().update(updates);
+    // Also update the phone via Cloud Function (for admin-level writes)
+    if (phone !== (currentWsMembers[uid]?.phone || '')) {
+      await callAdminApi('setMemberPhone', { wsId: currentWsId, uid, phone: phone || null });
+    }
+    // Flash success
+    const btn = document.querySelector(`[onclick="saveMemberDetails('${uid}')"]`);
+    if (btn) { const orig = btn.innerHTML; btn.innerHTML = '✅ SAVED'; setTimeout(() => btn.innerHTML = orig, 1500); }
     await loadMembersAndLocks();
-  } catch (e) { alert('Failed to save phone: ' + e.message); }
+  } catch (e) { alert('Failed to save member details: ' + e.message); }
 }
 
 async function inviteMember() {

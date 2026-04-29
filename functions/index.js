@@ -34,6 +34,7 @@ const SMTP_PASSWORD       = defineSecret('SMTP_PASSWORD');
 const TWILIO_ACCOUNT_SID  = defineSecret('TWILIO_ACCOUNT_SID');
 const TWILIO_AUTH_TOKEN   = defineSecret('TWILIO_AUTH_TOKEN');
 const TWILIO_PHONE_NUMBER = defineSecret('TWILIO_PHONE_NUMBER');
+const TWILIO_VERIFY_SID   = defineSecret('TWILIO_VERIFY_SID');
 
 // SMTP config for MXRoute
 const SMTP_HOST = 'chocobo.mxrouting.net';
@@ -1299,8 +1300,19 @@ exports.inviteUserToWorkspace = onRequest(
       const wsName = wsEntry.name || 'SHARED WORKSPACE';
       const now = Date.now();
       const multi = {};
+      // Pull invitee's profile if they have one
+      const profileSnap = await db.ref(`users/${target.uid}/profile`).once('value');
+      const profile = profileSnap.val() || {};
       multi[`workspaces/${wsId}/members/${target.uid}`] = {
         email: target.email || email,
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
+        phone: profile.phone || '',
+        phoneVerified: profile.phoneVerified || false,
+        birthMonth: profile.birthMonth || null,
+        birthDay: profile.birthDay || null,
+        annivMonth: profile.annivMonth || null,
+        annivDay: profile.annivDay || null,
         role,
         addedAt: now,
         addedBy: caller.uid,
@@ -1624,6 +1636,79 @@ exports.sendTestSms = onRequest(
       }
     } catch (err) {
       console.error('sendTestSms error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// Send phone verification code via Twilio Verify
+exports.sendPhoneVerification = onRequest(
+  { cors: true, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SID] },
+  async (req, res) => {
+    try {
+      if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+      const authHeader = req.get('Authorization') || '';
+      const match = authHeader.match(/^Bearer\s+(.+)$/);
+      if (!match) { res.status(401).json({ error: 'Missing Authorization header' }); return; }
+      let decoded;
+      try { decoded = await admin.auth().verifyIdToken(match[1]); } catch {
+        res.status(403).json({ error: 'Invalid auth token' }); return;
+      }
+      const body = getBody(req);
+      let { phone } = body;
+      if (!phone) { res.status(400).json({ error: 'phone required' }); return; }
+      if (!phone.startsWith('+')) phone = '+1' + phone.replace(/\D/g, '');
+      const client = getTwilioClient();
+      const verification = await client.verify.v2
+        .services(TWILIO_VERIFY_SID.value())
+        .verifications.create({ to: phone, channel: 'sms' });
+      res.json({ success: true, status: verification.status });
+    } catch (err) {
+      console.error('sendPhoneVerification error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// Verify phone code via Twilio Verify and mark profile as verified
+exports.verifyPhone = onRequest(
+  { cors: true, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SID] },
+  async (req, res) => {
+    try {
+      if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+      const authHeader = req.get('Authorization') || '';
+      const match = authHeader.match(/^Bearer\s+(.+)$/);
+      if (!match) { res.status(401).json({ error: 'Missing Authorization header' }); return; }
+      let decoded;
+      try { decoded = await admin.auth().verifyIdToken(match[1]); } catch {
+        res.status(403).json({ error: 'Invalid auth token' }); return;
+      }
+      const body = getBody(req);
+      let { phone, code } = body;
+      if (!phone || !code) { res.status(400).json({ error: 'phone and code required' }); return; }
+      if (!phone.startsWith('+')) phone = '+1' + phone.replace(/\D/g, '');
+      const client = getTwilioClient();
+      const check = await client.verify.v2
+        .services(TWILIO_VERIFY_SID.value())
+        .verificationChecks.create({ to: phone, code: String(code) });
+      if (check.status === 'approved') {
+        // Mark phone as verified in profile and all workspaces
+        const uid = decoded.uid;
+        await db.ref(`users/${uid}/profile/phoneVerified`).set(true);
+        // Also update all workspace memberships
+        const wsSnap = await db.ref(`users/${uid}/workspaces`).once('value');
+        const workspaces = wsSnap.val() || {};
+        const updates = {};
+        for (const wsId of Object.keys(workspaces)) {
+          updates[`workspaces/${wsId}/members/${uid}/phoneVerified`] = true;
+        }
+        if (Object.keys(updates).length) await db.ref().update(updates);
+        res.json({ success: true, status: 'approved' });
+      } else {
+        res.json({ success: false, status: check.status });
+      }
+    } catch (err) {
+      console.error('verifyPhone error:', err);
       res.status(500).json({ error: err.message });
     }
   }

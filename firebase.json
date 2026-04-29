@@ -16,6 +16,8 @@
       { "source": "/setMemberPhone", "function": "setMemberPhone" },
       { "source": "/sendSmsNotification", "function": "sendSmsNotification" },
       { "source": "/sendTestSms", "function": "sendTestSms" },
+      { "source": "/sendPhoneVerification", "function": "sendPhoneVerification" },
+      { "source": "/verifyPhone", "function": "verifyPhone" },
       { "source": "/calendarEvent", "function": "calendarEvent" },
       { "source": "/calendarFeed", "function": "calendarFeed" },
       { "source": "/getCalendarFeedUrl", "function": "getCalendarFeedUrl" },
