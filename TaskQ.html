@@ -522,6 +522,7 @@ input[type="date"] { color-scheme: dark; }
 /* ── EVENT MODAL ── */
 .event-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
 .event-overlay.hidden { display: none; }
+.pac-container { z-index: 10000 !important; }
 .event-modal { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 8px; width: 100%; max-width: 480px; padding: 24px; max-height: 90vh; overflow-y: auto; }
 .event-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .event-modal-title { font-size: 0.9rem; letter-spacing: 3px; color: var(--accent); }
@@ -1156,7 +1157,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.23</span>
+    <span class="beta-badge">β v2.24</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
   </div>
 </header>
