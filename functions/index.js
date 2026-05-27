@@ -35,6 +35,7 @@ const TWILIO_ACCOUNT_SID  = defineSecret('TWILIO_ACCOUNT_SID');
 const TWILIO_AUTH_TOKEN   = defineSecret('TWILIO_AUTH_TOKEN');
 const TWILIO_PHONE_NUMBER = defineSecret('TWILIO_PHONE_NUMBER');
 const TWILIO_VERIFY_SID   = defineSecret('TWILIO_VERIFY_SID');
+const TWILIO_MESSAGING_SERVICE_SID = defineSecret('TWILIO_MESSAGING_SERVICE_SID');
 
 // SMTP config for MXRoute
 const SMTP_HOST = 'chocobo.mxrouting.net';
@@ -1460,11 +1461,11 @@ function getTwilioClient() {
 
 async function sendSms(toPhone, messageBody) {
   const client = getTwilioClient();
-  const from = TWILIO_PHONE_NUMBER.value();
+  const messagingServiceSid = TWILIO_MESSAGING_SERVICE_SID.value();
   try {
     const msg = await client.messages.create({
       body: messageBody,
-      from,
+      messagingServiceSid,
       to: toPhone
     });
     console.log(`SMS sent to ${toPhone}: sid=${msg.sid}`);
@@ -1540,7 +1541,7 @@ exports.setMemberPhone = onRequest(
 // Send SMS notifications for a task or event to specified members.
 // Called by the client after saving a task/event with smsNotify list.
 exports.sendSmsNotification = onRequest(
-  { cors: true, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER] },
+  { cors: true, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, TWILIO_MESSAGING_SERVICE_SID] },
   async (req, res) => {
     try {
       if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -1606,7 +1607,7 @@ exports.sendSmsNotification = onRequest(
 
 // Send a test SMS to the authenticated user's phone number
 exports.sendTestSms = onRequest(
-  { cors: true, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER] },
+  { cors: true, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, TWILIO_MESSAGING_SERVICE_SID] },
   async (req, res) => {
     try {
       if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
