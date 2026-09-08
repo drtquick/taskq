@@ -33,7 +33,7 @@ const DEFAULT_TZ = 'America/Chicago';
 setGlobalOptions({ maxInstances: 10 });
 
 // The only origins allowed to call these endpoints from a browser.
-// Replaces the previous `cors: CORS_ORIGINS`, which allowed every origin on the internet.
+// Replaces the previous blanket setting, which allowed every origin on the internet.
 const CORS_ORIGINS = [
   'https://taskq.qponent.com',
   'https://drtquick.github.io',
@@ -439,7 +439,7 @@ exports.scheduledEmailReport = onSchedule(
 exports.sendEmailNow = onRequest(
   {
     secrets:   [SMTP_PASSWORD],
-    cors:      true,
+    cors:      CORS_ORIGINS,
   },
   async (req, res) => {
     if (req.method !== 'POST') {
