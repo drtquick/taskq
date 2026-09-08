@@ -23,10 +23,18 @@
           ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())"
         },
         "activity": {
-          ".indexOn": "ts",
           ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())"
         },
         "config": {
+          ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())"
+        },
+        "lists": {
+          ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())"
+        },
+        "routines": {
+          ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())"
+        },
+        "templates": {
           ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())"
         },
 

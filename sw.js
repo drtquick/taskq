@@ -1,10 +1,10 @@
 // TaskQ Service Worker - Offline caching and PWA support
 // Bump CACHE_VERSION on every deploy so the activate handler can evict the old cache.
-const CACHE_VERSION = '2026-09-08-02';
+const CACHE_VERSION = '2026-09-08-03';
 const CACHE_NAME = `taskq-${CACHE_VERSION}`;
 
 // Only genuinely static, rarely changing assets belong here.
-// TaskQ.html and index.html are deliberately excluded: they are served network-first below.
+// The app document at / is deliberately excluded: it is served network-first below.
 const STATIC_ASSETS = [
   '/favicon.ico',
   '/favicon.svg',
@@ -60,7 +60,7 @@ self.addEventListener('fetch', event => {
         }
         return response;
       }).catch(() =>
-        caches.match(event.request).then(cached => cached || caches.match('/TaskQ.html'))
+        caches.match(event.request).then(cached => cached || caches.match('/index.html') || caches.match('/'))
       )
     );
     return;

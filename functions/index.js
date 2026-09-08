@@ -33,7 +33,7 @@ const DEFAULT_TZ = 'America/Chicago';
 setGlobalOptions({ maxInstances: 10 });
 
 // The only origins allowed to call these endpoints from a browser.
-// Replaces the previous blanket setting, which allowed every origin on the internet.
+// Replaces the previous `cors: CORS_ORIGINS`, which allowed every origin on the internet.
 const CORS_ORIGINS = [
   'https://taskq.qponent.com',
   'https://drtquick.github.io',
@@ -181,7 +181,9 @@ function getAssigneeArr(item) {
 // Email HTML builder
 // ─────────────────────────────────────────────────────────────────────────────
 
-function buildEmailHTML({ overdueTasks, todayTasks, upcomingEvents, byPerson }) {
+function buildEmailHTML({ overdueTasks, todayTasks, upcomingEvents, byPerson, listSummary, routineSummary }) {
+  listSummary = listSummary || [];
+  routineSummary = routineSummary || [];
   const dateStr = new Date().toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
   });
@@ -295,6 +297,22 @@ function buildEmailHTML({ overdueTasks, todayTasks, upcomingEvents, byPerson }) 
     </table>` : '<div class="empty-note">No upcoming events.</div>'}
   </div>
 
+  ${routineSummary.length ? `<div class="section">
+    <div class="section-title">🔁 Routines Still Open Today (${routineSummary.length})</div>
+    <table>
+      <tr><th>ROUTINE</th><th>WHEN</th><th>OUTSTANDING</th><th>WORKSPACE</th></tr>
+      ${routineSummary.map(r => `<tr><td>${esc(r.title)}</td><td>${esc(String(r.slot).toUpperCase())}</td><td>${r.outstanding}</td><td>${esc(r.wsName)}</td></tr>`).join('')}
+    </table>
+  </div>` : ''}
+
+  ${listSummary.length ? `<div class="section">
+    <div class="section-title">📝 Lists (${listSummary.reduce((n, l) => n + l.open, 0)} open items)</div>
+    <table>
+      <tr><th>LIST</th><th>OPEN</th><th>WORKSPACE</th></tr>
+      ${listSummary.map(l => `<tr><td>${esc(l.name)}</td><td>${l.open}</td><td>${esc(l.wsName)}</td></tr>`).join('')}
+    </table>
+  </div>` : ''}
+
   ${personHTML ? `<div class="section">
     <div class="section-title">👤 Per-Person Summary</div>
     ${personHTML}
@@ -332,6 +350,13 @@ async function buildAndSendPersonalizedReport(smtpPassword, uid, email, wsIdsWit
 
   const allTasks = [];
   const allEvents = [];
+  const listSummary = [];
+  const routineSummary = [];
+  const dayKey = (() => {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  })();
+  const weekday = new Date().getDay();
   for (const { wsId, categoryFilter } of wsIdsWithConfig) {
     const wsData = workspaces[wsId];
     if (!wsData) continue;
@@ -345,8 +370,22 @@ async function buildAndSendPersonalizedReport(smtpPassword, uid, email, wsIdsWit
       if (filterSet && !filterSet.has(String(v.category))) return;
       allEvents.push({ ...v, _key: k, _wsId: wsId, _wsName: wsName });
     });
+    // Lists are not category-filtered: a shopping list has no category.
+    Object.values(wsData.lists || {}).forEach(l => {
+      const open = Object.values(l.items || {}).filter(i => !i.done).length;
+      if (open) listSummary.push({ name: l.name || 'List', open, wsName });
+    });
+    // Routines scheduled for today that nobody has ticked yet.
+    Object.values(wsData.routines || {}).forEach(r => {
+      const runs = r.freq === 'weekly' ? (Array.isArray(r.days) && r.days.includes(weekday)) : true;
+      if (!runs) return;
+      const marks = (r.log || {})[dayKey] || {};
+      const people = Object.keys(r.members || {});
+      const outstanding = people.length ? people.filter(uid => !marks[uid]).length : 1;
+      if (outstanding) routineSummary.push({ title: r.title || 'Routine', slot: r.slot || 'morning', outstanding, wsName });
+    });
   }
-  if (!allTasks.length && !allEvents.length) {
+  if (!allTasks.length && !allEvents.length && !listSummary.length && !routineSummary.length) {
     console.log(`No matching items for ${email}; skipping send.`);
     return { skipped: true };
   }
@@ -375,7 +414,7 @@ async function buildAndSendPersonalizedReport(smtpPassword, uid, email, wsIdsWit
       byPerson[p].events.push(e);
     });
   });
-  const html    = buildEmailHTML({ overdueTasks, todayTasks, upcomingEvents, byPerson });
+  const html    = buildEmailHTML({ overdueTasks, todayTasks, upcomingEvents, byPerson, listSummary, routineSummary });
   const subject = `TaskQ Daily Report -- ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`;
   const transporter = createTransport(smtpPassword);
   await transporter.sendMail({
@@ -439,7 +478,7 @@ exports.scheduledEmailReport = onSchedule(
 exports.sendEmailNow = onRequest(
   {
     secrets:   [SMTP_PASSWORD],
-    cors:      CORS_ORIGINS,
+    cors:      true,
   },
   async (req, res) => {
     if (req.method !== 'POST') {
@@ -652,6 +691,7 @@ function parseSubjectTags(subject) {
     urgent: false,
     highPriority: false,
     forceEvent: false,
+    list: null,
   };
   let s = raw;
   const addAssignees = (str) => {
@@ -677,6 +717,7 @@ function parseSubjectTags(subject) {
     { re: /\[HIGH\]/i,    on: () => { fields.highPriority = true; } },
     { re: /\[\*\]/,        on: () => { fields.highPriority = true; } },
     { re: /\[EVENT\]/i,   on: () => { fields.forceEvent = true; } },
+    { re: /\[LIST:([^\]]+)\]/i, on: (m) => { fields.list = m[1].trim(); } },
   ];
   let changed = true;
   while (changed) {
@@ -763,6 +804,7 @@ function mergeFields(subjFields, bodyFields) {
     urgent:       subjFields.urgent        || !!bodyFields.urgent      || false,
     highPriority: subjFields.highPriority  || !!bodyFields.highPriority|| false,
     forceEvent:   subjFields.forceEvent    || bodyFields.forceEvent    || false,
+    list:         subjFields.list          || bodyFields.list          || null,
   };
 }
 
@@ -964,6 +1006,51 @@ async function createEventFromFields(uid, wsId, title, description, fields, from
   return ref.key;
 }
 
+// Append the lines of an email to a named list. Matching is case-insensitive on
+// the list name; an unknown name creates the list rather than dropping the mail.
+async function appendToListFromEmail(wsId, listName, cleanSubject, bodyText, uid) {
+  const snap = await db.ref(`workspaces/${wsId}/lists`).once('value');
+  const lists = snap.val() || {};
+  const want = String(listName).trim().toLowerCase();
+  let listId = Object.keys(lists).find(k => String(lists[k].name || '').trim().toLowerCase() === want);
+  let created = false;
+  if (!listId) {
+    const ref = db.ref(`workspaces/${wsId}/lists`).push();
+    await ref.set({
+      name: sanitizeLine(listName, 60),
+      type: 'todo',
+      color: '#4a9eff',
+      order: Object.keys(lists).length,
+      createdAt: Date.now(),
+      createdBy: uid || null,
+    });
+    listId = ref.key;
+    created = true;
+  }
+  // Every non-empty line of the body becomes an item. If the body is empty the
+  // subject itself is the item, which is what a one-line email from a phone is.
+  let lines = String(bodyText || '')
+    .split(/\r?\n/)
+    .map(l => l.replace(/^[-*\u2022\s]+/, '').trim())
+    .filter(Boolean);
+  if (!lines.length && cleanSubject) lines = [cleanSubject];
+  lines = lines.slice(0, 100);
+  const existing = (lists[listId] && lists[listId].items) || {};
+  let order = Object.values(existing).reduce((m, i) => Math.max(m, i.order || 0), -1) + 1;
+  const itemsRef = db.ref(`workspaces/${wsId}/lists/${listId}/items`);
+  for (const line of lines) {
+    await itemsRef.push({
+      text: sanitizeLine(line, 140),
+      done: false,
+      section: null,
+      order: order++,
+      addedAt: Date.now(),
+      addedBy: uid || null,
+    });
+  }
+  return { listId, count: lines.length, created, name: sanitizeLine(listName, 60) };
+}
+
 async function createTaskFromEmail(uid, wsId, cleanName, bodyText, fromEmail, fields) {
   fields = fields || {};
   const tasksRef = db.ref(`workspaces/${wsId}/tasks`);
@@ -1110,6 +1197,15 @@ exports.pollInbox = onSchedule(
               `Starts:   ${fmtAckDate(startTs)}`,
               ve.location ? `Location: ${ve.location}` : null,
               vevents.length > 1 ? `Also created: ${vevents.length - 1} additional event(s).` : null,
+              '',
+              'View in TaskQ: https://drtquick.github.io/taskq/'
+            ].filter(Boolean), true);
+          } else if (fields.list) {
+            const res = await appendToListFromEmail(wsId, fields.list, subjParsed.cleanSubject, bodyParsed.bodyRest, userUid);
+            console.log(`Added ${res.count} item(s) to list "${res.name}" in ${wsId} for ${fromEmail}`);
+            await sendAck(smtpPass, fromEmail, origSubject, origMsgId, [
+              `${res.count} item${res.count === 1 ? '' : 's'} added to the list "${res.name}" in ${wsNameForAck}.`,
+              res.created ? 'That list did not exist, so it was created.' : null,
               '',
               'View in TaskQ: https://drtquick.github.io/taskq/'
             ].filter(Boolean), true);
