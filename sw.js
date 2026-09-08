@@ -1,8 +1,11 @@
 // TaskQ Service Worker - Offline caching and PWA support
-const CACHE_NAME = 'taskq-v1';
+// Bump CACHE_VERSION on every deploy so the activate handler can evict the old cache.
+const CACHE_VERSION = '2026-09-08-01';
+const CACHE_NAME = `taskq-${CACHE_VERSION}`;
+
+// Only genuinely static, rarely changing assets belong here.
+// TaskQ.html and index.html are deliberately excluded: they are served network-first below.
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   '/favicon.ico',
   '/favicon.svg',
   '/favicon-192x192.png',
@@ -20,7 +23,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activate: clean old caches
+// Activate: clean every cache that is not the current version
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -29,14 +32,13 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch: network-first for API/Firebase, cache-first for static assets
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
-  // Network-first for Firebase, API calls, and Google APIs
+  // Never intercept Firebase, Google APIs, or the TaskQ API. Let the network handle them.
   if (url.hostname.includes('firebaseio.com') ||
       url.hostname.includes('googleapis.com') ||
       url.hostname.includes('firebase') ||
@@ -44,11 +46,30 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  const isHtml = event.request.mode === 'navigate' ||
+                 url.pathname === '/' ||
+                 url.pathname.endsWith('.html');
+
+  // Network-first for the app shell, so a deploy is live on the very next load.
+  if (isHtml) {
+    event.respondWith(
+      fetch(event.request).then(response => {
+        if (response.ok && url.origin === self.location.origin) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        }
+        return response;
+      }).catch(() =>
+        caches.match(event.request).then(cached => cached || caches.match('/TaskQ.html'))
+      )
+    );
+    return;
+  }
+
   // Cache-first for static assets, network fallback
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) {
-        // Return cached but also update in background
         event.waitUntil(
           fetch(event.request).then(response => {
             if (response.ok) {
@@ -58,18 +79,12 @@ self.addEventListener('fetch', event => {
         );
         return cached;
       }
-      // Not cached, try network
       return fetch(event.request).then(response => {
         if (response.ok && url.origin === self.location.origin) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => {
-        // Offline fallback for navigation requests
-        if (event.request.mode === 'navigate') {
-          return caches.match('/');
-        }
       });
     })
   );

@@ -13,6 +13,7 @@
  *   5. Set up MXRoute forwarding: taskq@qponent.com → inboundEmail Cloud Function URL
  */
 
+const { setGlobalOptions } = require('firebase-functions/v2');
 const { onSchedule }  = require('firebase-functions/v2/scheduler');
 const { onRequest }   = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
@@ -27,6 +28,19 @@ const twilio           = require('twilio');
 
 const DEFAULT_TZ = 'America/Chicago';
 
+// Hard ceiling on concurrent instances for every function in this codebase.
+// Without this a single abusive caller can fan out without limit on a Blaze plan.
+setGlobalOptions({ maxInstances: 10 });
+
+// The only origins allowed to call these endpoints from a browser.
+// Replaces the previous `cors: CORS_ORIGINS`, which allowed every origin on the internet.
+const CORS_ORIGINS = [
+  'https://taskq.qponent.com',
+  'https://drtquick.github.io',
+  'https://taskq-80ce7.web.app',
+  'https://taskq-80ce7.firebaseapp.com',
+];
+
 admin.initializeApp();
 const db = admin.database();
 
@@ -36,6 +50,74 @@ const TWILIO_AUTH_TOKEN   = defineSecret('TWILIO_AUTH_TOKEN');
 const TWILIO_PHONE_NUMBER = defineSecret('TWILIO_PHONE_NUMBER');
 const TWILIO_VERIFY_SID   = defineSecret('TWILIO_VERIFY_SID');
 const TWILIO_MESSAGING_SERVICE_SID = defineSecret('TWILIO_MESSAGING_SERVICE_SID');
+const ADMIN_API_KEY = defineSecret('ADMIN_API_KEY');
+
+// Gate for maintenance endpoints that no signed-in user should be able to reach.
+// Returns true if the caller presented the right key; sends 401 and returns false otherwise.
+function assertAdminKey(req, res) {
+  const supplied = req.get('X-Admin-Key') || '';
+  const expected = ADMIN_API_KEY.value();
+  if (!expected || supplied !== expected) {
+    res.status(401).json({ error: 'Authentication required' });
+    return false;
+  }
+  return true;
+}
+
+// Strip control characters and newlines from any value that came from outside,
+// then cap its length. Used on every field an unauthenticated sender can set.
+function sanitizeLine(value, max) {
+  return String(value == null ? '' : value)
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max || 200);
+}
+
+// RFC 5545 text escaping. The previous code stripped newlines from some fields
+// and not others, which let a crafted title inject whole iCalendar lines.
+function icsEscape(value) {
+  return String(value == null ? '' : value)
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r\n|\r|\n/g, '\\n');
+}
+
+// Fixed-window per-user rate limit held in the database. The rateLimits subtree
+// is denied to every client in database.rules.json; only the Admin SDK writes it.
+async function consumeRateLimit(uid, bucket, max, windowMs) {
+  const ref = db.ref(`rateLimits/${uid}/${bucket}`);
+  const now = Date.now();
+  const result = await ref.transaction((cur) => {
+    if (!cur || !cur.windowStart || now - cur.windowStart > windowMs) {
+      return { windowStart: now, count: 1 };
+    }
+    if (cur.count >= max) return;            // abort: over the limit
+    return { windowStart: cur.windowStart, count: cur.count + 1 };
+  });
+  return result.committed;
+}
+
+// North American Numbering Plan only. Outbound SMS to arbitrary international
+// ranges is the payload of an SMS pumping attack, so it is refused outright.
+function normalizeNanp(raw) {
+  let phone = String(raw || '').trim();
+  if (!phone.startsWith('+')) phone = '+1' + phone.replace(/\D/g, '');
+  else phone = '+' + phone.slice(1).replace(/\D/g, '');
+  return /^\+1[2-9]\d{2}[2-9]\d{6}$/.test(phone) ? phone : null;
+}
+
+// Single-event, expiring capability token for tap-to-add calendar links in SMS.
+// Replaces sending the recipient's permanent full-feed token over SMS.
+async function mintEventToken(uid, wsId, key, ttlMs) {
+  const crypto = require('crypto');
+  const token = crypto.randomBytes(24).toString('hex');
+  await db.ref(`calEventTokens/${token}`).set({
+    uid, wsId, key, exp: Date.now() + (ttlMs || 90 * 86400000),
+  });
+  return token;
+}
 
 // SMTP config for MXRoute
 const SMTP_HOST = 'chocobo.mxrouting.net';
@@ -226,104 +308,6 @@ function buildEmailHTML({ overdueTasks, todayTasks, upcomingEvents, byPerson }) 
 // Core: gather data and send
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function buildAndSendReport(smtpPassword) {
-  const settingsSnap = await db.ref('emailSettings').once('value');
-  const emailCfg     = settingsSnap.val() || {};
-
-  if (!emailCfg.enabled) {
-    console.log('Email report is disabled -- skipping.');
-    return { skipped: true };
-  }
-  const DEFAULT_RECIPIENT = 'trevorcoddington@gmail.com';
-  const recipients = (emailCfg.recipients || []).filter(r => r && r.includes('@'));
-  if (!recipients.length) recipients.push(DEFAULT_RECIPIENT);
-
-  const [wsSnap, usersSnap] = await Promise.all([
-    db.ref('workspaces').once('value'),
-    db.ref('users').once('value'),
-  ]);
-  const workspaces = wsSnap.val() || {};
-  const users = usersSnap.val() || {};
-
-  // Build wsId -> name map from users/{uid}/workspaces/{wsId}/name
-  const wsNameById = {};
-  Object.values(users).forEach(userData => {
-    const userWs = userData?.workspaces || {};
-    Object.entries(userWs).forEach(([wsId, entry]) => {
-      if (entry?.name && !wsNameById[wsId]) wsNameById[wsId] = entry.name;
-    });
-  });
-
-  const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0);
-  const todayStart   = todayMidnight.getTime();
-  const todayEnd     = todayStart + 86400000;
-  const weekEnd      = todayStart + 7 * 86400000;
-
-  let allTasks  = [];
-  let allEvents = [];
-
-  Object.entries(workspaces).forEach(([wsId, wsData]) => {
-    const wsName = wsNameById[wsId] || wsData.settings?.subtitle || wsId;
-    const wsTasks = Object.entries(wsData.tasks || {})
-      .map(([k, v]) => ({ ...v, _key: k, _wsId: wsId, _wsName: wsName }));
-    const wsEvents = Object.entries(wsData.events || {})
-      .map(([k, v]) => ({ ...v, _key: k, _wsId: wsId, _wsName: wsName }));
-    allTasks.push(...wsTasks);
-    allEvents.push(...wsEvents);
-  });
-
-  const overdueTasks = allTasks
-    .filter(t => t.status !== 'done' && t.dueAt && t.dueAt < todayStart)
-    .sort((a, b) => a.dueAt - b.dueAt);
-
-  const todayTasks = allTasks
-    .filter(t => t.status !== 'done' && t.dueAt && t.dueAt >= todayStart && t.dueAt < todayEnd)
-    .sort((a, b) => a.dueAt - b.dueAt);
-
-  const upcomingEvents = allEvents
-    .filter(e => e.startAt >= todayStart && e.startAt < weekEnd)
-    .sort((a, b) => a.startAt - b.startAt);
-
-  // Per-person index using multi-assignee support
-  const byPerson = {};
-  [...overdueTasks, ...todayTasks].forEach(t => {
-    const people = getAssigneeArr(t);
-    if (!people.length) people.push('Unassigned');
-    people.forEach(p => {
-      if (!byPerson[p]) byPerson[p] = { tasks: [], events: [] };
-      byPerson[p].tasks.push(t);
-    });
-  });
-  upcomingEvents.forEach(e => {
-    const people = getAssigneeArr(e);
-    people.forEach(p => {
-      if (!byPerson[p]) byPerson[p] = { tasks: [], events: [] };
-      byPerson[p].events.push(e);
-    });
-  });
-
-  const html    = buildEmailHTML({ overdueTasks, todayTasks, upcomingEvents, byPerson });
-  const subject = `TaskQ Daily Report -- ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`;
-
-  const transporter = createTransport(smtpPassword);
-  const fromName  = emailCfg.fromName  || 'TaskQ Daily';
-  const fromEmail = emailCfg.fromEmail || SMTP_USER;
-
-  await transporter.sendMail({
-    from:    `"${fromName}" <${fromEmail}>`,
-    to:      recipients.join(', '),
-    subject,
-    html
-  });
-
-  console.log(`Report sent to ${recipients.length} recipient(s) via MXRoute SMTP.`);
-  return { sent: true, recipients: recipients.length };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Scheduled function -- runs daily at 7 AM Central
-// ─────────────────────────────────────────────────────────────────────────────
-
 // Build a personalized report email for one member in one workspace.
 // Applies categoryFilter (list of category ids); if empty/null, includes all categories.
 async function buildAndSendPersonalizedReport(smtpPassword, uid, email, wsIdsWithConfig) {
@@ -462,34 +446,43 @@ exports.sendEmailNow = onRequest(
       res.status(405).json({ error: 'Method not allowed' });
       return;
     }
+
+    // Authentication is mandatory. There is no anonymous fallback.
+    const authHeader = req.get('Authorization') || '';
+    const match = authHeader.match(/^Bearer\s+(.+)$/);
+    if (!match) {
+      res.status(401).json({ error: 'Authentication required' });
+      return;
+    }
+    let decoded;
     try {
-      // If the caller is authed, send a personalized report to them across all workspaces they belong to.
-      const authHeader = req.get('Authorization') || '';
-      const match = authHeader.match(/^Bearer\s+(.+)$/);
-      if (match) {
-        try {
-          const decoded = await admin.auth().verifyIdToken(match[1]);
-          const uid = decoded.uid;
-          const email = decoded.email;
-          const wsSnap = await db.ref('workspaces').once('value');
-          const workspaces = wsSnap.val() || {};
-          const wsList = [];
-          for (const [wsId, wsData] of Object.entries(workspaces)) {
-            const m = wsData?.members?.[uid];
-            if (!m) continue;
-            wsList.push({ wsId, categoryFilter: m.reportConfig?.categoryFilter || null });
-          }
-          if (wsList.length && email) {
-            const result = await buildAndSendPersonalizedReport(SMTP_PASSWORD.value(), uid, email, wsList);
-            res.json({ success: true, ...result });
-            return;
-          }
-        } catch (e) {
-          console.warn('sendEmailNow: auth provided but lookup failed, falling back to legacy');
-        }
+      decoded = await admin.auth().verifyIdToken(match[1]);
+    } catch (e) {
+      console.warn('sendEmailNow: token verification failed');
+      res.status(401).json({ error: 'Invalid auth token' });
+      return;
+    }
+
+    try {
+      const uid   = decoded.uid;
+      const email = decoded.email;
+      if (!email) {
+        res.status(400).json({ error: 'Account has no email address' });
+        return;
       }
-      // Legacy fallback: fire the old global-settings report.
-      const result = await buildAndSendReport(SMTP_PASSWORD.value());
+      const wsSnap     = await db.ref('workspaces').once('value');
+      const workspaces = wsSnap.val() || {};
+      const wsList     = [];
+      for (const [wsId, wsData] of Object.entries(workspaces)) {
+        const m = wsData?.members?.[uid];
+        if (!m) continue;
+        wsList.push({ wsId, categoryFilter: m.reportConfig?.categoryFilter || null });
+      }
+      if (!wsList.length) {
+        res.status(403).json({ error: 'Caller is not a member of any workspace' });
+        return;
+      }
+      const result = await buildAndSendPersonalizedReport(SMTP_PASSWORD.value(), uid, email, wsList);
       res.json({ success: true, ...result });
     } catch (err) {
       console.error('sendEmailNow error:', err);
@@ -504,12 +497,15 @@ exports.sendEmailNow = onRequest(
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.inboundEmail = onRequest(
-  { cors: false },
+  { cors: false, secrets: [ADMIN_API_KEY] },
   async (req, res) => {
     if (req.method !== 'POST') {
       res.status(405).send('Method not allowed');
       return;
     }
+    // This endpoint writes a task into a real workspace, so it must not be open.
+    // Whatever forwards mail here has to present the X-Admin-Key header.
+    if (!assertAdminKey(req, res)) return;
     try {
       // Parse inbound email fields (supports both JSON and form-encoded)
       const body    = req.body || {};
@@ -519,7 +515,7 @@ exports.inboundEmail = onRequest(
 
       // Extract sender name from "Name <email>" format
       const nameMatch = from.match(/^([^<]+)</);
-      const senderName = nameMatch ? nameMatch[1].trim() : from.split('@')[0];
+      const senderName = sanitizeLine(nameMatch ? nameMatch[1] : from.split('@')[0], 60);
 
       // Determine target workspace (default to first workspace)
       const wsSnap = await db.ref('workspaces').once('value');
@@ -559,12 +555,12 @@ exports.inboundEmail = onRequest(
       // Create the task
       const taskData = {
         id:        'T-' + String(num).padStart(3, '0'),
-        name:      cleanSubject.substring(0, 80),
+        name:      sanitizeLine(cleanSubject, 80),
         assignees: senderName ? [senderName] : null,
         category:  defaultCat,
         createdAt: Date.now(),
         dueAt:     null,
-        notes:     text ? text.substring(0, 1000) : null,
+        notes:     text ? sanitizeLine(text, 1000) : null,
         status:    'active',
         doneAt:    null
       };
@@ -1001,30 +997,6 @@ async function createTaskFromEmail(uid, wsId, cleanName, bodyText, fromEmail, fi
   return ref.key;
 }
 
-async function processOneMessage(client, uid, mailbox, seq) {
-  const fetched = await client.fetchOne(seq, { source: true, envelope: true });
-  if (!fetched) return { skipped: true, reason: 'not found' };
-  const parsed = await simpleParser(fetched.source);
-  const subject = parsed.subject || '';
-  const fromEmail = bareEmail(parsed.from);
-  const wsId = await pickWorkspaceForUser(uid, subject);
-  if (!wsId) return { skipped: true, reason: 'no workspace' };
-  const vevents = extractIcsEvents(parsed.attachments, parsed.html || parsed.text);
-  if (vevents.length) {
-    for (const ve of vevents) {
-      await createEventFromIcs(uid, wsId, ve, fromEmail);
-    }
-    return { type: 'event', count: vevents.length, wsId };
-  }
-  const bodyText = parsed.text || (parsed.html ? parsed.html.replace(/<[^>]+>/g, ' ') : '');
-  const taskKey = await createTaskFromEmail(uid, wsId, subject, bodyText, fromEmail);
-  const fileMeta = await uploadAttachmentsToStorage(parsed.attachments, wsId, taskKey);
-  if (fileMeta.length) {
-    await db.ref(`workspaces/${wsId}/tasks/${taskKey}/files`).set(fileMeta);
-  }
-  return { type: 'task', key: taskKey, files: fileMeta.length, wsId };
-}
-
 exports.pollInbox = onSchedule(
   {
     schedule: 'every 5 minutes',
@@ -1223,7 +1195,7 @@ exports.dailyBackup = onSchedule(
     const cutoff = Date.now() - 30 * 86400000;
     let pruned = 0;
     for (const f of files) {
-      const m = f.name.match(/db-backups\/(\d{4}-\d{2}-\d{2})\.json$/);
+      const m = f.name.match(/db-backups\/(?:manual-)?(\d{4}-\d{2}-\d{2})/);
       if (!m) continue;
       const ts = Date.parse(m[1] + 'T00:00:00Z');
       if (!isNaN(ts) && ts < cutoff) {
@@ -1268,7 +1240,7 @@ function getBody(req) {
 }
 
 exports.inviteUserToWorkspace = onRequest(
-  { cors: true },
+  { cors: CORS_ORIGINS },
   async (req, res) => {
     try {
       if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -1334,7 +1306,7 @@ exports.inviteUserToWorkspace = onRequest(
 );
 
 exports.removeUserFromWorkspace = onRequest(
-  { cors: true },
+  { cors: CORS_ORIGINS },
   async (req, res) => {
     try {
       if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -1364,7 +1336,7 @@ exports.removeUserFromWorkspace = onRequest(
 );
 
 exports.setUserRole = onRequest(
-  { cors: true },
+  { cors: CORS_ORIGINS },
   async (req, res) => {
     try {
       if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -1395,7 +1367,7 @@ exports.setUserRole = onRequest(
 );
 
 exports.setWorkspaceLocks = onRequest(
-  { cors: true },
+  { cors: CORS_ORIGINS },
   async (req, res) => {
     try {
       if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -1422,7 +1394,7 @@ exports.setWorkspaceLocks = onRequest(
 );
 
 exports.setMemberReportConfig = onRequest(
-  { cors: true },
+  { cors: CORS_ORIGINS },
   async (req, res) => {
     try {
       if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -1499,16 +1471,16 @@ function buildIcsEvent(title, startTs, endTs, description, location, uid) {
     `UID:${icsUid}`,
     `DTSTART:${toIcsDate(startTs)}`,
     `DTEND:${toIcsDate(endTs || startTs + 3600000)}`,
-    `SUMMARY:${(title || '').replace(/[\r\n]/g, ' ')}`,
+    `SUMMARY:${icsEscape(title)}`,
   ];
-  if (description) lines.push(`DESCRIPTION:${String(description).replace(/[\r\n]/g, '\\n').slice(0, 500)}`);
-  if (location) lines.push(`LOCATION:${String(location).replace(/[\r\n]/g, ' ')}`);
+  if (description) lines.push(`DESCRIPTION:${icsEscape(String(description).slice(0, 500))}`);
+  if (location) lines.push(`LOCATION:${icsEscape(location)}`);
   lines.push(
     `DTSTAMP:${toIcsDate(Date.now())}`,
     'BEGIN:VALARM',
     'TRIGGER:-PT30M',
     'ACTION:DISPLAY',
-    `DESCRIPTION:Reminder: ${title}`,
+    `DESCRIPTION:Reminder: ${icsEscape(title)}`,
     'END:VALARM',
     'END:VEVENT',
     'END:VCALENDAR'
@@ -1518,7 +1490,7 @@ function buildIcsEvent(title, startTs, endTs, description, location, uid) {
 
 // Admin endpoint: update a member's phone number
 exports.setMemberPhone = onRequest(
-  { cors: true },
+  { cors: CORS_ORIGINS },
   async (req, res) => {
     try {
       if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -1541,7 +1513,7 @@ exports.setMemberPhone = onRequest(
 // Send SMS notifications for a task or event to specified members.
 // Called by the client after saving a task/event with smsNotify list.
 exports.sendSmsNotification = onRequest(
-  { cors: true, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, TWILIO_MESSAGING_SERVICE_SID] },
+  { cors: CORS_ORIGINS, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, TWILIO_MESSAGING_SERVICE_SID] },
   async (req, res) => {
     try {
       if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -1555,7 +1527,8 @@ exports.sendSmsNotification = onRequest(
       const authHeader = req.get('Authorization') || '';
       const match = authHeader.match(/^Bearer\s+(.+)$/);
       if (!match) { res.status(401).json({ error: 'Missing Authorization header' }); return; }
-      try { await admin.auth().verifyIdToken(match[1]); } catch {
+      let decoded;
+      try { decoded = await admin.auth().verifyIdToken(match[1]); } catch {
         res.status(403).json({ error: 'Invalid auth token' }); return;
       }
 
@@ -1571,12 +1544,20 @@ exports.sendSmsNotification = onRequest(
       const membersSnap = await db.ref(`workspaces/${wsId}/members`).once('value');
       const members = membersSnap.val() || {};
 
-      // Build the .ics download URL for events
-      let icsUrl = null;
-      if (itemType === 'event' && item.startAt) {
-        // Serve via calendarEvent endpoint
-        icsUrl = `https://api.taskq.qponent.com/calendarEvent?wsId=${wsId}&key=${itemKey}`;
+      // The caller has to belong to the workspace whose members they are texting.
+      // Previously the token was verified and then the caller's identity discarded.
+      if (!members[decoded.uid]) {
+        res.status(403).json({ error: 'Caller is not a member of this workspace' });
+        return;
       }
+
+      // Cap outbound volume per caller. Each recipient is one billable message.
+      if (!await consumeRateLimit(decoded.uid, 'smsNotify', 60, 86400000)) {
+        res.status(429).json({ error: 'Daily SMS limit reached' });
+        return;
+      }
+
+      const wantsIcs = itemType === 'event' && !!item.startAt;
 
       const sent = [];
       const failed = [];
@@ -1586,11 +1567,17 @@ exports.sendSmsNotification = onRequest(
         let msg = '';
         if (itemType === 'event') {
           const startStr = item.startAt ? fmtDateTime(item.startAt, item.allDay) : 'TBD';
-          msg = `TaskQ: ${item.title || '(No title)'}\n${startStr}`;
-          if (item.location) msg += `\n${item.location}`;
-          if (icsUrl) msg += `\n\nTap to add to calendar:\n${icsUrl}`;
+          msg = `TaskQ: ${sanitizeLine(item.title, 80) || '(No title)'}\n${startStr}`;
+          if (item.location) msg += `\n${sanitizeLine(item.location, 80)}`;
+          if (wantsIcs) {
+            // Single-event token, scoped to this recipient and expiring in 90 days.
+            // The permanent full-feed token is never put into an SMS.
+            const evToken = await mintEventToken(uid, wsId, itemKey, 90 * 86400000);
+            const icsUrl = `https://api.taskq.qponent.com/calendarEvent?wsId=${wsId}&key=${itemKey}&uid=${uid}&token=${evToken}`;
+            msg += `\n\nTap to add to calendar:\n${icsUrl}`;
+          }
         } else {
-          msg = `TaskQ: ${item.name || '(No title)'}`;
+          msg = `TaskQ: ${sanitizeLine(item.name, 80) || '(No title)'}`;
           if (item.dueAt) msg += `\nDue: ${fmtDateTime(item.dueAt, false)}`;
           if (item.urgent) msg += '\n*** URGENT ***';
         }
@@ -1607,7 +1594,7 @@ exports.sendSmsNotification = onRequest(
 
 // Send a test SMS to the authenticated user's phone number
 exports.sendTestSms = onRequest(
-  { cors: true, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, TWILIO_MESSAGING_SERVICE_SID] },
+  { cors: CORS_ORIGINS, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, TWILIO_MESSAGING_SERVICE_SID] },
   async (req, res) => {
     try {
       if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -1644,7 +1631,7 @@ exports.sendTestSms = onRequest(
 
 // Send phone verification code via Twilio Verify
 exports.sendPhoneVerification = onRequest(
-  { cors: true, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SID] },
+  { cors: CORS_ORIGINS, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SID] },
   async (req, res) => {
     try {
       if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -1656,9 +1643,20 @@ exports.sendPhoneVerification = onRequest(
         res.status(403).json({ error: 'Invalid auth token' }); return;
       }
       const body = getBody(req);
-      let { phone } = body;
-      if (!phone) { res.status(400).json({ error: 'phone required' }); return; }
-      if (!phone.startsWith('+')) phone = '+1' + phone.replace(/\D/g, '');
+      const phone = normalizeNanp(body.phone);
+      if (!phone) {
+        res.status(400).json({ error: 'A valid US or Canadian mobile number is required' });
+        return;
+      }
+      // Five verification sends per account per day. Without this an attacker can
+      // register free accounts and drive paid Verify traffic at numbers they own.
+      if (!await consumeRateLimit(decoded.uid, 'phoneVerify', 5, 86400000)) {
+        res.status(429).json({ error: 'Too many verification attempts today' });
+        return;
+      }
+      // Remember which number this account asked to verify, so verifyPhone cannot
+      // be used to mark an unrelated number as verified.
+      await db.ref(`users/${decoded.uid}/profile/pendingPhone`).set(phone);
       const client = getTwilioClient();
       const verification = await client.verify.v2
         .services(TWILIO_VERIFY_SID.value())
@@ -1673,7 +1671,7 @@ exports.sendPhoneVerification = onRequest(
 
 // Verify phone code via Twilio Verify and mark profile as verified
 exports.verifyPhone = onRequest(
-  { cors: true, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SID] },
+  { cors: CORS_ORIGINS, secrets: [TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SID] },
   async (req, res) => {
     try {
       if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -1685,9 +1683,19 @@ exports.verifyPhone = onRequest(
         res.status(403).json({ error: 'Invalid auth token' }); return;
       }
       const body = getBody(req);
-      let { phone, code } = body;
+      const { code } = body;
+      const phone = normalizeNanp(body.phone);
       if (!phone || !code) { res.status(400).json({ error: 'phone and code required' }); return; }
-      if (!phone.startsWith('+')) phone = '+1' + phone.replace(/\D/g, '');
+      // The number being confirmed must be the one this account asked to verify.
+      const pendingSnap = await db.ref(`users/${decoded.uid}/profile/pendingPhone`).once('value');
+      if (pendingSnap.val() !== phone) {
+        res.status(403).json({ error: 'No pending verification for that number' });
+        return;
+      }
+      if (!await consumeRateLimit(decoded.uid, 'phoneCheck', 20, 86400000)) {
+        res.status(429).json({ error: 'Too many verification attempts today' });
+        return;
+      }
       const client = getTwilioClient();
       const check = await client.verify.v2
         .services(TWILIO_VERIFY_SID.value())
@@ -1696,6 +1704,7 @@ exports.verifyPhone = onRequest(
         // Mark phone as verified in profile and all workspaces
         const uid = decoded.uid;
         await db.ref(`users/${uid}/profile/phoneVerified`).set(true);
+        await db.ref(`users/${uid}/profile/pendingPhone`).remove();
         // Also update all workspace memberships
         const wsSnap = await db.ref(`users/${uid}/workspaces`).once('value');
         const workspaces = wsSnap.val() || {};
@@ -1715,13 +1724,55 @@ exports.verifyPhone = onRequest(
   }
 );
 
-// Serve a single event as a downloadable .ics file (for SMS tap-to-add links)
+// Read the caller's calendar feed token, creating one if they do not have it yet.
+async function ensureCalFeedToken(uid) {
+  const snap = await db.ref(`users/${uid}/calFeedToken`).once('value');
+  let token = snap.val();
+  if (!token) {
+    const crypto = require('crypto');
+    token = crypto.randomBytes(24).toString('hex');
+    await db.ref(`users/${uid}/calFeedToken`).set(token);
+  }
+  return token;
+}
+
+// Serve a single event as a downloadable .ics file (for SMS tap-to-add links).
+// Requires the recipient's uid and calendar feed token, and workspace membership.
 exports.calendarEvent = onRequest(
-  { cors: true },
+  { cors: CORS_ORIGINS },
   async (req, res) => {
     try {
-      const { wsId, key } = req.query;
-      if (!wsId || !key) { res.status(400).send('wsId and key required'); return; }
+      const { wsId, key, uid, token } = req.query;
+      if (!wsId || !key || !uid || !token) {
+        res.status(400).send('wsId, key, uid and token required');
+        return;
+      }
+      // Preferred path: a single-event token minted for this recipient, this
+      // workspace and this event, with an expiry. Falls back to the long-lived
+      // feed token so links sent before this change keep working.
+      let authorised = false;
+      const evTokSnap = await db.ref(`calEventTokens/${token}`).once('value');
+      const evTok = evTokSnap.val();
+      if (evTok) {
+        if (evTok.uid === uid && evTok.wsId === wsId && evTok.key === key && evTok.exp > Date.now()) {
+          authorised = true;
+        } else if (evTok.exp <= Date.now()) {
+          await db.ref(`calEventTokens/${token}`).remove().catch(() => {});
+        }
+      }
+      if (!authorised) {
+        const tokenSnap = await db.ref(`users/${uid}/calFeedToken`).once('value');
+        authorised = tokenSnap.exists() && tokenSnap.val() === token;
+      }
+      if (!authorised) {
+        res.status(403).send('Invalid or expired token');
+        return;
+      }
+      const memberSnap = await db.ref(`workspaces/${wsId}/members/${uid}`).once('value');
+      if (!memberSnap.exists()) {
+        res.status(403).send('Not a member of this workspace');
+        return;
+      }
       const snap = await db.ref(`workspaces/${wsId}/events/${key}`).once('value');
       const ev = snap.val();
       if (!ev) { res.status(404).send('Event not found'); return; }
@@ -1747,7 +1798,7 @@ exports.calendarEvent = onRequest(
 // URL: /calendarFeed?uid=XYZ&token=SECRET
 // The token is stored at users/{uid}/calFeedToken and generated on first request.
 exports.calendarFeed = onRequest(
-  { cors: true },
+  { cors: CORS_ORIGINS },
   async (req, res) => {
     try {
       const { uid, token } = req.query;
@@ -1801,7 +1852,7 @@ exports.calendarFeed = onRequest(
           if (ev.location) lines.push(`LOCATION:${String(ev.location).replace(/[\r\n]/g, ' ')}`);
           lines.push(`DTSTAMP:${toIcsDate(Date.now())}`);
           // Add a 30-minute reminder
-          lines.push('BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', `DESCRIPTION:${ev.title || 'TaskQ Event'}`, 'END:VALARM');
+          lines.push('BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', `DESCRIPTION:${icsEscape(ev.title || 'TaskQ Event')}`, 'END:VALARM');
           lines.push('END:VEVENT');
           vevents.push(lines.join('\r\n'));
         }
@@ -1819,7 +1870,7 @@ exports.calendarFeed = onRequest(
           lines.push(`SUMMARY:${prefix}${String(t.name || '').replace(/[\r\n]/g, ' ')} [${wsName}]`);
           if (t.description) lines.push(`DESCRIPTION:${String(t.description).replace(/[\r\n]/g, '\\n').slice(0, 500)}`);
           lines.push(`DTSTAMP:${toIcsDate(Date.now())}`);
-          lines.push('BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', `DESCRIPTION:${t.name || 'TaskQ Task'}`, 'END:VALARM');
+          lines.push('BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', `DESCRIPTION:${icsEscape(t.name || 'TaskQ Task')}`, 'END:VALARM');
           lines.push('END:VEVENT');
           vevents.push(lines.join('\r\n'));
         }
@@ -1849,7 +1900,7 @@ exports.calendarFeed = onRequest(
 
 // Generate or retrieve a calendar feed token for a user
 exports.getCalendarFeedUrl = onRequest(
-  { cors: true },
+  { cors: CORS_ORIGINS },
   async (req, res) => {
     try {
       const authHeader = req.get('Authorization') || '';
@@ -1860,14 +1911,12 @@ exports.getCalendarFeedUrl = onRequest(
         res.status(403).json({ error: 'Invalid auth token' }); return;
       }
       const uid = decoded.uid;
-      let tokenSnap = await db.ref(`users/${uid}/calFeedToken`).once('value');
-      let token = tokenSnap.val();
-      if (!token) {
-        // Generate a random token
-        const crypto = require('crypto');
-        token = crypto.randomBytes(24).toString('hex');
-        await db.ref(`users/${uid}/calFeedToken`).set(token);
+      // ?rotate=1 revokes the existing feed token and issues a new one, so a leaked
+      // subscription URL can be invalidated without support.
+      if (req.query.rotate === '1') {
+        await db.ref(`users/${uid}/calFeedToken`).remove();
       }
+      const token = await ensureCalFeedToken(uid);
       const url = `https://api.taskq.qponent.com/calendarFeed?uid=${uid}&token=${token}`;
       res.json({ success: true, url });
     } catch (err) {
@@ -1880,11 +1929,11 @@ exports.getCalendarFeedUrl = onRequest(
 // One-time migration: backfill every existing workspace with its owner(s) as admin.
 // Triggerable via HTTP, idempotent (skips workspaces that already have members).
 exports.migrateAdminsBackfill = onRequest(
-  { cors: true },
+  { cors: CORS_ORIGINS, secrets: [ADMIN_API_KEY] },
   async (req, res) => {
+    if (!assertAdminKey(req, res)) return;
     try {
       // Idempotent one-shot: promotes each workspace's creator(s) to admin.
-      // Safe to run publicly — cannot escalate privileges beyond the truthful owner mapping.
       const [usersSnap, wsSnap] = await Promise.all([
         db.ref('users').once('value'),
         db.ref('workspaces').once('value'),
@@ -1943,8 +1992,9 @@ exports.migrateAdminsBackfill = onRequest(
 
 // Manually-triggered backup endpoint, in case you need an on-demand snapshot.
 exports.backupNow = onRequest(
-  { cors: true },
+  { cors: CORS_ORIGINS, secrets: [ADMIN_API_KEY] },
   async (req, res) => {
+    if (!assertAdminKey(req, res)) return;
     try {
       const snap = await db.ref('/').once('value');
       const data = snap.val() || {};

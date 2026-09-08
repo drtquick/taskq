@@ -6,27 +6,48 @@
         ".write": "auth != null && auth.uid === $uid"
       }
     },
+
     "workspaces": {
       "$wsId": {
-        ".read": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())",
-        ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())",
+        ".read": "auth != null && root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists()",
+
+        ".write": "auth != null && !newData.exists() && root.child('workspaces/' + $wsId + '/members/' + auth.uid + '/role').val() === 'admin'",
+
+        "tasks": {
+          ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())"
+        },
+        "events": {
+          ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())"
+        },
+        "settings": {
+          ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())"
+        },
+        "activity": {
+          ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())"
+        },
+        "config": {
+          ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())"
+        },
+
         "members": {
           "$memberId": {
-            ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid + '/role').val() === 'owner' || !root.child('workspaces/' + $wsId + '/members').exists())"
+            ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid + '/role').val() === 'admin' || ($memberId === auth.uid && !root.child('workspaces/' + $wsId).exists() && newData.child('role').val() === 'admin') || ($memberId === auth.uid && root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() && newData.child('role').val() === data.child('role').val()))"
           }
         },
+
         "locks": {
-          ".write": "auth != null && root.child('workspaces/' + $wsId + '/members/' + auth.uid + '/role').val() === 'owner'"
+          ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid + '/role').val() === 'admin' || !root.child('workspaces/' + $wsId + '/members').exists())"
         }
       }
     },
+
     "emailSettings": {
       ".read": "auth != null",
-      ".write": "auth != null"
-    },
-    "backups": {
-      ".read": false,
       ".write": false
-    }
+    },
+
+    "backups":        { ".read": false, ".write": false },
+    "rateLimits":     { ".read": false, ".write": false },
+    "calEventTokens": { ".read": false, ".write": false }
   }
 }

@@ -2601,15 +2601,16 @@ async function doCreateWorkspace(name) {
     reportConfig: { enabled: true, sendHour: 7, categoryFilter: null }
   } : null;
   const defaultLocks = { assignees: false, categories: false, subtitle: false, urgentFlag: false };
-  const writes = [
+  // The creator's admin membership is written first and awaited. Everything else
+  // in the workspace is gated on that record existing, so the order matters.
+  if (memberEntry && user) {
+    await db.ref(`workspaces/${wsId}/members/${user.uid}`).set(memberEntry);
+  }
+  await Promise.all([
     db.ref(`workspaces/${wsId}/settings`).set(JSON.parse(JSON.stringify(DEFAULTS))),
     db.ref(`workspaces/${wsId}/locks`).set(defaultLocks),
     wsListRef.child(wsId).set({ name: name.trim().toUpperCase(), createdAt: now, role: user ? 'admin' : null })
-  ];
-  if (memberEntry && user) {
-    writes.push(db.ref(`workspaces/${wsId}/members/${user.uid}`).set(memberEntry));
-  }
-  await Promise.all(writes);
+  ]);
   switchWorkspace(wsId);
 }
 
@@ -3196,7 +3197,7 @@ function openExpenseReport() {
     // Task header row
     rows += `<tr class="tr-${t.status === 'done' ? 'done' : 'green'}" style="background:var(--surface2)">
       <td class="td-task" colspan="3">${esc(t.name)} <span class="td-muted" style="font-weight:normal">— ${esc(t.assignee)}</span></td>
-      <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
+      <td><span class="cat-badge" style="background:${safeColor(cat.color)}22;color:${safeColor(cat.color)};border:1px solid ${safeColor(cat.color)}44">${esc(cat.label)}</span></td>
       <td class="td-muted" style="text-align:right">${t.status === 'done' ? 'DONE' : 'ACTIVE'}</td>
     </tr>`;
     // Line item rows
@@ -3266,7 +3267,7 @@ function openTimeReport() {
         rows += `<tr class="tr-${t.status === 'done' ? 'done' : 'green'}">
           <td class="td-task">${esc(t.name)}</td>
           <td class="td-muted">${esc(assignee)}</td>
-          <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
+          <td><span class="cat-badge" style="background:${safeColor(cat.color)}22;color:${safeColor(cat.color)};border:1px solid ${safeColor(cat.color)}44">${esc(cat.label)}</span></td>
           <td style="text-align:right;font-weight:bold">${fmtHours(t.timeSpent)}</td>
           <td class="td-muted">${t.status === 'done' ? 'DONE' : 'ACTIVE'}</td>
         </tr>`;
@@ -3337,7 +3338,7 @@ function renderUserReport(assignee) {
     const meta   = getTaskMeta(t);
     taskRows += `<tr class="tr-${meta.cls}" onclick="openEditTask('${esc(t._key)}')" style="cursor:pointer">
       <td class="td-task">${esc(t.name)}${t.urgent ? ' <span style="color:var(--orange)">⚡</span>' : ''}${t.highPriority ? ' <span style="color:#ff9100;font-weight:700">★</span>' : ''}</td>
-      <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
+      <td><span class="cat-badge" style="background:${safeColor(cat.color)}22;color:${safeColor(cat.color)};border:1px solid ${safeColor(cat.color)}44">${esc(cat.label)}</span></td>
       <td class="td-muted" style="${overdue?'color:var(--red)':''}">${t.dueAt ? fmtDate(t.dueAt) : '—'}</td>
       <td class="td-muted">${overdue ? '<span style="color:var(--red)">OVERDUE</span>' : 'ACTIVE'}</td>
     </tr>`;
@@ -3368,7 +3369,7 @@ function renderUserReport(assignee) {
     const dateStr = ev.allDay ? fmtDate(ev.startAt) : fmtDate(ev.startAt) + ' ' + fmtTime(ev.startAt);
     evRows += `<tr onclick="openEditEvent('${esc(ev._key)}',event)" style="cursor:pointer">
       <td class="td-task">${esc(ev.title)}</td>
-      <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
+      <td><span class="cat-badge" style="background:${safeColor(cat.color)}22;color:${safeColor(cat.color)};border:1px solid ${safeColor(cat.color)}44">${esc(cat.label)}</span></td>
       <td class="td-muted">${dateStr}</td>
       <td class="td-muted">${ev.location ? esc(ev.location) : '—'}</td>
     </tr>`;
@@ -3463,27 +3464,26 @@ function saveEmailSettings() {
     .map(el => el.value.trim())
     .filter(v => v && v.includes('@'));
 
-  const data = {
-    enabled:     document.getElementById('emailEnabled').checked,
-    sendHour:    parseInt(document.getElementById('emailSendHour').value, 10),
-    fromName:    document.getElementById('emailFromName').value.trim()  || 'TaskQ Daily',
-    fromEmail:   document.getElementById('emailFromEmail').value.trim() || null,
-    functionUrl: document.getElementById('emailFunctionUrl').value.trim() || null,
-    recipients
-  };
-
-  emailSettingsRef.set(data);
+  // Legacy panel. The old global daily report it configured has been removed;
+  // reports are now per member and are set in Admin, so this node is read-only.
+  void recipients;
+  alert('Daily report settings are now per member. Open Admin, pick the member, and set their report options there.');
   closeEmailSettings();
 }
 
 async function sendReportNow() {
-  const url = document.getElementById('emailFunctionUrl').value.trim() || emailSettings.functionUrl;
-  if (!url) { alert('Please enter your Cloud Function URL in the Email settings first.'); return; }
   const btn = document.getElementById('btnSendNow');
+  const user = auth.currentUser;
+  if (!user) { alert('Please sign in first.'); return; }
   btn.disabled = true;
   btn.textContent = '⏳ SENDING…';
   try {
-    const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ manual: true }) });
+    const token = await user.getIdToken();
+    const resp = await fetch(`${CF_BASE}/sendEmailNow`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ manual: true })
+    });
     const json = await resp.json().catch(() => ({}));
     if (resp.ok) {
       btn.textContent = '✓ SENT';
@@ -3526,14 +3526,14 @@ function openEditTask(key) {
   // Populate category select
   const sel = document.getElementById('etCategory');
   const curCat = task.category || cfg.categories[0]?.id || '';
-  sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('') +
+  sel.innerHTML = cfg.categories.map(c => `<option value="${esc(c.id)}">${esc(c.label)}</option>`).join('') +
     '<option value="__new__" style="color:var(--accent)">+ NEW CATEGORY</option>';
   sel.value = curCat;
   sel.onchange = async function() {
     if (this.value === '__new__') {
       const newId = await inlineAddCategory('etCategory', curCat);
       if (newId) {
-        sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('') +
+        sel.innerHTML = cfg.categories.map(c => `<option value="${esc(c.id)}">${esc(c.label)}</option>`).join('') +
           '<option value="__new__" style="color:var(--accent)">+ NEW CATEGORY</option>';
         sel.value = newId;
       } else { this.value = curCat; }
@@ -4189,8 +4189,11 @@ function fmtDate(ts) {
 function fmtTime(ts) {
   return new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
+function safeColor(c, fallback) {
+  return /^#[0-9a-fA-F]{3,8}$/.test(String(c || '')) ? c : (fallback || 'var(--accent)');
+}
 function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 function fmtHours(h) {
   if (!h && h !== 0) return '';
@@ -4280,7 +4283,7 @@ function getTaskMeta(t, now) {
 function render() {
   const sel = document.getElementById('iCategory');
   const cur = sel.value;
-  sel.innerHTML = cfg.categories.map(c => `<option value="${c.id}">${c.label}</option>`).join('') +
+  sel.innerHTML = cfg.categories.map(c => `<option value="${esc(c.id)}">${esc(c.label)}</option>`).join('') +
     '<option value="__new__" style="color:var(--accent)">+ NEW CATEGORY</option>';
   if (cfg.categories.find(c => c.id === cur)) sel.value = cur;
   sel.onchange = async function() {
@@ -4380,7 +4383,7 @@ function renderBoard() {
   <div class="card-body">
   <div class="card-header">
     ${idBadge}
-    <span class="card-category" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span>
+    <span class="card-category" style="background:${safeColor(cat.color)}22;color:${safeColor(cat.color)};border:1px solid ${safeColor(cat.color)}44">${esc(cat.label)}</span>
   </div>
   <div class="card-name">${safeName}${t.recurrence ? ' <span class="card-recur-icon" title="Recurring task">🔁</span>' : ''}</div>
   ${hiPriLine}
@@ -4489,7 +4492,7 @@ function renderTable() {
   ${cbCell}
   <td class="td-task">${safeName}${t.recurrence ? ' <span class="card-recur-icon" title="Recurring task">🔁</span>' : ''}</td>
   <td class="td-muted">${esc(taskAssigneesArr(t).join(', ') || '—')}</td>
-  <td><span class="cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${esc(cat.label)}</span></td>
+  <td><span class="cat-badge" style="background:${safeColor(cat.color)}22;color:${safeColor(cat.color)};border:1px solid ${safeColor(cat.color)}44">${esc(cat.label)}</span></td>
   <td class="td-status ${colorCls}">${statusLbl}</td>
   <td class="td-timer ${colorCls}">${timerTxt}</td>
   <td class="td-muted">${t.dueAt ? fmtDate(t.dueAt) : '—'}</td>
@@ -4574,13 +4577,13 @@ function renderCategoryBoard() {
     return `<div class="cat-col"
   ondragover="event.preventDefault()"
   ondrop="event.preventDefault();catDrop('${esc(cat.id)}',this)">
-  <div class="cat-col-header" style="border-top-color:${cat.color}"
+  <div class="cat-col-header" style="border-top-color:${safeColor(cat.color)}"
     draggable="true"
     ondragstart="catColDragStart('${esc(cat.id)}',event)"
     ondragend="catColDragEnd()"
     ondragover="event.preventDefault()"
     ondrop="event.preventDefault();catColDrop('${esc(cat.id)}',this.parentElement)">
-    <span style="color:${cat.color}" title="Drag to reorder columns">${esc(cat.label)}</span>
+    <span style="color:${safeColor(cat.color)}" title="Drag to reorder columns">${esc(cat.label)}</span>
     <span class="cat-col-count">${catTasks.length}</span>
   </div>
   <div class="cat-col-cards"
@@ -5133,7 +5136,7 @@ function buildCatList() {
 <div class="cat-row">
   <input type="text" value="${esc(c.label)}" placeholder="NAME" maxlength="14"
     oninput="tmpCats[${i}].label=this.value.toUpperCase();this.value=this.value.toUpperCase()">
-  <input type="color" value="${c.color}" oninput="tmpCats[${i}].color=this.value">
+  <input type="color" value="${safeColor(c.color, '#888888')}" oninput="tmpCats[${i}].color=this.value">
   <input type="number" class="green-input"  value="${c.yellow}" min="0.5" max="365" step="0.5" oninput="tmpCats[${i}].yellow=parseFloat(this.value)||1">
   <input type="number" class="yellow-input" value="${c.orange}" min="1"   max="365" step="0.5" oninput="tmpCats[${i}].orange=parseFloat(this.value)||2">
   <input type="number" class="orange-input" value="${c.red}"    min="1"   max="365" step="0.5" oninput="tmpCats[${i}].red=parseFloat(this.value)||3">
@@ -5384,7 +5387,7 @@ function renderMonthView() {
       const assignee = evAssigneeLabel(ev);
       const assigneeHtml = assignee ? ` <span style="opacity:0.7;font-size:0.6rem">[${esc(assignee)}]</span>` : '';
       return `<div class="cal-event-chip" style="background:${color}33;color:${color};border-left:2px solid ${color}"
-        onclick="openEditEvent('${esc(ev._key)}',event)" title="${esc(ev.title)}${assignee ? ' — ' + assignee : ''}">${timeStr} ${esc(ev.title)}${assigneeHtml}${recurIcon}</div>`;
+        onclick="openEditEvent('${esc(ev._key)}',event)" title="${esc(ev.title)}${assignee ? ' — ' + esc(assignee) : ''}">${timeStr} ${esc(ev.title)}${assigneeHtml}${recurIcon}</div>`;
     }).join('');
     const moreHtml = more > 0 ? `<div class="cal-event-more">+${more} more</div>` : '';
 
@@ -5590,7 +5593,7 @@ function packAndRenderBlocks(evts, dayStart, hourH) {
 function buildEventCategorySelect(currentCatId) {
   const sel = document.getElementById('evCategory');
   sel.innerHTML = cfg.categories.map(c =>
-    `<option value="${c.id}" style="color:${c.color}">${c.label}</option>`
+    `<option value="${esc(c.id)}" style="color:${safeColor(c.color)}">${esc(c.label)}</option>`
   ).join('') + '<option value="__new__" style="color:var(--accent)">+ NEW CATEGORY</option>';
   const defaultId = currentCatId || cfg.categories[0]?.id || '';
   if (cfg.categories.find(c => c.id === defaultId)) sel.value = defaultId;
@@ -6184,7 +6187,7 @@ function renderActivityFeed() {
   el.innerHTML = activityItems.map(a => {
     const ago = fmtTimeAgo(a.ts);
     return `<div class="activity-item">
-      <div class="activity-icon">${a.icon || '📋'}</div>
+      <div class="activity-icon">${esc(a.icon) || '📋'}</div>
       <div class="activity-content">
         <div class="activity-text">${esc(a.text)}</div>
         <div class="activity-time">${ago}</div>
