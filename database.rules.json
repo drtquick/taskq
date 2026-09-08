@@ -23,6 +23,7 @@
           ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())"
         },
         "activity": {
+          ".indexOn": "ts",
           ".write": "auth != null && (root.child('workspaces/' + $wsId + '/members/' + auth.uid).exists() || !root.child('workspaces/' + $wsId + '/members').exists())"
         },
         "config": {
