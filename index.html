@@ -1259,7 +1259,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge">β v2.27</span>
+    <span class="beta-badge" id="betaBadge">β v3.0</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
   </div>
 </header>
@@ -2091,6 +2091,11 @@ input[type="date"] { color-scheme: dark; }
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 
 <script>
+// ── VERSION ───────────────────────────────────────────────────────
+// The single source of truth for the app version. The service worker cache key is
+// derived from it at registration, so one edit here invalidates both.
+const APP_VERSION = '3.0';
+
 // ── GOOGLE MAPS PLACES CONFIG ─────────────────────────────────────────────────
 const MAPS_API_KEY = 'AIzaSyDPRDdAtEL1LyI4rRG2zmBYu2yZZeLV4CI'; // Firebase browser key with Maps/Places enabled
 if (MAPS_API_KEY) {
@@ -6610,7 +6615,12 @@ function checkDueSoon() {
 // ── SERVICE WORKER REGISTRATION ──────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(reg => {
+    const badge = document.getElementById('betaBadge');
+    if (badge) badge.textContent = 'β v' + APP_VERSION;
+    // Passing the version in the query string does two things at once: the browser
+    // sees a different script URL and re-registers, and sw.js reads it back to name
+    // its cache. That removes the second version number that had to be kept in sync.
+    navigator.serviceWorker.register('/sw.js?v=' + APP_VERSION).then(reg => {
       console.log('SW registered, scope:', reg.scope);
       // Check for updates periodically
       setInterval(() => reg.update(), 60 * 60 * 1000); // hourly

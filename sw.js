@@ -1,6 +1,7 @@
 // TaskQ Service Worker - Offline caching and PWA support
-// Bump CACHE_VERSION on every deploy so the activate handler can evict the old cache.
-const CACHE_VERSION = '2026-09-08-03';
+// The version comes from the ?v= on the registration URL, which the page sets from
+// its own APP_VERSION. Bump the version in index.html and this follows automatically.
+const CACHE_VERSION = new URL(self.location.href).searchParams.get('v') || 'dev';
 const CACHE_NAME = `taskq-${CACHE_VERSION}`;
 
 // Only genuinely static, rarely changing assets belong here.
