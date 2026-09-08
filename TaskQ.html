@@ -1947,6 +1947,7 @@ input[type="date"] { color-scheme: dark; }
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
@@ -1978,6 +1979,29 @@ const firebaseConfig = {
   appId: "1:614008966022:web:0af7e103d26ac539caba07"
 };
 firebase.initializeApp(firebaseConfig);
+
+// ── APP CHECK ─────────────────────────────────────────────────────────────────
+// Attests that a request came from this app rather than from a script holding
+// the public web key, which is public by design. The site key below is also
+// public; the secret half lives in reCAPTCHA Enterprise and never reaches the
+// browser. Enforcement is OFF at the project, so today this only populates the
+// verified-versus-unverified counters in the App Check console. Nothing here can
+// refuse a request until enforcement is switched on per service.
+const APPCHECK_SITE_KEY = '6LeA37AtAAAAANYjMxzg6jz541ajDC-TdRGX96Te';
+try {
+  if (firebase.appCheck && firebase.appCheck.ReCaptchaEnterpriseProvider) {
+    firebase.appCheck().activate(
+      new firebase.appCheck.ReCaptchaEnterpriseProvider(APPCHECK_SITE_KEY),
+      true   // keep the token refreshed in the background
+    );
+  } else {
+    console.warn('App Check SDK missing; continuing without attestation.');
+  }
+} catch (e) {
+  // Never let attestation setup break the app while enforcement is off.
+  console.warn('App Check did not activate:', (e && e.message) || e);
+}
+
 const db             = firebase.database();
 const auth           = firebase.auth();
 const storage        = firebase.storage();

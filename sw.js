@@ -1,6 +1,6 @@
 // TaskQ Service Worker - Offline caching and PWA support
 // Bump CACHE_VERSION on every deploy so the activate handler can evict the old cache.
-const CACHE_VERSION = '2026-09-08-01';
+const CACHE_VERSION = '2026-09-08-02';
 const CACHE_NAME = `taskq-${CACHE_VERSION}`;
 
 // Only genuinely static, rarely changing assets belong here.
