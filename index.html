@@ -1137,6 +1137,136 @@ input[type="date"] { color-scheme: dark; }
   .list-rail-item { border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; }
   .list-rail-item.active { border-left-color: transparent; border-bottom-color: var(--accent); }
 }
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIGHT THEME
+   A true light-on-white ground for daytime and for a wall in a bright kitchen.
+   The ageing ramp is darkened rather than replaced, so green through red keeps
+   the same order and the same meaning, just at contrast that survives on white.
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  --bg: #f4f5f7; --surface: #ffffff; --surface2: #eceff4; --border: #dde2ea;
+  --text: #1b2230; --muted: #6b7482; --accent: #d95f02;
+  --blue: #1a6fc4; --green: #1c8b4c; --yellow: #a8770a; --orange: #cc5a12; --red: #c02626;
+  --hdr-blue-bg: #e4eefb; --hdr-blue-tx: #0f4b8f; --hdr-blue-tx2: #2f6fb3;
+  --hdr-green-bg: #e3f3e9; --hdr-green-tx: #14663a; --hdr-green-tx2: #2c8055;
+  --hdr-yellow-bg: #fbf1d8; --hdr-yellow-tx: #7a5606; --hdr-yellow-tx2: #96700f;
+  --hdr-orange-bg: #fceadd; --hdr-orange-tx: #9c410b; --hdr-orange-tx2: #b8571d;
+  --hdr-red-bg: #fbe4e4; --hdr-red-tx: #921c1c; --hdr-red-tx2: #b03636;
+  --hdr-done-bg: #e8eef0; --hdr-done-tx: #4a5a63; --hdr-done-tx2: #64757f;
+}
+[data-theme="light"] body,
+[data-theme="light"] .auth-screen { background: var(--bg); color: var(--text); }
+[data-theme="light"] .header { background: #ffffff; border-bottom-color: var(--accent); }
+[data-theme="light"] .logo { color: var(--accent); }
+[data-theme="light"] .datetime { color: var(--text); }
+[data-theme="light"] .user-name, [data-theme="light"] .legend-item { color: var(--muted); }
+[data-theme="light"] .status-bar { background: #ffffff; border-bottom-color: var(--border); }
+[data-theme="light"] .page-nav { background: #ffffff; border-bottom-color: var(--border); }
+[data-theme="light"] .page-tab { color: var(--muted); }
+[data-theme="light"] .page-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+[data-theme="light"] .controls { background: #ffffff; border-bottom-color: var(--border); }
+[data-theme="light"] .countdown-strip { background: #ffffff; border-bottom-color: var(--border); }
+[data-theme="light"] .lists-rail { background: #ffffff; border-right-color: var(--border); }
+[data-theme="light"] .list-item { border-bottom-color: var(--border); }
+[data-theme="light"] .list-item:hover,
+[data-theme="light"] .list-rail-item:hover,
+[data-theme="light"] .list-rail-item.active { background: var(--surface2); }
+[data-theme="light"] .routine-row { background: #ffffff; border-color: var(--border); }
+[data-theme="light"] .card { background: var(--surface); border-color: var(--border); color: var(--text); }
+[data-theme="light"] .card.red { animation: none; box-shadow: 0 0 0 2px rgba(192,38,38,0.18); }
+[data-theme="light"] .card-name { color: var(--text); }
+[data-theme="light"] .card-actions button,
+[data-theme="light"] .btn, [data-theme="light"] .btn-view, [data-theme="light"] .btn-report,
+[data-theme="light"] .btn-list-tool, [data-theme="light"] .btn-new-list, [data-theme="light"] .btn-signout {
+  background: var(--surface2); color: var(--muted); border-color: var(--border);
+}
+[data-theme="light"] .btn-add { background: var(--accent); color: #ffffff; border-color: var(--accent); }
+[data-theme="light"] .btn-view.active { background: var(--accent); color: #ffffff; border-color: var(--accent); }
+[data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea,
+[data-theme="light"] .list-add-input { background: #ffffff; color: var(--text); border-color: var(--border); }
+[data-theme="light"] .task-table { background: var(--surface); color: var(--text); }
+[data-theme="light"] .task-table th { background: var(--surface2); color: var(--text); border-color: var(--border); }
+[data-theme="light"] .task-table td { border-color: var(--border); }
+[data-theme="light"] .task-table tr:hover { background: var(--surface2); }
+[data-theme="light"] .cat-col { background: var(--surface2); }
+[data-theme="light"] .cat-col-header { background: #ffffff; color: var(--text); }
+[data-theme="light"] .cal-header, [data-theme="light"] .cal-day-header { background: #ffffff; color: var(--muted); border-color: var(--border); }
+[data-theme="light"] .cal-day { background: var(--surface); border-color: var(--border); color: var(--text); }
+[data-theme="light"] .cal-day.other-month { background: var(--surface2); color: var(--muted); }
+[data-theme="light"] .edit-task-panel, [data-theme="light"] .event-panel { background: #ffffff; color: var(--text); }
+[data-theme="light"] .edit-task-header { background: var(--surface2); color: var(--text); }
+[data-theme="light"] .settings-btn { background: var(--surface2); border-color: var(--border); color: var(--text); }
+[data-theme="light"] .beta-badge { color: var(--accent); border-color: var(--accent); }
+[data-theme="light"] .av-bubble { border-color: #ffffff; }
+[data-theme="light"] .empty-state { color: var(--muted); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMFORT MODE
+   Same information, a tenth of the ink. Urgency moves off the filled header
+   band and onto a left spine plus the status word, the threshold meter that
+   was already there gets the width to be read across a room, and the four
+   action buttons stop competing with the content until you reach for them.
+   Nothing is removed: the status label, the countdown, the started and due
+   lines and the G/Y/O threshold line are all still on the card.
+   ═══════════════════════════════════════════════════════════════════════════ */
+body.comfort .board { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; padding: 18px 22px; }
+body.comfort .card { border-radius: 12px; border-width: 1px; overflow: visible; }
+body.comfort .card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+  border-radius: 12px 0 0 12px; background: var(--muted);
+}
+body.comfort .card.blue::before   { background: var(--blue); }
+body.comfort .card.green::before  { background: var(--green); }
+body.comfort .card.yellow::before { background: var(--yellow); }
+body.comfort .card.orange::before { background: var(--orange); }
+body.comfort .card.red::before    { background: var(--red); }
+body.comfort .card.done::before   { background: var(--hdr-done-bg); }
+body.comfort .card.red { animation: none; }
+
+/* The header band loses its fill; the words keep the colour. */
+body.comfort .card-alert-hdr { background: none !important; padding: 12px 16px 0 20px; }
+body.comfort .card-alert-lbl { font-size: 0.62rem; letter-spacing: 2.2px; }
+body.comfort .card-alert-tmr { font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+body.comfort .card.blue   .card-alert-lbl, body.comfort .card.blue   .card-alert-tmr { color: var(--blue); }
+body.comfort .card.green  .card-alert-lbl, body.comfort .card.green  .card-alert-tmr { color: var(--green); }
+body.comfort .card.yellow .card-alert-lbl, body.comfort .card.yellow .card-alert-tmr { color: var(--yellow); }
+body.comfort .card.orange .card-alert-lbl, body.comfort .card.orange .card-alert-tmr { color: var(--orange); }
+body.comfort .card.red    .card-alert-lbl, body.comfort .card.red    .card-alert-tmr { color: var(--red); }
+body.comfort .card.done   .card-alert-lbl, body.comfort .card.done   .card-alert-tmr { color: var(--muted); }
+
+body.comfort .card-body { padding: 10px 16px 16px 20px; }
+/* The name is the thing you read from the doorway, so it gets a readable face
+   and real size. Everything else stays monospace, which is the app's voice. */
+body.comfort .card-name {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 1.16rem; font-weight: 600; letter-spacing: -0.01em; line-height: 1.28; margin-bottom: 10px;
+}
+body.comfort .av-stack { margin-bottom: 10px; }
+body.comfort .av-bubble { width: 30px; height: 30px; font-size: 0.66rem; }
+
+/* One quiet metadata line instead of four stacked ones. */
+body.comfort .card-started, body.comfort .card-due, body.comfort .card-thresh, body.comfort .card-time-spent {
+  display: inline-block; margin-right: 12px; margin-bottom: 2px; font-size: 0.62rem; opacity: 0.85;
+}
+body.comfort .card-category { font-size: 0.6rem; opacity: 0.9; }
+
+/* The threshold meter was already on the card at 4px. Give it the width to be
+   read across a room and put it at the foot of the card where the eye lands. */
+body.comfort .progress-bar { height: 7px; border-radius: 4px; margin: 12px 0 0; background: var(--surface2); }
+body.comfort .progress-fill { border-radius: 4px; }
+
+/* Controls on demand. A resting board is text, colour and faces. */
+body.comfort .card-actions {
+  max-height: 0; opacity: 0; overflow: hidden; margin-top: 0;
+  transition: max-height 0.18s ease, opacity 0.18s ease, margin-top 0.18s ease;
+}
+body.comfort .card:hover .card-actions,
+body.comfort .card:focus-within .card-actions,
+body.comfort .card.reveal .card-actions { max-height: 120px; opacity: 1; margin-top: 12px; }
+@media (hover: none) {
+  body.comfort .card-actions { max-height: 120px; opacity: 1; margin-top: 12px; }
+}
+body.comfort .card-actions button { padding: 9px 6px; font-size: 0.66rem; border-radius: 6px; }
 </style>
 </head>
 <body>
@@ -1259,7 +1389,7 @@ input[type="date"] { color-scheme: dark; }
       <span class="user-name" id="userName"></span>
       <button class="btn-signout" onclick="signOut()">SIGN OUT</button>
     </div>
-    <span class="beta-badge" id="betaBadge">β v3.0</span>
+    <span class="beta-badge" id="betaBadge">β v3.1</span>
     <button class="btn-signout" onclick="toggleTheme()" id="themeToggleBtn" title="Switch color scheme">🎨 DARK</button>
   </div>
 </header>
@@ -1417,6 +1547,7 @@ input[type="date"] { color-scheme: dark; }
       </div>
       <div class="view-toggle">
         <button class="btn-view" id="btnGroup" onclick="toggleBoardGroup()" title="Group the board by category with collapsible headers">▤ GROUP</button>
+        <button class="btn-view" id="btnComfort" onclick="toggleComfort()" title="Roomier cards, urgency on the spine, buttons on demand. Every time indicator stays.">◫ COMFORT</button>
       </div>
       <div class="export-btns">
         <button class="btn-export" onclick="exportTasksCSV()" title="Export tasks to CSV">📥 CSV</button>
@@ -2094,7 +2225,7 @@ input[type="date"] { color-scheme: dark; }
 // ── VERSION ───────────────────────────────────────────────────────
 // The single source of truth for the app version. The service worker cache key is
 // derived from it at registration, so one edit here invalidates both.
-const APP_VERSION = '3.0';
+const APP_VERSION = '3.1';
 
 // ── GOOGLE MAPS PLACES CONFIG ─────────────────────────────────────────────────
 const MAPS_API_KEY = 'AIzaSyDPRDdAtEL1LyI4rRG2zmBYu2yZZeLV4CI'; // Firebase browser key with Maps/Places enabled
@@ -2250,26 +2381,43 @@ function loadLocal(key, fallback) {
 function saveLocal(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
 // ── THEME TOGGLE ─────────────────────────────────────────────────────────────
+const THEMES = ['dark', 'light', 'kds'];
+const THEME_LABEL = { dark: '\u{1F318} DARK', light: '\u2600\uFE0F LIGHT', kds: '\u{1F3A8} KDS' };
+
 function applyTheme(theme) {
-  if (theme === 'kds') {
-    document.documentElement.setAttribute('data-theme', 'kds');
-  } else {
-    document.documentElement.removeAttribute('data-theme');
-  }
+  if (!THEMES.includes(theme)) theme = 'dark';
+  if (theme === 'dark') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', theme);
   const btn = document.getElementById('themeToggleBtn');
-  if (btn) btn.textContent = theme === 'kds' ? '🎨 KDS' : '🎨 DARK';
+  if (btn) btn.textContent = THEME_LABEL[theme];
   localStorage.setItem('taskq-theme', theme);
 }
 
 function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  applyTheme(current === 'kds' ? 'dark' : 'kds');
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(THEMES[(THEMES.indexOf(current) + 1) % THEMES.length]);
+}
+
+// Comfort mode: the same card with the urgency moved off the filled header band
+// and onto a spine, the threshold meter widened, and the buttons held back until
+// you reach for them. Every time indicator stays on the card.
+function applyComfort(on) {
+  document.body.classList.toggle('comfort', !!on);
+  const btn = document.getElementById('btnComfort');
+  if (btn) btn.classList.toggle('active-past', !!on);
+  localStorage.setItem('taskq_comfort', on ? '1' : '0');
+}
+function toggleComfort() {
+  applyComfort(!document.body.classList.contains('comfort'));
 }
 
 // Apply saved theme on load
 (function() {
   const saved = localStorage.getItem('taskq-theme');
-  if (saved === 'kds') applyTheme('kds');
+  if (saved && saved !== 'dark') applyTheme(saved);
+  document.addEventListener('DOMContentLoaded', () => {
+    applyComfort(localStorage.getItem('taskq_comfort') === '1');
+  });
 })();
 
 // ── SIDEBAR ──────────────────────────────────────────────────────────────────
@@ -6611,6 +6759,15 @@ function checkDueSoon() {
     }
   });
 }
+
+// On a touch screen there is no hover, so a tap on the card body reveals its
+// buttons and a tap elsewhere puts them away again.
+document.addEventListener('click', (e) => {
+  if (!document.body.classList.contains('comfort')) return;
+  const card = e.target.closest ? e.target.closest('.card') : null;
+  document.querySelectorAll('.card.reveal').forEach(c => { if (c !== card) c.classList.remove('reveal'); });
+  if (card && !e.target.closest('button')) card.classList.add('reveal');
+}, true);
 
 // ── SERVICE WORKER REGISTRATION ──────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
